@@ -7,6 +7,7 @@ import { useToast } from "@/shared/hooks/use-toast";
 import { issueRepository } from "@/features/issues/repositories/issueRepository";
 import { issueService } from "@/features/issues/services/issueService";
 import { profileService } from "@/features/profile/services/profileService";
+import { userStatsService } from "@/features/profile/services/userStatsService";
 import { gamificationService } from "@/features/profile/services/gamificationService";
 import { Issue } from "@/shared/types/domain/Issue";
 import { ROUTES } from "@/shared/config/routes";
@@ -49,6 +50,7 @@ export function CommunityHeroWidget() {
   const [isHovered, setIsHovered] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [statsLoaded, setStatsLoaded] = useState(false);
+  const [verificationsCount, setVerificationsCount] = useState(0);
 
   const prevProgressRef = useRef<any>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -62,6 +64,10 @@ export function CommunityHeroWidget() {
 
       const rawSupported = await issueRepository.fetchUserSupportedIssues(user.id);
       setSupportedIssues(rawSupported.map((item) => issueService.mapResponseToDomain(item)));
+
+      // Real vote count from the DB, not a localStorage scan.
+      const stats = await userStatsService.getMyStats();
+      setVerificationsCount(stats.verificationCount);
 
       setStatsLoaded(true);
 
@@ -88,7 +94,7 @@ export function CommunityHeroWidget() {
     }
   }, [user]);
 
-  const progress = gamificationService.computeProgress(issues, supportedIssues);
+  const progress = gamificationService.computeProgress(issues, supportedIssues, verificationsCount);
 
   // Monitor stats changes for Toast triggers and Pulse animations
   useEffect(() => {

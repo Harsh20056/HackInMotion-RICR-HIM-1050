@@ -55,6 +55,7 @@ import { AnalyticsPanel } from "../components/AnalyticsPanel";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { formatResolutionTime } from "../services/dashboardService";
 import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
+import { ResolutionReviewPanel } from "@/features/issues/components/ResolutionReviewPanel";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "Water Supply": <Droplets className="w-4 h-4" />,
@@ -143,10 +144,11 @@ export default function DashboardPage() {
     supportingId,
     handleSupport,
     isNearbyMode,
+    refetch,
   } = useDashboardIssues(user, language, userCoords);
 
   // Dashboard counters are server-computed over the whole dataset.
-  const { overview } = useAnalytics();
+  const { overview, refetch: refetchAnalytics } = useAnalytics();
 
   const getTimeAgo = (date: Date) => getTimeAgoUtil(date, language);
 
@@ -579,6 +581,20 @@ export default function DashboardPage() {
                         </p>
                       )}
                     </div>
+
+                    {/* Resolution outcome — only the reporter decides whether it holds */}
+                    {user?.id === selectedIssue.userId &&
+                      selectedIssue.status === IssueStatus.RESOLVED && (
+                        <ResolutionReviewPanel
+                          issueId={selectedIssue.id}
+                          onReviewed={() => {
+                            searchParams.delete("issueId");
+                            setSearchParams(searchParams);
+                            refetch();
+                            refetchAnalytics();
+                          }}
+                        />
+                      )}
 
                     {/* AI Intelligence Panel — only for authenticated users */}
                     {user && <AIInsightPanel issue={selectedIssue} />}

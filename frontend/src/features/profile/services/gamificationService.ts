@@ -2,33 +2,15 @@ import { Issue } from "@/shared/types/domain/Issue";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 import { GamificationState, Achievement, LeaderboardEntry } from "../types/gamification";
 
-const countUserVotes = (): number => {
-  if (typeof window === "undefined") return 0;
-  let count = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith("samadhan_issue_vote_")) {
-      const dataStr = localStorage.getItem(key);
-      if (dataStr) {
-        try {
-          const data = JSON.parse(dataStr);
-          if (data && data.userVote) {
-            count++;
-          }
-        } catch {
-          // Corrupt localStorage entry — skip it.
-        }
-      }
-    }
-  }
-  return count;
-};
-
 export const gamificationService = {
-  computeProgress(issues: Issue[], supportedIssues: Issue[]): GamificationState {
+  /**
+   * @param verificationsCount real vote count from GET /users/me/stats.
+   *   Previously this was counted by scanning localStorage keys, which only
+   *   ever saw votes cast in the current browser.
+   */
+  computeProgress(issues: Issue[], supportedIssues: Issue[], verificationsCount = 0): GamificationState {
     const reportedCount = issues.length;
     const supportedCount = supportedIssues.length;
-    const verificationsCount = countUserVotes();
     const resolvedCount = issues.filter((i) => i.status === IssueStatus.RESOLVED).length;
 
     // Calculate XP

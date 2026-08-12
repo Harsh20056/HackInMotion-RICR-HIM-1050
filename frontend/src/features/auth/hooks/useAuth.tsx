@@ -38,8 +38,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
 
+    // The API client emits this when a 401 survives a refresh attempt, so
+    // an expired session drops the user out instead of leaving a
+    // signed-in shell where every request fails.
+    const handleExpired = () => {
+      logger.info("Session expired — clearing local auth state");
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+    };
+    window.addEventListener("samadhan_session_expired", handleExpired);
+
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener("samadhan_session_expired", handleExpired);
     };
   }, []);
 

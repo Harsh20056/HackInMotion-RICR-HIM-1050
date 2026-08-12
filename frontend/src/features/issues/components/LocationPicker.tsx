@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
-import { MapPin, Search, Loader2, Compass } from "lucide-react";
+import { MapPin, Search, Loader2, Compass, AlertTriangle, X } from "lucide-react";
 import { logger } from "@/shared/services/logger";
 
 // Standard default leaflet icons fix
@@ -72,6 +72,8 @@ export default function LocationPicker({
   const [isLocating, setIsLocating] = useState(false);
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
   const [isMapMoving, setIsMapMoving] = useState(false);
+  // Surfaced to the user — a silent GPS failure looks like a broken button.
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -260,10 +262,16 @@ export default function LocationPicker({
 
   const handleUseCurrentLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
+      setLocationError(
+        language === "en"
+          ? "This browser does not support location access. Search for the address or tap the map instead."
+          : "यह ब्राउज़र स्थान पहुंच का समर्थन नहीं करता। पता खोजें या मानचित्र पर टैप करें।"
+      );
       return;
     }
 
     setIsLocating(true);
+    setLocationError(null);
     setGeocodeStatus("resolving");
 
     navigator.geolocation.getCurrentPosition(
@@ -283,6 +291,23 @@ export default function LocationPicker({
       },
       (err) => {
         logger.error("GPS location capture failed:", err);
+        // Tell the user which failure it was and what to do next.
+        const messages: Record<number, { en: string; hi: string }> = {
+          1: {
+            en: "Location permission denied. Enable it in your browser settings, or tap the map to place the pin manually.",
+            hi: "स्थान अनुमति अस्वीकृत। ब्राउज़र सेटिंग्स में सक्षम करें, या पिन लगाने के लिए मानचित्र पर टैप करें।",
+          },
+          2: {
+            en: "Your location is unavailable right now. Tap the map to place the pin manually.",
+            hi: "आपका स्थान अभी उपलब्ध नहीं है। पिन लगाने के लिए मानचित्र पर टैप करें।",
+          },
+          3: {
+            en: "Locating timed out. Try again, or tap the map to place the pin manually.",
+            hi: "स्थान खोजने में समय समाप्त। पुनः प्रयास करें, या मानचित्र पर टैप करें।",
+          },
+        };
+        const msg = messages[err.code] ?? messages[2];
+        setLocationError(language === "en" ? msg.en : msg.hi);
         setGeocodeStatus("failed");
         setIsLocating(false);
       },
@@ -404,6 +429,25 @@ export default function LocationPicker({
           📍 {language === "en" ? "Move marker or click map for precision" : "सटीक स्थिति के लिए मार्कर खिसकाएं या नक्शे पर क्लिक करें"}
         </div>
       </div>
+
+      {/* Location failure — always actionable, never a dead button */}
+      {locationError && (
+        <div
+          role="status"
+          className="flex items-start gap-2 p-3 rounded-xl border border-amber-500/25 bg-amber-500/5"
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground flex-1">{locationError}</p>
+          <button
+            type="button"
+            onClick={() => setLocationError(null)}
+            className="text-muted-foreground hover:text-foreground shrink-0"
+            aria-label="Dismiss"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Confirmed Location Details Card */}
       <div className="p-4 border border-border/80 bg-muted/20 dark:bg-muted/5 rounded-2xl space-y-3 shadow-inner">

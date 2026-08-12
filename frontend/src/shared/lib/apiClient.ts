@@ -62,11 +62,33 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     });
   };
 
-  let response = await doFetch();
+  let response: Response;
+  try {
+    response = await doFetch();
+  } catch {
+    // fetch() only rejects on network-level failure.
+    throw new APIError(
+      navigator.onLine
+        ? "Can't reach the Samadhan server. Please try again in a moment."
+        : "You appear to be offline. Reconnect and try again.",
+      0
+    );
+  }
 
   if (response.status === 401 && auth && tokenStore.getRefreshToken()) {
     const refreshed = await refreshAccessToken();
-    if (refreshed) response = await doFetch();
+    if (refreshed) {
+      response = await doFetch();
+    }
+  }
+
+  // A 401 that survives the refresh attempt means the session is genuinely
+  // gone. Clear it and announce that, so guards can send the user to sign in
+  // instead of leaving a signed-in shell that fails every request.
+  if (response.status === 401 && auth) {
+    tokenStore.clear();
+    window.dispatchEvent(new CustomEvent("samadhan_session_expired"));
+    throw new APIError("Your session has expired. Please sign in again.", 401);
   }
 
   if (!response.ok) {
