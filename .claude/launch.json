@@ -2,10 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "samadhan-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 8080
+      "name": "samadhan-preview2",
+      "url": "http://localhost:4174"
     }
   ]
 }

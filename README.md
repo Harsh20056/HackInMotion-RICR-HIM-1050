@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/hero-landing-page.png"
+  <img src="assets/hero-landing-page.png"
        alt="Samadhan"
        width="550">
 </p>
@@ -34,7 +34,8 @@ An AI-powered civic engagement platform that unifies issue reporting, community 
   <a href="#-installation">Installation</a> •
   <a href="#-project-structure">Structure</a> •
   <a href="#-future-scope">Roadmap</a> •
-  <a href="#-license">License</a>
+  <a href="#-license">License</a> •
+  <a href="docs/">Docs</a>
 </p>
 
 </div>
@@ -89,7 +90,7 @@ Civic issues — broken roads, overflowing garbage, damaged streetlights, water 
 ### 📊 Civic Dashboard
 
 <p align="center">
-  <img src="public/dashboard-analytics.png" alt="Samadhan Civic Dashboard" width="450" />
+  <img src="assets/dashboard-analytics.png" alt="Samadhan Civic Dashboard" width="450" />
 </p>
 <p align="center"><sub><b>AI classifications, duplicate prevention, resolution time, and live category/status breakdowns — all in one dashboard.</b></sub></p>
 
@@ -105,7 +106,7 @@ Civic issues — broken roads, overflowing garbage, damaged streetlights, water 
 ### 🗺️ Interactive Civic Map
 
 <p align="center">
-  <img src="public/civic-map.png" alt="Samadhan Interactive Civic Map" width="450" />
+  <img src="assets/civic-map.png" alt="Samadhan Interactive Civic Map" width="450" />
 </p>
 <p align="center"><sub><b>Live, filterable map of reported issues with category breakdowns and top-affected-city rankings.</b></sub></p>
 
@@ -285,51 +286,40 @@ Government Scheme Matching
 
 ## 🚀 Installation
 
+The app lives in `frontend/`. It runs fully standalone — no backend, credentials,
+or environment variables are required (see [docs/phase-1-supabase-removal.md](docs/phase-1-supabase-removal.md)).
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/your-username/samadhan.git
-cd samadhan
+cd samadhan/frontend
 
 # 2. Install dependencies
 npm install
 
-# 3. Set up environment variables
-cp .env.example .env
-# Fill in the values — see Environment Variables section below
-
-# 4. Run the development server
+# 3. Run the development server
 npm run dev
 
-# 5. Build for production
+# 4. Build for production
 npm run build
 
-# 6. Preview the production build locally
+# 5. Preview the production build locally
 npm run preview
 ```
 
 **Deployment**
 
 ```bash
-# Firebase Hosting
+# Firebase Hosting (serves frontend/dist)
 firebase deploy
-
-# Google Cloud (final submission target)
-gcloud app deploy
 ```
 
 <br/>
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the project root:
-
-```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-GOOGLE_AI_API_KEY=
-```
-
-> ⚠️ Never commit real API keys. Use `.env.example` as a template and keep `.env` in `.gitignore`.
+None are required to run the app today. `frontend/.env.example` documents the
+(currently empty) template for whatever Phase 2's backend introduces.
 
 <br/>
 
@@ -337,33 +327,22 @@ GOOGLE_AI_API_KEY=
 
 ```
 samadhan/
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   │   ├── ui/
-│   │   ├── reporting/
-│   │   ├── verification/
-│   │   ├── map/
-│   │   ├── analytics/
-│   │   ├── documents/
-│   │   ├── schemes/
-│   │   └── community-hero/
-│   ├── pages/
-│   ├── hooks/
-│   ├── lib/
-│   ├── services/
-│   │   ├── ai/
-│   │   └── supabase/
-│   ├── types/
-│   ├── App.tsx
-│   └── main.tsx
-├── supabase/
-│   └── functions/          # Edge Functions
-├── .env.example
-├── package.json
-├── tailwind.config.ts
-├── vite.config.ts
+├── frontend/                # The React + TypeScript + Vite app (see below)
+│   ├── public/
+│   ├── src/
+│   │   ├── app/              # Routing, providers, layouts
+│   │   ├── features/         # Feature modules (issues, admin, auth, ...)
+│   │   └── shared/            # Cross-feature types, contracts, mock data layer
+│   ├── tests/
+│   ├── .env.example
+│   ├── package.json
+│   ├── tailwind.config.ts
+│   └── vite.config.ts
+├── backend/                  # Phase 2 — not yet implemented
+├── docs/                     # tech-stack, roadmap, performance, migration notes
+├── assets/                   # README screenshots
+├── architecture-diagram.png
+├── api-documentation.md
 └── README.md
 ```
 

@@ -8,12 +8,15 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+frontend/node_modules
 dist
+frontend/dist
 dist-ssr
 *.local
 
 # Environment variables - never commit secrets!
 .env
+frontend/.env
 .env.local
 .env.*.local
 .env.development
@@ -35,8 +38,13 @@ dist-ssr
 *.md
 **/*.md
 
-# Except README.md
+# Except README.md, project docs, and contributor-facing markdown
 !/README.md
+!/api-documentation.md
+!/docs/**/*.md
+!/backend/README.md
+!/CONTRIBUTING.md
+!/.github/**/*.md
 
 # Python virtual environments & cache files
 .venv/
