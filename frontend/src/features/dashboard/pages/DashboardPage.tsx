@@ -743,6 +743,22 @@ function IssueCard({
       style={{ animationDelay: `${index * 0.1}s` }}
       onClick={onViewDetails}
     >
+      {/* Evidence photo — the strongest signal on the card, so it leads */}
+      {issue.imageUrls && issue.imageUrls.length > 0 && (
+        <div className="h-40 w-full bg-muted overflow-hidden">
+          <img
+            src={issue.imageUrls[0]}
+            alt={issue.title}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              // A dead image URL shouldn't leave a broken-image icon on the card.
+              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+            }}
+          />
+        </div>
+      )}
+
       <div className="p-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-4">

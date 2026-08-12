@@ -7,6 +7,8 @@ export const createIssueSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90),
   longitude: z.coerce.number().min(-180).max(180),
   address: z.string().max(500).optional(),
+  /** Cloudinary URLs of evidence photos already uploaded by the client. */
+  imageUrls: z.array(z.string().url()).max(5).optional(),
   // Set once the citizen has already seen a duplicateCandidate and
   // explicitly said "this is a different issue" — skips the dedup check.
   force: z.boolean().optional().default(false),
@@ -15,7 +17,10 @@ export type CreateIssueInput = z.infer<typeof createIssueSchema>;
 
 export const listIssuesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  // The civic map plots every geotagged issue in one pass, so the ceiling
+  // has to clear a whole city's backlog — 100 silently truncated it to an
+  // empty map once the dataset grew past a page.
+  pageSize: z.coerce.number().int().min(1).max(500).default(20),
   categoryCode: z.string().optional(),
   status: z
     .enum(["reported", "acknowledged", "in_progress", "resolved", "verified", "rejected", "reopened", "closed"])

@@ -28,11 +28,31 @@ function toApiIssue(row: IssueRow) {
   };
 }
 
+/**
+ * Attaches media to a page of issues in one query. Cards, map popups and
+ * the detail dialog all render the evidence photo, so the list endpoint has
+ * to carry it — fetching per issue would be an N+1 on every feed load.
+ */
+async function withMedia(rows: IssueRow[]) {
+  if (rows.length === 0) return [];
+  const media = await prisma.issueMedia.findMany({
+    where: { issueId: { in: rows.map((r) => r.id) } },
+    orderBy: { createdAt: "asc" },
+  });
+  const byIssue = new Map<string, { id: string; kind: string; url: string }[]>();
+  for (const m of media) {
+    const list = byIssue.get(m.issueId) ?? [];
+    list.push({ id: m.id, kind: m.kind, url: m.url });
+    byIssue.set(m.issueId, list);
+  }
+  return rows.map((row) => ({ ...toApiIssue(row), media: byIssue.get(row.id) ?? [] }));
+}
+
 export const issuesService = {
   async list(filters: ListIssuesQuery) {
     const { rows, total } = await issuesRepository.list(filters);
     return {
-      items: rows.map(toApiIssue),
+      items: await withMedia(rows),
       page: filters.page,
       pageSize: filters.pageSize,
       total,
@@ -105,6 +125,20 @@ export const issuesService = {
         data: { issueId: inserted.id, reporterId, description: input.description, isPrimary: true },
       });
 
+      // Evidence photos the client already pushed to Cloudinary. Without
+      // this the upload succeeded but the URL was dropped on the floor.
+      if (input.imageUrls?.length) {
+        await tx.issueMedia.createMany({
+          data: input.imageUrls.map((url) => ({
+            issueId: inserted.id,
+            kind: "evidence" as const,
+            url,
+            publicId: url.split("/").pop() ?? url,
+            uploadedBy: reporterId,
+          })),
+        });
+      }
+
       // Data-driven routing: one work order per matching department rule.
       await tx.workOrder.createMany({
         data: rules.map((rule, idx) => ({
@@ -131,7 +165,7 @@ export const issuesService = {
     });
 
     const row = await issuesRepository.findById(issue.id);
-    const apiIssue = toApiIssue(row!);
+    const [apiIssue] = await withMedia([row!]);
 
     eventBus.emitIssueEvent({
       type: "issue.created",

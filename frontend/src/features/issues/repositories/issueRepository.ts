@@ -107,6 +107,9 @@ export const issueRepository = {
       latitude: issue.latitude,
       longitude: issue.longitude,
       address: issue.location ?? undefined,
+      // Already uploaded to Cloudinary by uploadIssueImage; the backend
+      // persists these as issue_media evidence rows.
+      imageUrls: issue.image_urls ?? undefined,
       force,
     };
 
