@@ -18,16 +18,19 @@ export interface IssueRow {
   priority: number;
   reported_by: string;
   supports_count: number;
+  resolution_note: string | null;
   created_at: Date;
   acknowledged_at: Date | null;
   resolved_at: Date | null;
+  verified_at: Date | null;
   closed_at: Date | null;
 }
 
 const ISSUE_SELECT = Prisma.sql`
   SELECT
     i.id, i.public_ref, i.title, i.description, i.status, i.address, i.priority,
-    i.reported_by, i.supports_count, i.created_at, i.acknowledged_at, i.resolved_at, i.closed_at,
+    i.reported_by, i.supports_count, i.resolution_note,
+    i.created_at, i.acknowledged_at, i.resolved_at, i.verified_at, i.closed_at,
     ST_Y(i.location::geometry) AS latitude,
     ST_X(i.location::geometry) AS longitude,
     c.code AS category_code,

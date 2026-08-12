@@ -19,9 +19,11 @@ function toApiIssue(row: IssueRow) {
     priority: row.priority,
     reportedBy: row.reported_by,
     supportsCount: row.supports_count,
+    resolutionNote: row.resolution_note,
     createdAt: row.created_at,
     acknowledgedAt: row.acknowledged_at,
     resolvedAt: row.resolved_at,
+    verifiedAt: row.verified_at,
     closedAt: row.closed_at,
   };
 }
