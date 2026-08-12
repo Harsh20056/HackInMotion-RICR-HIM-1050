@@ -254,7 +254,7 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
 
   // Fetch community verification data using the unified getComputedState helper
   const { confirmations, disagreements, confidence, isVerified } = 
-    issueVerificationService.getComputedState(issue.id, issue.title);
+    issueVerificationService.getComputedState(issue.id);
 
   const verificationBadgeHtml = isVerified
     ? `<span style="

@@ -3,6 +3,13 @@ import { gamificationService } from "@/features/profile/services/gamificationSer
 import { Issue } from "@/shared/types/domain/Issue";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 
+// Streak logic is relative to "now", so these fixtures must be too —
+// hardcoded calendar dates silently start failing once they age out of the
+// streak window.
+const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+const RECENT_REPORT_DATE = daysAgo(0);
+const EARLIER_REPORT_DATE = daysAgo(5);
+
 describe("gamificationService", () => {
   const mockIssues: Issue[] = [
     {
@@ -15,8 +22,8 @@ describe("gamificationService", () => {
       longitude: 75.8577,
       status: IssueStatus.REPORTED,
       supportsCount: 2,
-      createdAt: new Date("2026-06-25T10:00:00Z"),
-      updatedAt: new Date("2026-06-25T10:00:00Z"),
+      createdAt: RECENT_REPORT_DATE,
+      updatedAt: RECENT_REPORT_DATE,
       userId: "user123",
       mediaUrl: null,
       masterIssueId: null,
@@ -31,8 +38,8 @@ describe("gamificationService", () => {
       longitude: 75.8577,
       status: IssueStatus.RESOLVED,
       supportsCount: 5,
-      createdAt: new Date("2026-06-20T10:00:00Z"),
-      updatedAt: new Date("2026-06-21T10:00:00Z"),
+      createdAt: EARLIER_REPORT_DATE,
+      updatedAt: EARLIER_REPORT_DATE,
       userId: "user123",
       mediaUrl: null,
       masterIssueId: null,
@@ -95,10 +102,9 @@ describe("gamificationService", () => {
 
   it("calculates contribution streak correctly", () => {
     const streakData = gamificationService.calculateStreak(mockIssues);
-    // last issue reported is on 2026-06-25, which is within 2 weeks.
-    // issue2 is on 2026-06-20, which is in the same/consecutive week range.
+    // Both fixtures are recent, so the streak must register at least one week.
     expect(streakData.streakCount).toBeGreaterThanOrEqual(1);
-    expect(streakData.lastContributionDate).toBe(new Date("2026-06-25T10:00:00Z").toLocaleDateString());
+    expect(streakData.lastContributionDate).toBe(RECENT_REPORT_DATE.toLocaleDateString());
   });
 
   it("generates leaderboard and inserts current user in sorted rank order", () => {

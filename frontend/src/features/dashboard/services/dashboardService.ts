@@ -452,7 +452,7 @@ export const dashboardService = {
 
     // Get verified reports details
     const verifiedIssues = issues.filter((i) => {
-      const state = issueVerificationService.getComputedState(i.id, i.title);
+      const state = issueVerificationService.getComputedState(i.id);
       return state.isVerified;
     });
     const verifiedCount = verifiedIssues.length;

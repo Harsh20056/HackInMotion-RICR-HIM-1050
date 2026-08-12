@@ -190,7 +190,7 @@ export function useDashboardIssues(
       gamificationService.dispatchGamificationUpdate();
       if (!isSupported) {
         const title = allIssues.find((i) => i.id === issueId)?.title;
-        await issueVerificationService.voteOnIssue(issueId, "confirm", title);
+        await issueVerificationService.voteOnIssue(issueId, "confirm");
 
         toast({
           title: activeLanguage === "en" ? "Issue Supported!" : "समस्या समर्थित!",

@@ -110,7 +110,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleVote = async (issueId: string, vote: "confirm" | "disagree", title?: string) => {
-    await issueVerificationService.voteOnIssue(issueId, vote, title);
+    await issueVerificationService.voteOnIssue(issueId, vote);
     toast({
       title: language === "en" ? "Vote Registered" : "मत दर्ज किया गया",
       description: language === "en" 
@@ -364,7 +364,7 @@ export default function DashboardPage() {
           ) : (
             (() => {
               const { confirmations, disagreements, confidence, isVerified, userVote } = 
-                issueVerificationService.getComputedState(selectedIssue.id, selectedIssue.title);
+                issueVerificationService.getComputedState(selectedIssue.id);
               const insight = aiInsightService.getSyncInsight(selectedIssue);
               const hasDepartment = !!insight?.department;
 
@@ -691,14 +691,14 @@ function IssueCard({
   const localizedStatusLabel = STATUS_LABELS[issue.status]?.[activeLanguage] || issue.status;
 
   const [verificationState, setVerificationState] = useState(() => 
-    issueVerificationService.getComputedState(issue.id, issue.title)
+    issueVerificationService.getComputedState(issue.id)
   );
 
   useEffect(() => {
     const handleSync = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail?.issueId === issue.id) {
-        setVerificationState(issueVerificationService.getComputedState(issue.id, issue.title));
+        setVerificationState(issueVerificationService.getComputedState(issue.id));
       }
     };
     window.addEventListener("issue_verifications_changed", handleSync);

@@ -1,11 +1,6 @@
+import { apiRequest } from "@/shared/lib/apiClient";
+import { logger } from "@/shared/services/logger";
 import { gamificationService } from "../../profile/services/gamificationService";
-
-export interface VerificationRecord {
-  issueId: string;
-  confirmations: number;
-  disagreements: number;
-  userVote?: "confirm" | "disagree" | null;
-}
 
 export interface VerificationState {
   confirmations: number;
@@ -15,137 +10,115 @@ export interface VerificationState {
   userVote: "confirm" | "disagree" | null;
 }
 
+interface ApiVerificationState {
+  confirmations: number;
+  disagreements: number;
+  confidence: number;
+  isVerified: boolean;
+  userVote: boolean | null;
+}
+
+const EMPTY: VerificationState = {
+  confirmations: 0,
+  disagreements: 0,
+  confidence: 0,
+  isVerified: false,
+  userVote: null,
+};
+
+function fromApi(state: ApiVerificationState): VerificationState {
+  return {
+    confirmations: state.confirmations,
+    disagreements: state.disagreements,
+    confidence: state.confidence,
+    isVerified: state.isVerified,
+    userVote: state.userVote === null ? null : state.userVote ? "confirm" : "disagree",
+  };
+}
+
+/**
+ * Community verification, backed by the citizen_verifications table.
+ *
+ * Several call sites (Leaflet popup HTML, dashboard summaries) need a
+ * synchronous read, so states are cached in memory and served from there.
+ * Call `prefetch()` with the visible issue ids first; anything not yet
+ * loaded reports zeroes rather than inventing plausible-looking counts.
+ */
 class IssueVerificationService {
-  private STORAGE_KEY_PREFIX = "samadhan_issue_vote_";
+  private cache = new Map<string, VerificationState>();
+  private inFlight = new Map<string, Promise<void>>();
 
-  /**
-   * Retrieves or initializes community verification data for an issue.
-   */
-  getVerificationDataSync(issueId: string, title?: string): VerificationRecord {
-    if (typeof window === "undefined") {
-      return { issueId, confirmations: 0, disagreements: 0, userVote: null };
-    }
+  /** Bulk-loads verification state for the given issues into the cache. */
+  async prefetch(issueIds: string[]): Promise<void> {
+    const missing = issueIds.filter((id) => !this.cache.has(id) && !this.inFlight.has(id));
+    if (missing.length === 0) return;
 
-    const key = `${this.STORAGE_KEY_PREFIX}${issueId}`;
-    const local = localStorage.getItem(key);
-    if (local) {
+    // The API exposes per-issue state; fetch the missing ones concurrently
+    // and de-duplicate so a re-render can't storm the backend.
+    const load = async (id: string) => {
       try {
-        return JSON.parse(local);
-      } catch {
-        // Corrupt localStorage entry — fall through to recompute defaults.
+        const state = await apiRequest<ApiVerificationState>(`/issues/${id}/verification`);
+        this.cache.set(id, fromApi(state));
+      } catch (err) {
+        logger.error(`Failed to load verification state for ${id}:`, err);
+        this.cache.set(id, EMPTY);
+      } finally {
+        this.inFlight.delete(id);
       }
-    }
-
-    // Initialize realistic vote counts for the demo dataset
-    let confirmations = 0;
-    let disagreements = 0;
-
-    const cleanTitle = (title || "").toLowerCase();
-
-    if (cleanTitle.includes("pothole") || cleanTitle.includes("road") || cleanTitle.includes("सड़क")) {
-      confirmations = 12;
-      disagreements = 1;
-    } else if (cleanTitle.includes("garbage") || cleanTitle.includes("trash") || cleanTitle.includes("कचरा") || cleanTitle.includes("clean")) {
-      confirmations = 8;
-      disagreements = 2;
-    } else if (cleanTitle.includes("leak") || cleanTitle.includes("water") || cleanTitle.includes("पानी")) {
-      confirmations = 5;
-      disagreements = 0;
-    } else if (cleanTitle.includes("wire") || cleanTitle.includes("electricity") || cleanTitle.includes("बिजली") || cleanTitle.includes("blackout")) {
-      confirmations = 11;
-      disagreements = 0;
-    } else {
-      // Fallback: deterministic baseline sum for all other issues so they look natural
-      let sum = 0;
-      for (let i = 0; i < issueId.length; i++) {
-        sum += issueId.charCodeAt(i);
-      }
-      confirmations = sum % 13; // 0 to 12
-      disagreements = sum % 3;  // 0 to 2
-    }
-
-    const record: VerificationRecord = {
-      issueId,
-      confirmations,
-      disagreements,
-      userVote: null,
     };
 
-    localStorage.setItem(key, JSON.stringify(record));
-    return record;
+    const promises = missing.map((id) => {
+      const p = load(id);
+      this.inFlight.set(id, p);
+      return p;
+    });
+
+    await Promise.all(promises);
+    this.notifyChanged();
   }
 
   /**
-   * Returns the unified computed verification state for an issue.
+   * Synchronous cache read. Returns zeroes until `prefetch` has resolved —
+   * deliberately, so the UI never shows a number the server didn't provide.
    */
-  getComputedState(issueId: string, title?: string): VerificationState {
-    const data = this.getVerificationDataSync(issueId, title);
-    const confidence = this.calculateConfidence(data.confirmations, data.disagreements);
-    const isVerified = this.isCommunityVerified(data.confirmations, data.disagreements);
-    return {
-      confirmations: data.confirmations,
-      disagreements: data.disagreements,
-      confidence,
-      isVerified,
-      userVote: data.userVote || null,
-    };
+  getComputedState(issueId: string): VerificationState {
+    return this.cache.get(issueId) ?? EMPTY;
   }
 
-  /**
-   * Casts a vote on an issue.
-   */
-  async voteOnIssue(
-    issueId: string,
-    vote: "confirm" | "disagree",
-    title?: string
-  ): Promise<VerificationRecord> {
-    if (typeof window === "undefined") {
-      return { issueId, confirmations: 0, disagreements: 0, userVote: null };
+  async refresh(issueId: string): Promise<VerificationState> {
+    try {
+      const state = await apiRequest<ApiVerificationState>(`/issues/${issueId}/verification`);
+      const mapped = fromApi(state);
+      this.cache.set(issueId, mapped);
+      this.notifyChanged(issueId);
+      return mapped;
+    } catch (err) {
+      logger.error(`Failed to refresh verification state for ${issueId}:`, err);
+      return this.getComputedState(issueId);
     }
+  }
 
-    const current = this.getVerificationDataSync(issueId, title);
-
-    // Prevent double voting
-    if (current.userVote) {
-      return current;
-    }
-
-    // Update counts
-    if (vote === "confirm") {
-      current.confirmations += 1;
-    } else {
-      current.disagreements += 1;
-    }
-
-    current.userVote = vote;
-
-    const key = `${this.STORAGE_KEY_PREFIX}${issueId}`;
-    localStorage.setItem(key, JSON.stringify(current));
-
-    // Dispatch custom DOM event to sync all listeners reactively
-    window.dispatchEvent(
-      new CustomEvent("issue_verifications_changed", { detail: { issueId } })
-    );
+  /** Casts (or changes) the signed-in citizen's vote. */
+  async voteOnIssue(issueId: string, vote: "confirm" | "disagree"): Promise<VerificationState> {
+    const state = await apiRequest<ApiVerificationState>(`/issues/${issueId}/verify`, {
+      method: "POST",
+      body: { vote: vote === "confirm" },
+    });
+    const mapped = fromApi(state);
+    this.cache.set(issueId, mapped);
+    this.notifyChanged(issueId);
     gamificationService.dispatchGamificationUpdate();
-
-    return current;
+    return mapped;
   }
 
-  /**
-   * Helper to calculate confidence metrics.
-   */
-  calculateConfidence(confirmations: number, disagreements: number): number {
-    const total = confirmations + disagreements;
-    if (total === 0) return 0;
-    return Math.round((confirmations / total) * 100);
+  /** Drops cached state — call on sign-out so votes don't leak between users. */
+  clear(): void {
+    this.cache.clear();
   }
 
-  /**
-   * Determines if the issue crosses the community verification threshold.
-   */
-  isCommunityVerified(confirmations: number, disagreements: number): boolean {
-    const confidence = this.calculateConfidence(confirmations, disagreements);
-    return confirmations >= 10 && confidence >= 80;
+  private notifyChanged(issueId?: string) {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("issue_verifications_changed", { detail: { issueId } }));
   }
 }
 

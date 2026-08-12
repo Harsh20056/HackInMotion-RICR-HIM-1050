@@ -577,7 +577,7 @@ export function AnalyzerAndAssistant() {
                           {analysisResult.reason || "This document was not recognized as an Indian government form."}
                         </p>
                         <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "दिशा-निर्देश:" : "Guidance:"}</strong> {analysisResult.guidance || "Please upload a valid blank printed government application form."}
+                          <strong>{language === "hi" ? "दिशा-निर्देश:" : "Guidance:"}</strong> {analysisResult.guidance?.summary || "Please upload a valid blank printed government application form."}
                         </p>
                       </div>
                     </div>
@@ -595,7 +595,7 @@ export function AnalyzerAndAssistant() {
                           {analysisResult.reason}
                         </p>
                         <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance}
+                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance?.summary}
                         </p>
                       </div>
                     </div>
@@ -613,7 +613,7 @@ export function AnalyzerAndAssistant() {
                           {analysisResult.reason}
                         </p>
                         <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance}
+                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance?.summary}
                         </p>
                       </div>
                     </div>
