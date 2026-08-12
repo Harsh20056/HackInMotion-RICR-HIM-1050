@@ -107,6 +107,11 @@ export const issuesRepository = {
     if (filters.categoryCode) conditions.push(Prisma.sql`c.code = ${filters.categoryCode}`);
     if (filters.status) conditions.push(Prisma.sql`i.status = ${filters.status}::"IssueStatus"`);
     if (filters.reportedBy) conditions.push(Prisma.sql`i.reported_by = ${filters.reportedBy}::uuid`);
+    if (filters.supportedBy) {
+      conditions.push(
+        Prisma.sql`EXISTS (SELECT 1 FROM issue_supports s WHERE s.issue_id = i.id AND s.user_id = ${filters.supportedBy}::uuid)`
+      );
+    }
     if (filters.departmentId) {
       conditions.push(
         Prisma.sql`EXISTS (SELECT 1 FROM work_orders wo WHERE wo.issue_id = i.id AND wo.department_id = ${filters.departmentId}::uuid)`

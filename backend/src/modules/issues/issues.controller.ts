@@ -62,3 +62,12 @@ issuesRouter.post("/:id/support", authenticate, validate(uuidParam("id"), "param
     next(err);
   }
 });
+
+issuesRouter.delete("/:id/support", authenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
+  try {
+    await issuesService.unsupport(req.params.id as string, req.auth!.sub);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});

@@ -20,6 +20,7 @@ export const listIssuesQuerySchema = z.object({
   status: z.enum(["reported", "acknowledged", "in_progress", "resolved", "rejected", "closed"]).optional(),
   departmentId: z.string().uuid().optional(),
   reportedBy: z.string().uuid().optional(),
+  supportedBy: z.string().uuid().optional(),
   // bbox = minLng,minLat,maxLng,maxLat
   bbox: z
     .string()

@@ -10,6 +10,7 @@ import { issuesRouter } from "./modules/issues/issues.controller.js";
 import { departmentsRouter } from "./modules/departments/departments.controller.js";
 import { workOrdersRouter } from "./modules/workOrders/workOrders.controller.js";
 import { uploadsRouter } from "./modules/uploads/uploads.controller.js";
+import { usersRouter } from "./modules/users/users.controller.js";
 
 export function createApp() {
   const app = express();
@@ -26,6 +27,7 @@ export function createApp() {
   app.use("/departments", departmentsRouter);
   app.use("/work-orders", workOrdersRouter);
   app.use("/uploads", uploadsRouter);
+  app.use("/users", usersRouter);
 
   app.use(errorHandler);
 

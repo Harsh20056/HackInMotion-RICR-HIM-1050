@@ -167,14 +167,18 @@ export const issueRepository = {
   },
 
   async fetchUserSupports(userId: string): Promise<SupportResponse[]> {
-    // No dedicated "my supports" endpoint yet — derived client-side from the
-    // local optimistic-update cache is not reliable across sessions, so this
-    // currently reports none until the backend exposes it (Phase 3).
-    return [];
+    const data = await apiRequest<{ items: ApiIssue[] }>("/users/me/supports");
+    return data.items.map((issue) => ({
+      id: `${issue.id}-${userId}`,
+      issue_id: issue.id,
+      user_id: userId,
+      created_at: issue.createdAt,
+    }));
   },
 
-  async fetchUserSupportedIssues(userId: string): Promise<IssueResponse[]> {
-    return [];
+  async fetchUserSupportedIssues(_userId: string): Promise<IssueResponse[]> {
+    const data = await apiRequest<{ items: ApiIssue[] }>("/users/me/supports");
+    return data.items.map(toIssueResponse);
   },
 
   async addSupport(issueId: string, userId: string): Promise<SupportResponse> {
@@ -182,9 +186,8 @@ export const issueRepository = {
     return { id: `${issueId}-${userId}`, issue_id: issueId, user_id: userId, created_at: new Date().toISOString() };
   },
 
-  async removeSupport(issueId: string, userId: string): Promise<void> {
-    // Unsupporting isn't implemented by the backend yet (supports are
-    // append-only there); no-op so the optimistic UI rollback stays consistent.
+  async removeSupport(issueId: string, _userId: string): Promise<void> {
+    await apiRequest<void>(`/issues/${issueId}/support`, { method: "DELETE" });
   },
 
   subscribeToIssuesChange(onChange: (payload: any) => void): () => void {

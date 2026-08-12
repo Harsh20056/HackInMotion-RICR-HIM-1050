@@ -164,4 +164,20 @@ export const issuesService = {
     const row = await issuesRepository.findById(issueId);
     return toApiIssue(row!);
   },
+
+  async unsupport(issueId: string, userId: string): Promise<void> {
+    const existing = await prisma.issueSupport.findUnique({
+      where: { issueId_userId: { issueId, userId } },
+    });
+    if (!existing) throw new NotFoundError("Support not found");
+
+    await prisma.$transaction([
+      prisma.issueSupport.delete({ where: { id: existing.id } }),
+      prisma.issue.update({ where: { id: issueId }, data: { supportsCount: { decrement: 1 } } }),
+    ]);
+  },
+
+  async listSupportedByUser(userId: string) {
+    return this.list({ page: 1, pageSize: 100, supportedBy: userId });
+  },
 };
