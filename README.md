@@ -20,17 +20,31 @@ The platform is designed around the principle that a smart-city solution should 
 
 ---
 
-## 🎯 Problem
+## 🎯 Problem Statement
 
-Cities face numerous everyday civic issues:
+Every city faces recurring civic issues such as broken streetlights, potholes, overflowing garbage bins, water leakage, damaged public property, illegal dumping and drainage problems.
 
-* 🛣️ Potholes and damaged roads
-* 💡 Broken streetlights
-* 🗑️ Overflowing garbage bins
-* 💧 Water leakage
-* 🚧 Damaged public infrastructure
-* 🌊 Drainage and waterlogging problems
-* 🚮 Illegal dumping
+Although complaint systems may exist, citizens often lack visibility into what happens after an issue is reported. Complaints may not receive visible follow-up, citizens may not know which department is responsible, and multiple reports for the same issue can accumulate because existing reports are not easily visible.
+
+This creates a gap between **reporting a problem and knowing whether it is actually being resolved**.
+
+### Key Challenges
+
+* **Lack of transparency:** Citizens have limited visibility into the progress of their complaints.
+* **Unclear responsibility:** Reports may not be automatically directed to the appropriate department.
+* **Duplicate complaints:** Multiple citizens may report the same issue independently.
+* **Limited accountability:** There is little visibility into departmental performance and resolution times.
+* **Scalability:** City administrators need structured tools to manage large numbers of civic issues efficiently.
+
+### The Need
+
+A smart-city platform should do more than simply collect complaints. It should provide a structured system that can:
+
+**Report → Detect → Route → Track → Resolve → Analyze**
+
+Samadhan addresses this need by connecting citizens and city administrators through a transparent civic issue lifecycle, supported by location-based reporting, duplicate detection, automated department routing, status tracking and city-wide analytics.
+
+The goal is to make civic issue resolution **more transparent, organized and accountable**.
 
 While complaint systems may exist, citizens often have limited visibility into what happens after a complaint is submitted.
 
