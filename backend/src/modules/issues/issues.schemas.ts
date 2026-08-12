@@ -7,6 +7,9 @@ export const createIssueSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90),
   longitude: z.coerce.number().min(-180).max(180),
   address: z.string().max(500).optional(),
+  // Set once the citizen has already seen a duplicateCandidate and
+  // explicitly said "this is a different issue" — skips the dedup check.
+  force: z.boolean().optional().default(false),
 });
 export type CreateIssueInput = z.infer<typeof createIssueSchema>;
 

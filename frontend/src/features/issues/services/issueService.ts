@@ -46,7 +46,8 @@ export const issueService = {
     userId: string,
     input: { title: string; description: string; category: string; location: string; latitude?: number | null; longitude?: number | null },
     imageFile: File | null,
-    activeLanguage: "en" | "hi"
+    activeLanguage: "en" | "hi",
+    force = false
   ): Promise<Issue> {
     let imageUrls: string[] = [];
 
@@ -58,18 +59,27 @@ export const issueService = {
     // Standardize category storage in DB. Use translated label for backward compatibility
     const dbCategoryName = this.getCategoryLabel(input.category, activeLanguage);
 
-    const raw = await issueRepository.insertIssue({
-      user_id: userId,
-      title: input.title,
-      description: input.description,
-      category: dbCategoryName,
-      location: input.location,
-      status: STATUSES.REPORTED,
-      image_urls: imageUrls.length ? imageUrls : null,
-      latitude: input.latitude || null,
-      longitude: input.longitude || null,
-    });
+    const raw = await issueRepository.insertIssue(
+      {
+        user_id: userId,
+        title: input.title,
+        description: input.description,
+        category: dbCategoryName,
+        location: input.location,
+        status: STATUSES.REPORTED,
+        image_urls: imageUrls.length ? imageUrls : null,
+        latitude: input.latitude || null,
+        longitude: input.longitude || null,
+      },
+      force
+    );
 
+    return this.mapResponseToDomain(raw);
+  },
+
+  /** Citizen chose "same issue" after seeing a duplicate candidate. */
+  async confirmDuplicateIssue(candidateId: string, description: string): Promise<Issue> {
+    const raw = await issueRepository.confirmDuplicate(candidateId, description);
     return this.mapResponseToDomain(raw);
   },
 

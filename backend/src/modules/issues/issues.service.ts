@@ -63,16 +63,18 @@ export const issuesService = {
     const category = await prisma.issueCategory.findUnique({ where: { code: input.categoryCode } });
     if (!category || !category.active) throw new ValidationError(`Unknown category: ${input.categoryCode}`);
 
-    const dedupCandidate = await issuesRepository.findDedupCandidate({
-      categoryId: category.id,
-      latitude: input.latitude,
-      longitude: input.longitude,
-      radiusM: category.dedupRadiusM,
-      windowHours: category.dedupWindowHours,
-    });
+    if (!input.force) {
+      const dedupCandidate = await issuesRepository.findDedupCandidate({
+        categoryId: category.id,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        radiusM: category.dedupRadiusM,
+        windowHours: category.dedupWindowHours,
+      });
 
-    if (dedupCandidate) {
-      return { duplicateCandidate: dedupCandidate };
+      if (dedupCandidate) {
+        return { duplicateCandidate: dedupCandidate };
+      }
     }
 
     const rules = await prisma.categoryDepartmentRule.findMany({

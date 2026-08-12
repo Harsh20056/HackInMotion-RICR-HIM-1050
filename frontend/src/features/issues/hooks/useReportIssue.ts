@@ -10,6 +10,7 @@ import { logger } from "@/shared/services/logger";
 import { ROUTES } from "@/shared/config/routes";
 import { validateFileSignature } from "@/shared/validation/magicBytes";
 import { voiceService } from "@/shared/services/voiceService";
+import { DuplicateIssueError } from "@/shared/errors/errors";
 
 const detectionToCategory = (cls: string): string | null => {
   const c = cls.toLowerCase();
@@ -94,6 +95,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [duplicateCandidate, setDuplicateCandidate] = useState<{ id: string; title: string; distanceM?: number } | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
@@ -312,6 +314,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
     }
 
     setIsSubmitting(true);
+    setDuplicateCandidate(null);
 
     try {
       await issueService.reportNewIssue(
@@ -325,18 +328,72 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
         activeLanguage
       );
 
-      gamificationService.dispatchGamificationUpdate();
-
-      toast({
-        title: activeLanguage === "en" ? "Issue Reported!" : "समस्या दर्ज!",
-        description: activeLanguage === "en" 
-          ? "Your issue has been submitted successfully. The community can now support it." 
-          : "आपकी समस्या सफलतापूर्वक दर्ज की गई है। समुदाय अब इसका समर्थन कर सकता है।",
-      });
-
-      navigate(ROUTES.DASHBOARD);
+      reportSuccess();
     } catch (error: any) {
+      if (error instanceof DuplicateIssueError) {
+        // Don't insert and don't error out — let the citizen decide.
+        setDuplicateCandidate(error.candidate);
+        setIsSubmitting(false);
+        return;
+      }
       logger.error("Failed to report issue:", error);
+      toast({
+        title: activeLanguage === "en" ? "Error" : "त्रुटि",
+        description: error.message || "Failed to submit issue report.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const reportSuccess = () => {
+    gamificationService.dispatchGamificationUpdate();
+    toast({
+      title: activeLanguage === "en" ? "Issue Reported!" : "समस्या दर्ज!",
+      description: activeLanguage === "en"
+        ? "Your issue has been submitted successfully. The community can now support it."
+        : "आपकी समस्या सफलतापूर्वक दर्ज की गई है। समुदाय अब इसका समर्थन कर सकता है।",
+    });
+    navigate(ROUTES.DASHBOARD);
+  };
+
+  /** Citizen looked at the candidate and confirmed it's the same issue. */
+  const confirmSameIssue = async () => {
+    if (!duplicateCandidate) return;
+    setIsSubmitting(true);
+    try {
+      await issueService.confirmDuplicateIssue(duplicateCandidate.id, description);
+      setDuplicateCandidate(null);
+      reportSuccess();
+    } catch (error: any) {
+      logger.error("Failed to confirm duplicate issue:", error);
+      toast({
+        title: activeLanguage === "en" ? "Error" : "त्रुटि",
+        description: error.message || "Failed to confirm the report.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /** Citizen looked at the candidate and said it's a different issue — submit anyway. */
+  const confirmDifferentIssue = async () => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      await issueService.reportNewIssue(
+        user.id,
+        { title, description, category: selectedCategory || "", location, latitude, longitude },
+        imageFile,
+        activeLanguage,
+        true // force: skip the dedup check, the citizen already confirmed it's different
+      );
+      setDuplicateCandidate(null);
+      reportSuccess();
+    } catch (error: any) {
+      logger.error("Failed to report issue (forced):", error);
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
         description: error.message || "Failed to submit issue report.",
@@ -370,6 +427,11 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
     detectedClasses,
     handleImageChange,
     handleSubmit,
+    // Duplicate-report confirmation
+    duplicateCandidate,
+    confirmSameIssue,
+    confirmDifferentIssue,
+    dismissDuplicateCandidate: () => setDuplicateCandidate(null),
     // Voice
     isRecording,
     interimTranscript,

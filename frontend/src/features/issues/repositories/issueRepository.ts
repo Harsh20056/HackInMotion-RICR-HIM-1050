@@ -8,7 +8,7 @@ import { IssueResponse } from "@/shared/contracts/IssueResponse";
 import { SupportResponse } from "@/shared/contracts/SupportResponse";
 import { CATEGORY_LABELS } from "@/shared/constants/categories";
 import { validateFileSignature } from "@/shared/validation/magicBytes";
-import { APIError, ValidationError } from "@/shared/errors/errors";
+import { APIError, ValidationError, DuplicateIssueError } from "@/shared/errors/errors";
 
 interface ApiIssue {
   id: string;
@@ -85,7 +85,17 @@ export const issueRepository = {
     return data.items.map(toIssueResponse);
   },
 
-  async insertIssue(issue: Omit<IssueResponse, "id" | "created_at" | "updated_at" | "supports_count">): Promise<IssueResponse> {
+  /**
+   * Submits a new report. If the backend finds a likely-duplicate nearby
+   * report, it does NOT insert — instead this throws DuplicateIssueError
+   * carrying the candidate, and the caller must ask the citizen to choose
+   * "same issue" (confirmDuplicate) or "different issue" (retry with
+   * force: true, which skips the dedup check server-side).
+   */
+  async insertIssue(
+    issue: Omit<IssueResponse, "id" | "created_at" | "updated_at" | "supports_count">,
+    force = false
+  ): Promise<IssueResponse> {
     if (issue.latitude == null || issue.longitude == null) {
       throw new ValidationError("A location is required to report an issue.");
     }
@@ -97,27 +107,32 @@ export const issueRepository = {
       latitude: issue.latitude,
       longitude: issue.longitude,
       address: issue.location ?? undefined,
+      force,
     };
 
-    const result = await apiRequest<{ issue?: ApiIssue; duplicateCandidate?: { id: string; title: string } }>("/issues", {
-      method: "POST",
-      body,
-    });
+    const result = await apiRequest<{ issue?: ApiIssue; duplicateCandidate?: { id: string; title: string; distanceM?: number } }>(
+      "/issues",
+      { method: "POST", body }
+    );
 
     if (result.duplicateCandidate) {
-      // The backend found a nearby, still-open report in the same category.
-      // Corroborate it instead of silently dropping the citizen's report.
-      const confirmed = await apiRequest<ApiIssue>(`/issues/${result.duplicateCandidate.id}/confirm-duplicate`, {
-        method: "POST",
-        body: { duplicateOfId: result.duplicateCandidate.id, description: issue.description },
-      });
-      mockTable.insert(REALTIME_TABLE, toIssueResponse(confirmed) as unknown as Record<string, unknown>);
-      return toIssueResponse(confirmed);
+      throw new DuplicateIssueError(result.duplicateCandidate);
     }
 
     const created = toIssueResponse(result.issue!);
     mockTable.insert(REALTIME_TABLE, created as unknown as Record<string, unknown>);
     return created;
+  },
+
+  /** Citizen confirmed a candidate is the same issue — corroborates it instead of creating a new one. */
+  async confirmDuplicate(candidateId: string, description: string): Promise<IssueResponse> {
+    const confirmed = await apiRequest<ApiIssue>(`/issues/${candidateId}/confirm-duplicate`, {
+      method: "POST",
+      body: { duplicateOfId: candidateId, description },
+    });
+    const mapped = toIssueResponse(confirmed);
+    mockTable.insert(REALTIME_TABLE, mapped as unknown as Record<string, unknown>);
+    return mapped;
   },
 
   async uploadIssueImage(_userId: string, file: File): Promise<string> {

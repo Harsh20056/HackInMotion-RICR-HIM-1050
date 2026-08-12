@@ -41,3 +41,10 @@ export class StorageError extends AppError {
     super(message, "STORAGE_ERROR", originalError);
   }
 }
+
+/** Thrown when the backend finds a likely-duplicate report and needs the citizen to decide. */
+export class DuplicateIssueError extends AppError {
+  constructor(public readonly candidate: { id: string; title: string; distanceM?: number }) {
+    super(`A similar issue "${candidate.title}" was already reported nearby.`, "DUPLICATE_ISSUE");
+  }
+}

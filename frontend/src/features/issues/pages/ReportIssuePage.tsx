@@ -57,6 +57,11 @@ export default function ReportIssuePage() {
     detectedClasses,
     handleImageChange,
     handleSubmit,
+    // Duplicate-report confirmation
+    duplicateCandidate,
+    confirmSameIssue,
+    confirmDifferentIssue,
+    dismissDuplicateCandidate,
     // Voice
     isRecording,
     interimTranscript,
@@ -248,20 +253,49 @@ export default function ReportIssuePage() {
             )}
           </div>
 
-          {/* Submit */}
-          <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                {language === "en" ? "Submitting..." : "सबमिट हो रहा है..."}
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5" />
-                {language === "en" ? "Submit Report" : "रिपोर्ट सबमिट करें"}
-              </>
-            )}
-          </Button>
+          {/* Duplicate report decision */}
+          {duplicateCandidate ? (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 space-y-3">
+              <p className="text-sm font-medium">
+                {language === "en"
+                  ? `A similar issue was already reported nearby: "${duplicateCandidate.title}".`
+                  : `पास में पहले से ही एक समान समस्या दर्ज की गई है: "${duplicateCandidate.title}"।`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {language === "en" ? "Is this the same issue?" : "क्या यह वही समस्या है?"}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" onClick={confirmSameIssue} disabled={isSubmitting} className="flex-1">
+                  {language === "en" ? "Yes, same issue" : "हाँ, वही समस्या है"}
+                </Button>
+                <Button type="button" variant="outline" onClick={confirmDifferentIssue} disabled={isSubmitting} className="flex-1">
+                  {language === "en" ? "No, different issue" : "नहीं, अलग समस्या है"}
+                </Button>
+              </div>
+              <button
+                type="button"
+                onClick={dismissDuplicateCandidate}
+                className="text-xs text-muted-foreground underline"
+              >
+                {language === "en" ? "Cancel" : "रद्द करें"}
+              </button>
+            </div>
+          ) : (
+            /* Submit */
+            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {language === "en" ? "Submitting..." : "सबमिट हो रहा है..."}
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  {language === "en" ? "Submit Report" : "रिपोर्ट सबमिट करें"}
+                </>
+              )}
+            </Button>
+          )}
         </form>
       </div>
     </div>
