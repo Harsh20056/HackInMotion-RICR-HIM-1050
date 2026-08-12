@@ -1,52 +1,121 @@
-// TEMPORARY — backend pending (Phase 2)
-// Backed by the localStorage mock store instead of a real backend. There is
-// no real RBAC enforcement here — user_roles is just a local table, seeded
-// empty, so no account is an admin by default.
+// Backed by the real Phase 2 backend instead of the local mock.
+//
+// Gaps vs. the old contract, honestly noted:
+//  - There is no bulk "list every issue across every department" endpoint
+//    for a scoped dept_admin — only GET /departments/:id/queue (their own
+//    department) and the public GET /issues (used here for super_admin).
+//  - There is no DELETE /issues/:id — the new schema is audit-trail-first
+//    and deliberately doesn't support deleting citizen reports.
+//  - Status updates go through the work order that actually owns the
+//    transition, and the backend enforces a strict forward-only state
+//    machine — an admin jumping straight from "reported" to "resolved"
+//    will now get a real validation error instead of silently succeeding.
 
-import { mockTable } from "@/shared/mock/mockLocalStore";
+import { apiRequest } from "@/shared/lib/apiClient";
 import { UserRole } from "@/shared/types/domain/UserRole";
 import { IssueResponse } from "@/shared/contracts/IssueResponse";
+import { APIError } from "@/shared/errors/errors";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 
-interface UserRoleRow {
-  user_id: string;
-  role: UserRole;
-  department: string | null;
+interface ApiMeUser {
+  id: string;
+  role: string;
+  departmentId: string | null;
 }
 
-const ADMIN_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.DEPARTMENT_ADMIN];
+interface ApiIssue {
+  id: string;
+  publicRef: string;
+  title: string;
+  description: string;
+  category: { code: string; nameEn: string };
+  status: string;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  reportedBy: string;
+  supportsCount: number;
+  createdAt: string;
+  acknowledgedAt: string | null;
+  resolvedAt: string | null;
+  closedAt: string | null;
+  workOrders?: { id: string; departmentId: string; role: string; status: string }[];
+}
+
+function toIssueResponse(issue: ApiIssue): IssueResponse {
+  return {
+    id: issue.id,
+    user_id: issue.reportedBy,
+    title: issue.title,
+    description: issue.description,
+    category: issue.category.nameEn,
+    location: issue.address,
+    latitude: issue.latitude,
+    longitude: issue.longitude,
+    status: issue.status,
+    image_urls: null,
+    supports_count: issue.supportsCount,
+    master_issue_id: null,
+    created_at: issue.createdAt,
+    updated_at: issue.resolvedAt ?? issue.acknowledgedAt ?? issue.createdAt,
+  };
+}
+
+const ISSUE_STATUS_TO_WORK_ORDER_STATUS: Record<string, string> = {
+  [IssueStatus.REPORTED]: "pending",
+  [IssueStatus.IN_PROGRESS]: "in_progress",
+  [IssueStatus.RESOLVED]: "done",
+  [IssueStatus.REJECTED]: "rejected",
+};
+
+async function fetchMe(): Promise<ApiMeUser | null> {
+  try {
+    return await apiRequest<ApiMeUser>("/auth/me");
+  } catch {
+    return null;
+  }
+}
 
 export const adminRepository = {
-  async checkIsAdmin(userId: string): Promise<boolean> {
-    const roles = mockTable.getAll<UserRoleRow>("user_roles");
-    const row = roles.find((r) => r.user_id === userId);
-    return !!row && ADMIN_ROLES.includes(row.role);
+  async checkIsAdmin(_userId: string): Promise<boolean> {
+    const me = await fetchMe();
+    return me?.role === UserRole.ADMIN || me?.role === UserRole.SUPER_ADMIN || me?.role === UserRole.DEPARTMENT_ADMIN;
   },
 
-  async getUserRole(userId: string): Promise<{ role: UserRole | null; department: string | null }> {
-    const roles = mockTable.getAll<UserRoleRow>("user_roles");
-    const row = roles.find((r) => r.user_id === userId);
-    return {
-      role: row?.role ?? null,
-      department: row?.department ?? null,
-    };
+  async getUserRole(_userId: string): Promise<{ role: UserRole | null; department: string | null }> {
+    const me = await fetchMe();
+    return { role: (me?.role as UserRole) ?? null, department: me?.departmentId ?? null };
   },
 
   async fetchAllIssuesAdmin(): Promise<IssueResponse[]> {
-    const issues = mockTable.getAll<IssueResponse>("reported_issues");
-    return issues
-      .filter((i) => !i.master_issue_id)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const me = await fetchMe();
+    if (!me) return [];
+
+    if (me.role === "dept_admin" && me.departmentId) {
+      const data = await apiRequest<{ items: { issue: ApiIssue }[] }>(`/departments/${me.departmentId}/queue?pageSize=100`);
+      return data.items.map((item) => toIssueResponse(item.issue as ApiIssue));
+    }
+
+    const data = await apiRequest<{ items: ApiIssue[] }>("/issues?pageSize=100", { auth: false });
+    return data.items.map(toIssueResponse);
   },
 
   async updateIssueStatusAdmin(id: string, status: IssueStatus): Promise<void> {
-    mockTable.update<IssueResponse>("reported_issues", "id", id, {
-      status,
-      updated_at: new Date().toISOString(),
+    const issue = await apiRequest<ApiIssue>(`/issues/${id}`, { auth: false });
+    const primaryWorkOrder = issue.workOrders?.find((wo) => wo.role === "primary");
+    if (!primaryWorkOrder) throw new APIError("No work order found for this issue", 404);
+
+    const targetStatus = ISSUE_STATUS_TO_WORK_ORDER_STATUS[status];
+    await apiRequest(`/work-orders/${primaryWorkOrder.id}/status`, {
+      method: "PATCH",
+      body: { status: targetStatus },
     });
   },
 
-  async deleteIssueAdmin(id: string): Promise<void> {
-    mockTable.remove<IssueResponse>("reported_issues", "id", id);
+  async deleteIssueAdmin(_id: string): Promise<void> {
+    throw new APIError(
+      "Deleting reports isn't supported by the backend — its audit trail is append-only by design.",
+      501
+    );
   },
 };
