@@ -42,9 +42,10 @@ const navItems: NavItem[] = [
   { labelKey: "nav.dashboard", href: ROUTES.DASHBOARD, icon: MapPin },
   { labelKey: "nav.report", href: ROUTES.REPORT_ISSUE, icon: FileText },
   { labelKey: "nav.map", href: ROUTES.CIVIC_MAP, icon: Map, flag: "CIVIC_MAP" },
-  { labelKey: "nav.schemes", href: ROUTES.SCHEMES, icon: Shield, flag: "SCHEMES_ENGINE" },
-  { labelKey: "nav.analyzer", href: ROUTES.FORM_ANALYZER, icon: MessageSquare, flag: "FORM_ANALYZER" },
-  { labelKey: "nav.documents", href: ROUTES.DOCUMENTS, icon: FolderLock, flag: "DOCUMENT_LOCKER" },
+  // Hidden from navbar for now:
+  // { labelKey: "nav.schemes", href: ROUTES.SCHEMES, icon: Shield, flag: "SCHEMES_ENGINE" },
+  // { labelKey: "nav.analyzer", href: ROUTES.FORM_ANALYZER, icon: MessageSquare, flag: "FORM_ANALYZER" },
+  // { labelKey: "nav.documents", href: ROUTES.DOCUMENTS, icon: FolderLock, flag: "DOCUMENT_LOCKER" },
 ];
 
 export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
