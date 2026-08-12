@@ -1,62 +1,15 @@
-import { Issue } from "@/shared/types/domain/Issue";
-import { IssueStatus } from "@/shared/types/domain/IssueStatus";
-import { issueVerificationService } from "../../issues/services/issueVerificationService";
+import { AnalyticsOverview, DepartmentPerformanceRow, Hotspot } from "./analyticsApi";
 
-// ---------------------------------------------------------------------------
-// Public interfaces
-// ---------------------------------------------------------------------------
-
-export interface DashboardStats {
-  activeCount: number;
-  resolvedCount: number;
-  totalSupportsCount: number;
-  geoTaggedCount: number;
-  avgResolutionDays: number | null;
-  duplicateCount: number;
-  issuesThisWeek: number;
-  aiClassifiedCount: number;
-}
-
-export interface CategoryCount {
-  name: string;
-  count: number;
-  color: string;
-}
-
-export interface StatusCount {
-  name: string;
-  value: number;
-  color: string;
-}
-
-export interface MonthlyTrend {
-  month: string;
-  count: number;
-}
-
-export interface CityRanking {
-  city: string;
-  count: number;
-  resolvedCount: number;
-  resolutionRate: number;
-  topCategory: string;
-  riskLevel: "High" | "Medium" | "Low";
-  density: number;
-}
-
-export interface DepartmentPerformance {
-  department: string;
-  activeCount: number;
-  avgResolutionDays: number | null;
-  resolutionRate: number;
-  status: "Excellent" | "Average" | "Needs Attention";
-}
-
-export interface ForecastingState {
-  expectedGrowthPercent: number;
-  topCategoryLikelyToIncrease: string;
-  estimatedReportsNextWeek: number;
-}
+/**
+ * Presentation helpers only.
+ *
+ * All aggregation now happens server-side in /analytics/* (see
+ * analyticsApi.ts) — the previous client-side implementations recomputed
+ * counts from whatever page of issues happened to be loaded, and filled the
+ * gaps with invented values (an "AI classifications" tally that was just
+ * issues.length, and a growth forecast that defaulted to +15%). Those are
+ * gone; this file only formats numbers the server produced.
+ */
 
 export interface WeeklySummaryState {
   summaryTextEn: string;
@@ -65,446 +18,106 @@ export interface WeeklySummaryState {
   insightsHi: string[];
 }
 
-export interface DashboardAnalytics {
-  categoryData: CategoryCount[];
-  statusData: StatusCount[];
-  monthlyTrend: MonthlyTrend[];
-  cityRanking: CityRanking[];
-  departmentPerformance: DepartmentPerformance[];
-  forecasting: ForecastingState;
-  weeklySummary: WeeklySummaryState;
-  totalIssues: number;
-  geoTaggedCount: number;
-  avgResolutionDays: number | null;
-}
-
-// ---------------------------------------------------------------------------
-// Internal constants
-// ---------------------------------------------------------------------------
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "Water Supply":    "#3b82f6",
-  "जल आपूर्ति":     "#3b82f6",
-  "Sanitation":      "#f59e0b",
-  "स्वच्छता":       "#f59e0b",
-  "Electricity":     "#eab308",
-  "बिजली":          "#eab308",
-  "Roads":           "#6b7280",
-  "सड़कें":         "#6b7280",
+export const CATEGORY_COLORS: Record<string, string> = {
+  "Water Supply": "#3b82f6",
+  Sanitation: "#f59e0b",
+  Electricity: "#eab308",
+  Roads: "#6b7280",
   "Parks & Gardens": "#22c55e",
-  "पार्क और बगीचे": "#22c55e",
-  "Buildings":       "#8b5cf6",
-  "भवन":            "#8b5cf6",
+  Buildings: "#8b5cf6",
 };
 
-const KNOWN_CITIES = [
-  { key: "bhopal", name: "Bhopal" },
-  { key: "khanna", name: "Khanna" },
-  { key: "indore", name: "Indore" },
-  { key: "mumbai", name: "Mumbai" },
-  { key: "delhi", name: "Delhi" },
-  { key: "new delhi", name: "New Delhi" },
-  { key: "bangalore", name: "Bengaluru" },
-  { key: "bengaluru", name: "Bengaluru" },
-  { key: "hyderabad", name: "Hyderabad" },
-  { key: "chennai", name: "Chennai" },
-  { key: "kolkata", name: "Kolkata" },
-  { key: "pune", name: "Pune" }
-];
+export const STATUS_COLORS: Record<string, string> = {
+  reported: "#f59e0b",
+  acknowledged: "#a855f7",
+  in_progress: "#3b82f6",
+  resolved: "#22c55e",
+  verified: "#10b981",
+  reopened: "#f97316",
+  rejected: "#ef4444",
+  closed: "#64748b",
+};
 
-const STATE_COUNTRY_BLACKLIST = new Set([
-  "india", "usa", "united states",
-  "madhya pradesh", "mp", "m.p.", "punjab", "maharashtra", "delhi", "haryana",
-  "uttar pradesh", "up", "u.p.", "gujarat", "rajasthan", "karnataka", "tamil nadu",
-  "kerala", "andhra pradesh", "telangana", "west bengal", "bihar", "jharkhand",
-  "odisha", "chhattisgarh", "himachal pradesh", "uttarakhand", "goa", "assam"
-]);
+export const STATUS_LABELS: Record<string, { en: string; hi: string }> = {
+  reported: { en: "Reported", hi: "रिपोर्ट" },
+  acknowledged: { en: "Acknowledged", hi: "स्वीकृत" },
+  in_progress: { en: "In Progress", hi: "प्रगति में" },
+  resolved: { en: "Resolved", hi: "हल" },
+  verified: { en: "Verified", hi: "सत्यापित" },
+  reopened: { en: "Reopened", hi: "पुनः खोला" },
+  rejected: { en: "Rejected", hi: "अस्वीकृत" },
+  closed: { en: "Closed", hi: "बंद" },
+};
 
-const STREET_INDICATORS = /\b(st|street|rd|road|lane|ln|plot|ward|flat|sector|building|house|h\.no|no|floor|near|opp|behind|post office|post|office|park)\b/i;
-
-function extractCity(location: string): string {
-  if (!location) return "Unknown";
-  
-  const lowerLocation = location.toLowerCase();
-  
-  // 1. Check for known cities in the text
-  for (const city of KNOWN_CITIES) {
-    const regex = new RegExp(`\\b${city.key}\\b`, "i");
-    if (regex.test(lowerLocation)) {
-      return city.name;
-    }
+/** Hours -> a short human string, or a clear "no data yet" when null. */
+export function formatResolutionTime(hours: number | null, language: "en" | "hi"): string {
+  if (hours === null) {
+    return language === "en" ? "No resolved issues yet" : "अभी कोई हल नहीं";
   }
-
-  // 2. Comma-separated analysis
-  const parts = location.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length === 0) return "Unknown";
-
-  for (const part of parts) {
-    const partLower = part.toLowerCase();
-    
-    // Skip blacklist items
-    if (STATE_COUNTRY_BLACKLIST.has(partLower)) continue;
-    
-    // Skip pincodes
-    if (/^\d{6}$/.test(partLower)) continue;
-    
-    // Skip specific street addresses
-    if (/\d/.test(partLower) || STREET_INDICATORS.test(partLower)) continue;
-    
-    // If it looks like a clean name of length >= 3, return it capitalized
-    if (part.length >= 3) {
-      return part.charAt(0).toUpperCase() + part.slice(1);
-    }
-  }
-
-  // Fallback 1: Return the first part that is not country/state
-  for (const part of parts) {
-    const partLower = part.toLowerCase();
-    if (!STATE_COUNTRY_BLACKLIST.has(partLower)) {
-      return part;
-    }
-  }
-
-  // Fallback 2: Return first part
-  return parts[0] || "Unknown";
+  if (hours < 24) return `${Math.round(hours)} ${language === "en" ? "hrs" : "घंटे"}`;
+  return `${Math.round(hours / 24)} ${language === "en" ? "days" : "दिन"}`;
 }
 
-// ---------------------------------------------------------------------------
-// Service
-// ---------------------------------------------------------------------------
-
 export const dashboardService = {
-  calculateStats(issues: Issue[]): DashboardStats {
-    const activeCount = issues.filter(
-      (i) => i.status !== IssueStatus.RESOLVED && i.status !== IssueStatus.REJECTED
-    ).length;
-    const resolvedCount = issues.filter((i) => i.status === IssueStatus.RESOLVED).length;
-    const totalSupportsCount = issues.reduce((sum, i) => sum + i.supportsCount, 0);
-    const geoTaggedCount = issues.filter((i) => i.latitude !== null && i.longitude !== null).length;
-    
-    // Avg resolution in days
-    const resolvedWithDates = issues.filter(
-      (i) => i.status === IssueStatus.RESOLVED && i.updatedAt
-    );
-    let avgResolutionDays: number | null = null;
-    if (resolvedWithDates.length > 0) {
-      const totalMs = resolvedWithDates.reduce(
-        (sum, i) => sum + (i.updatedAt!.getTime() - i.createdAt.getTime()),
-        0
-      );
-      avgResolutionDays = Math.round(totalMs / resolvedWithDates.length / 86_400_000);
+  /**
+   * Builds the narrative summary purely from server-computed figures.
+   * Every number quoted here came out of /analytics/*.
+   */
+  buildWeeklySummary(
+    overview: AnalyticsOverview | null,
+    departments: DepartmentPerformanceRow[],
+    hotspots: Hotspot[]
+  ): WeeklySummaryState {
+    if (!overview) {
+      return { summaryTextEn: "", summaryTextHi: "", insightsEn: [], insightsHi: [] };
     }
-    
-    const duplicateCount = issues.filter((i) => i.masterIssueId !== null).length;
-    
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const issuesThisWeek = issues.filter((i) => i.createdAt.getTime() >= sevenDaysAgo).length;
-    
-    const aiClassifiedCount = issues.length; // All ingestion is processed
 
-    return { 
-      activeCount, 
-      resolvedCount, 
-      totalSupportsCount,
-      geoTaggedCount,
-      avgResolutionDays,
-      duplicateCount,
-      issuesThisWeek,
-      aiClassifiedCount
-    };
-  },
+    const topCategory = overview.byCategory[0]?.nameEn ?? "—";
+    const topCategoryCount = overview.byCategory[0]?.count ?? 0;
+    const totalIssues = overview.totals.issues;
+    const resolutionRate =
+      totalIssues === 0 ? 0 : Math.round((overview.totals.resolved / totalIssues) * 100);
+    const avg = overview.resolutionTime.avgHours;
+    const p90 = overview.resolutionTime.p90Hours;
+    const bestDept = [...departments].sort((a, b) => b.resolutionRate - a.resolutionRate)[0];
+    const topHotspotCount = hotspots[0]?.count ?? 0;
 
-  computeAnalytics(issues: Issue[]): DashboardAnalytics {
-    // -- Category breakdown ------------------------------------------------
-    const catCount: Record<string, number> = {};
-    issues.forEach((i) => {
-      const c = i.category as string;
-      catCount[c] = (catCount[c] || 0) + 1;
-    });
-    const categoryData: CategoryCount[] = Object.entries(catCount)
-      .map(([name, count]) => ({
-        name,
-        count,
-        color: CATEGORY_COLORS[name] ?? "#6366f1",
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    // -- Status breakdown --------------------------------------------------
-    const statusData: StatusCount[] = [
-      { name: "Reported",    value: issues.filter((i) => i.status === IssueStatus.REPORTED).length,    color: "#f59e0b" },
-      { name: "In Progress", value: issues.filter((i) => i.status === IssueStatus.IN_PROGRESS).length, color: "#3b82f6" },
-      { name: "Resolved",    value: issues.filter((i) => i.status === IssueStatus.RESOLVED).length,    color: "#22c55e" },
-      { name: "Rejected",    value: issues.filter((i) => i.status === IssueStatus.REJECTED).length,    color: "#ef4444" },
-    ].filter((s) => s.value > 0);
-
-    // -- Avg resolution time (days) ----------------------------------------
-    const resolvedWithDates = issues.filter(
-      (i) => i.status === IssueStatus.RESOLVED && i.updatedAt
-    );
-    let avgResolutionDays: number | null = null;
-    if (resolvedWithDates.length > 0) {
-      const totalMs = resolvedWithDates.reduce(
-        (sum, i) => sum + (i.updatedAt!.getTime() - i.createdAt.getTime()),
-        0
-      );
-      avgResolutionDays = Math.round(totalMs / resolvedWithDates.length / 86_400_000);
-    }
+    const avgEn = avg === null ? "not measurable yet" : `${formatResolutionTime(avg, "en")}`;
+    const avgHi = avg === null ? "अभी मापने योग्य नहीं" : `${formatResolutionTime(avg, "hi")}`;
 
     return {
-      categoryData,
-      statusData,
-      monthlyTrend: this.computeMonthlyTrend(issues),
-      cityRanking:  this.computeCityRanking(issues),
-      departmentPerformance: this.computeDepartmentPerformance(issues),
-      forecasting:  this.computeForecasting(issues),
-      weeklySummary: this.generateWeeklySummary(issues),
-      totalIssues:  issues.length,
-      geoTaggedCount: issues.filter((i) => i.latitude && i.longitude).length,
-      avgResolutionDays,
-    };
-  },
-
-  computeMonthlyTrend(issues: Issue[]): MonthlyTrend[] {
-    // Build a map for the last 6 months, initialised to 0
-    const months: Record<string, number> = {};
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-      months[key] = 0;
-    }
-    issues.forEach((issue) => {
-      const key = issue.createdAt.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-      if (key in months) months[key]++;
-    });
-    return Object.entries(months).map(([month, count]) => ({ month, count }));
-  },
-
-  computeCityRanking(issues: Issue[]): CityRanking[] {
-    const cityMap: Record<string, Issue[]> = {};
-    issues.forEach((issue) => {
-      const city = extractCity(issue.location);
-      if (!cityMap[city]) cityMap[city] = [];
-      cityMap[city].push(issue);
-    });
-    const totalCount = issues.length;
-    return Object.entries(cityMap)
-      .map(([city, list]) => {
-        const catCount: Record<string, number> = {};
-        list.forEach((i) => {
-          const c = i.category as string;
-          catCount[c] = (catCount[c] || 0) + 1;
-        });
-        const topCategory =
-          Object.entries(catCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
-        const resolvedCount = list.filter((i) => i.status === IssueStatus.RESOLVED).length;
-        const resolutionRate =
-          list.length > 0 ? Math.round((resolvedCount / list.length) * 100) : 0;
-
-        // Compute risk levels
-        let riskLevel: "High" | "Medium" | "Low" = "Low";
-        if (list.length >= 5 || resolutionRate < 50) {
-          riskLevel = "High";
-        } else if (list.length >= 2) {
-          riskLevel = "Medium";
-        }
-
-        // Compute density
-        const density = totalCount > 0 ? Math.round((list.length / totalCount) * 100) : 0;
-
-        return {
-          city,
-          count: list.length,
-          resolvedCount,
-          resolutionRate,
-          topCategory,
-          riskLevel,
-          density,
-        };
-      })
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  },
-
-  computeDepartmentPerformance(issues: Issue[]): DepartmentPerformance[] {
-    const DEPARTMENT_MAP: Record<string, string> = {
-      "Water Supply":    "Jal Board / Water Corporation",
-      "जल आपूर्ति":     "Jal Board / Water Corporation",
-      "Sanitation":      "Municipal Solid Waste Management",
-      "स्वच्छता":       "Municipal Solid Waste Management",
-      "Electricity":     "State Electricity Board / DISCOM",
-      "बिजली":          "State Electricity Board / DISCOM",
-      "Roads":           "Public Works Department (PWD)",
-      "सड़कें":         "Public Works Department (PWD)",
-      "Parks & Gardens": "Horticulture Department",
-      "पार्क और बगीचे": "Horticulture Department",
-      "Buildings":       "Building & Construction Department",
-      "भवन":            "Building & Construction Department",
-    };
-
-    const BASE_DAYS_MAP: Record<string, number> = {
-      "Water Supply": 5, "जल आपूर्ति": 5,
-      "Sanitation": 3, "स्वच्छता": 3,
-      "Electricity": 2, "बिजली": 2,
-      "Roads": 21, "सड़कें": 21,
-      "Parks & Gardens": 10, "पार्क और बगीचे": 10,
-      "Buildings": 30, "भवन": 30,
-    };
-
-    // Group issues by department
-    const deptIssues: Record<string, Issue[]> = {};
-    issues.forEach((issue) => {
-      const cat = issue.category as string;
-      const dept = DEPARTMENT_MAP[cat] ?? "Municipal Administration";
-      if (!deptIssues[dept]) deptIssues[dept] = [];
-      deptIssues[dept].push(issue);
-    });
-
-    return Object.entries(deptIssues).map(([department, list]) => {
-      const activeCount = list.filter(
-        (i) => i.status !== IssueStatus.RESOLVED && i.status !== IssueStatus.REJECTED
-      ).length;
-      const resolvedList = list.filter((i) => i.status === IssueStatus.RESOLVED);
-      
-      const resolutionRate = list.length > 0 ? Math.round((resolvedList.length / list.length) * 100) : 0;
-      
-      // Calculate avg resolution days
-      let avgResolutionDays: number | null = null;
-      if (resolvedList.length > 0) {
-        const totalMs = resolvedList.reduce(
-          (sum, i) => sum + (i.updatedAt!.getTime() - i.createdAt.getTime()),
-          0
-        );
-        avgResolutionDays = Math.round(totalMs / resolvedList.length / 86_400_000);
-      } else {
-        // Fallback to base category days
-        const firstIssue = list[0];
-        const cat = firstIssue ? (firstIssue.category as string) : "";
-        avgResolutionDays = BASE_DAYS_MAP[cat] ?? 14;
-      }
-
-      // Compute performance status deterministically
-      let status: "Excellent" | "Average" | "Needs Attention" = "Average";
-      if (resolutionRate >= 80 && activeCount <= 2) {
-        status = "Excellent";
-      } else if (resolutionRate < 50 || activeCount >= 5) {
-        status = "Needs Attention";
-      }
-
-      return {
-        department,
-        activeCount,
-        avgResolutionDays,
-        resolutionRate,
-        status,
-      };
-    }).sort((a, b) => b.resolutionRate - a.resolutionRate);
-  },
-
-  computeForecasting(issues: Issue[]): ForecastingState {
-    const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
-
-    const recentWeekCount = issues.filter((i) => i.createdAt.getTime() >= sevenDaysAgo).length;
-    const prevWeekCount = issues.filter(
-      (i) => i.createdAt.getTime() >= fourteenDaysAgo && i.createdAt.getTime() < sevenDaysAgo
-    ).length;
-
-    let expectedGrowthPercent = 0;
-    if (prevWeekCount > 0) {
-      expectedGrowthPercent = Math.round(((recentWeekCount - prevWeekCount) / prevWeekCount) * 100);
-    } else if (recentWeekCount > 0) {
-      expectedGrowthPercent = 15; // default positive prediction for initial growth
-    }
-
-    // Constrain forecast growth to realistic values
-    expectedGrowthPercent = Math.max(-25, Math.min(45, expectedGrowthPercent));
-
-    // Expected next week estimate
-    const estimatedReportsNextWeek = Math.max(
-      1,
-      Math.round(recentWeekCount * (1 + expectedGrowthPercent / 100))
-    );
-
-    // Category likely to increase
-    const catCount: Record<string, number> = {};
-    issues.forEach((i) => {
-      if (i.status !== IssueStatus.RESOLVED && i.status !== IssueStatus.REJECTED) {
-        const c = i.category as string;
-        catCount[c] = (catCount[c] || 0) + 1;
-      }
-    });
-    const topCategoryLikelyToIncrease =
-      Object.entries(catCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Sanitation";
-
-    return {
-      expectedGrowthPercent,
-      topCategoryLikelyToIncrease,
-      estimatedReportsNextWeek,
-    };
-  },
-
-  generateWeeklySummary(issues: Issue[]): WeeklySummaryState {
-    const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const recentIssues = issues.filter((i) => i.createdAt.getTime() >= sevenDaysAgo).length;
-
-    // Get verified reports details
-    const verifiedIssues = issues.filter((i) => {
-      const state = issueVerificationService.getComputedState(i.id);
-      return state.isVerified;
-    });
-    const verifiedCount = verifiedIssues.length;
-    const verifiedThisWeek = verifiedIssues.filter((i) => i.createdAt.getTime() >= sevenDaysAgo).length;
-    const verificationRate = issues.length > 0 ? Math.round((verifiedCount / issues.length) * 100) : 0;
-
-    // Highest category & city ranking details
-    const catCount: Record<string, number> = {};
-    issues.forEach((i) => {
-      const c = i.category as string;
-      catCount[c] = (catCount[c] || 0) + 1;
-    });
-    const topCategory = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Roads";
-
-    // City ranking
-    const cityMap: Record<string, number> = {};
-    issues.forEach((i) => {
-      let city = "Unknown";
-      if (i.location) {
-        const parts = i.location.split(",").map((p) => p.trim()).filter(Boolean);
-        city = parts[0] || "Unknown";
-      }
-      cityMap[city] = (cityMap[city] || 0) + 1;
-    });
-    const topCity = Object.entries(cityMap).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Indore";
-
-    const resolvedCount = issues.filter((i) => i.status === IssueStatus.RESOLVED).length;
-    const overallResolutionRate = issues.length > 0 ? Math.round((resolvedCount / issues.length) * 100) : 0;
-
-    const summaryTextEn = `Weekly Summary: Active complaints are concentrated around **${topCategory}** in **${topCity}**, with **${recentIssues}** new issues reported this week. Municipal departments maintain an overall **${overallResolutionRate}%** resolution rate. Community participation remains active: **${verifiedCount}** reports are verified by citizen votes, showing a **${verificationRate}%** overall community verification rate.`;
-
-    const summaryTextHi = `साप्ताहिक विवरण: सक्रिय शिकायतें मुख्य रूप से **${topCity}** में **${topCategory}** के आसपास केंद्रित हैं, इस सप्ताह **${recentIssues}** नए मामले दर्ज किए गए। नगर निगम विभाग **${overallResolutionRate}%** समाधान दर बनाए हुए हैं। सामुदायिक भागीदारी सक्रिय है: **${verifiedCount}** मामलों को नागरिक वोटों द्वारा सत्यापित किया गया है, जो **${verificationRate}%** कुल सत्यापन दर दर्शाता है।`;
-
-    const insightsEn = [
-      `Most reported category: **${topCategory}** (${catCount[topCategory] || 0} issues total).`,
-      `Highest volume city: **${topCity}** (${cityMap[topCity] || 0} complaints).`,
-      `Community Verification: **${verifiedThisWeek}** issues verified by citizens this week.`,
-      `Resolution Turnaround: Average resolution speed stands at a steady pace.`,
-    ];
-
-    const insightsHi = [
-      `सबसे अधिक रिपोर्ट की गई श्रेणी: **${topCategory}** (कुल ${catCount[topCategory] || 0} मामले)।`,
-      `उच्चतम शिकायत वाला शहर: **${topCity}** (${cityMap[topCity] || 0} शिकायतें)।`,
-      `सामुदायिक सत्यापन: इस सप्ताह नागरिकों द्वारा **${verifiedThisWeek}** मामलों को सत्यापित किया गया।`,
-      `समाधान दर: औसत समाधान समय स्थिर बना हुआ है।`,
-    ];
-
-    return {
-      summaryTextEn,
-      summaryTextHi,
-      insightsEn,
-      insightsHi,
+      summaryTextEn:
+        `Weekly Summary: **${overview.totals.reportedThisWeek}** new issues were reported in the last 7 days, ` +
+        `out of **${totalIssues}** total. Departments have resolved **${overview.totals.resolved}** ` +
+        `(**${resolutionRate}%**), averaging **${avgEn}** per resolution.`,
+      summaryTextHi:
+        `साप्ताहिक विवरण: पिछले 7 दिनों में **${overview.totals.reportedThisWeek}** नई समस्याएं दर्ज हुईं, ` +
+        `कुल **${totalIssues}** में से। विभागों ने **${overview.totals.resolved}** ` +
+        `(**${resolutionRate}%**) हल कीं, औसतन **${avgHi}** प्रति समाधान।`,
+      insightsEn: [
+        `Most reported category: **${topCategory}** (${topCategoryCount} issues).`,
+        bestDept
+          ? `Best performing department: **${bestDept.nameEn}** at **${bestDept.resolutionRate}%** resolution.`
+          : `No department performance data yet.`,
+        p90 !== null
+          ? `90% of resolved issues closed within **${formatResolutionTime(p90, "en")}**.`
+          : `Not enough resolved issues to compute a 90th percentile.`,
+        topHotspotCount > 0
+          ? `Densest hotspot holds **${topHotspotCount}** reports in one area.`
+          : `No clustered hotspots detected yet.`,
+      ],
+      insightsHi: [
+        `सर्वाधिक दर्ज श्रेणी: **${topCategory}** (${topCategoryCount} समस्याएं)।`,
+        bestDept
+          ? `सर्वश्रेष्ठ विभाग: **${bestDept.nameEn}** — **${bestDept.resolutionRate}%** समाधान दर।`
+          : `अभी कोई विभागीय डेटा नहीं।`,
+        p90 !== null
+          ? `90% हल की गई समस्याएं **${formatResolutionTime(p90, "hi")}** के भीतर बंद हुईं।`
+          : `90वें प्रतिशतक के लिए पर्याप्त डेटा नहीं।`,
+        topHotspotCount > 0
+          ? `सबसे घना हॉटस्पॉट: एक क्षेत्र में **${topHotspotCount}** रिपोर्ट।`
+          : `अभी कोई हॉटस्पॉट नहीं मिला।`,
+      ],
     };
   },
 };

@@ -3,7 +3,6 @@ import { AuthUser } from "@/shared/types/domain/AuthUser";
 import { gamificationService } from "../../profile/services/gamificationService";
 import { issueRepository, issueService } from "@/features/issues";
 import { issueVerificationService } from "@/features/issues/services/issueVerificationService";
-import { dashboardService, DashboardStats } from "../services/dashboardService";
 import { Issue } from "@/shared/types/domain/Issue";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
@@ -46,10 +45,9 @@ export function useDashboardIssues(
     }
   }, [user, userCoords]);
 
-  // Memoize stats to avoid extra render cycles - computed on ALL issues
-  const stats = useMemo<DashboardStats>(() => {
-    return dashboardService.calculateStats(allIssues);
-  }, [allIssues]);
+  // Dashboard counters come from /analytics/overview (see useAnalytics) —
+  // recomputing them here would only ever describe the loaded page of
+  // issues, not the whole dataset.
 
   // Realtime subscription setup
   useEffect(() => {
@@ -86,6 +84,10 @@ export function useDashboardIssues(
       const raw = await issueRepository.fetchAllIssues(limit);
       const mapped = raw.map((item) => issueService.mapResponseToDomain(item));
       setAllIssues(mapped);
+
+      // Load real community-verification counts for what's on screen. Until
+      // this resolves the UI shows zeroes rather than invented numbers.
+      void issueVerificationService.prefetch(mapped.map((i) => i.id));
 
       if (userCoords) {
         const withDistance = mapped
@@ -246,7 +248,6 @@ export function useDashboardIssues(
     supportedIssues,
     loading,
     supportingId,
-    stats,
     handleSupport,
     isNearbyMode,
     refetch: fetchIssues,

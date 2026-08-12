@@ -13,6 +13,8 @@ export interface AnalyticsOverview {
     reportedThisWeek: number;
     reopened: number;
     resolved: number;
+    open: number;
+    supports: number;
   };
   byStatus: { status: string; count: number }[];
   byCategory: { code: string; nameEn: string; count: number }[];

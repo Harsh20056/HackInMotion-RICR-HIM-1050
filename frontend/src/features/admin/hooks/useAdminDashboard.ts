@@ -1,50 +1,35 @@
 /**
  * useAdminDashboard.ts
  * --------------------
- * Admin hook with local real-time-style sync for live issue updates.
+ * Department work queue, served and scoped entirely by the backend.
  *
- * Task 2.2 — Real-Time Admin Sync (ImplementationPlan.md)
- * Task 2.3 — RBAC Department Scoping (ImplementationPlan.md)
+ * Filtering, sorting and pagination are query parameters on
+ * GET /departments/:id/queue — a dept_admin cannot widen their own scope by
+ * editing client state, because the route enforces the department itself.
  *
- * Listens to the mock "reported_issues" table via the local pub-sub helper
- * so that merged reports, severity escalations, and status changes appear
- * instantly in the admin panel without manual page refresh. TEMPORARY —
- * backend pending (Phase 2), which will replace this with real realtime.
- *
- * Department admins receive ONLY events scoped to their assigned department.
- * Super admins see all events and can filter by department via UI.
+ * Live updates arrive over SSE (GET /departments/:id/stream) rather than
+ * polling; EventSource reconnects on its own if the connection drops.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AuthUser } from "@/shared/types/domain/AuthUser";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/shared/hooks/use-toast";
-import { adminService } from "../services/adminService";
-import { Issue } from "@/shared/types/domain/Issue";
+import { adminService, QueueFilters, QueueItem } from "../services/adminService";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 import { UserRole } from "@/shared/types/domain/UserRole";
 import { logger } from "@/shared/services/logger";
 import { ROUTES } from "@/shared/config/routes";
-import { subscribeToTable } from "@/shared/mock/mockLocalStore";
-import { IssueResponse } from "@/shared/contracts/IssueResponse";
-import { issueService } from "@/features/issues";
+import { useEventStream } from "@/shared/hooks/useEventStream";
 
-// Mapping from department key → issue category labels (both languages)
-const DEPT_CATEGORY_MAP: Record<string, string[]> = {
-  water_supply: ["Water Supply", "जल आपूर्ति"],
-  sanitation: ["Sanitation", "स्वच्छता"],
-  electricity: ["Electricity", "बिजली"],
-  roads: ["Roads", "सड़कें"],
-  parks: ["Parks & Gardens", "पार्क और बगीचे"],
-  buildings: ["Buildings", "भवन"],
-};
-
-/** Returns true if the issue category belongs to the given department key. */
-function categoryMatchesDept(category: string, department: string): boolean {
-  if (!department || department === "all") return true;
-  const labels = DEPT_CATEGORY_MAP[department] ?? [];
-  return labels.some((l) => l.toLowerCase() === category?.toLowerCase());
+export interface AdminDepartment {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameHi: string;
 }
+
+const PAGE_SIZE = 20;
 
 export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, activeLanguage: "en" | "hi") {
   const navigate = useNavigate();
@@ -53,38 +38,21 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userDepartment, setUserDepartment] = useState<string | null>(null);
-  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [departments, setDepartments] = useState<AdminDepartment[]>([]);
+  const [activeDepartmentId, setActiveDepartmentId] = useState<string | null>(null);
 
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const [items, setItems] = useState<QueueItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<Omit<QueueFilters, "page" | "pageSize" | "departmentId">>({
+    sort: "created_desc",
+  });
+
   const [loading, setLoading] = useState(true);
-  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Keep a ref so the realtime callback always accesses the latest values
-  const issuesRef = useRef<Issue[]>([]);
-  issuesRef.current = issues;
-  const userDepartmentRef = useRef<string | null>(null);
-  userDepartmentRef.current = userDepartment;
-  const userRoleRef = useRef<UserRole | null>(null);
-  userRoleRef.current = userRole;
-  const filterDepartmentRef = useRef<string>("all");
-  filterDepartmentRef.current = filterDepartment;
-
-  // ── Load initial issues ──────────────────────────────────────────────────
-  const loadIssues = useCallback(async () => {
-    try {
-      const items = await adminService.fetchAllIssuesAdmin();
-      setIssues(items);
-    } catch (err: any) {
-      logger.error("Failed to load admin issues:", err);
-      toast({
-        title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: err.message || "Failed to load issues feed.",
-        variant: "destructive",
-      });
-    }
-  }, [activeLanguage, toast]);
-
-  // ── Auth check + initial load ────────────────────────────────────────────
+  // ── Identify the admin and resolve their scope ───────────────────────────
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -94,151 +62,136 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
 
     (async () => {
       try {
-        const adminCheck = await adminService.checkIsAdmin(user.id);
-        setIsAdmin(adminCheck);
+        const { role, department } = await adminService.getUserRole(user.id);
+        const admin = role === UserRole.DEPARTMENT_ADMIN || role === UserRole.SUPER_ADMIN;
+        setIsAdmin(admin);
+        setUserRole(role);
+        setUserDepartment(department);
 
-        if (adminCheck) {
-          // Resolve the user's role + department for scoping
-          const { role, department } = await adminService.getUserRole(user.id);
-          setUserRole(role as UserRole);
-          setUserDepartment(department);
+        if (!admin) return;
 
-          // Department admins: lock filter to their department
-          if (role === UserRole.DEPARTMENT_ADMIN && department) {
-            setFilterDepartment(department);
-          }
-
-          await loadIssues();
+        if (role === UserRole.SUPER_ADMIN) {
+          const list = await adminService.listDepartments();
+          setDepartments(list);
+          setActiveDepartmentId(list[0]?.id ?? null);
+        } else {
+          setActiveDepartmentId(department);
         }
       } catch (err) {
-        logger.error("Failed to resolve admin permissions check:", err);
+        logger.error("Failed to resolve admin permissions:", err);
         setIsAdmin(false);
       } finally {
         setLoading(false);
       }
     })();
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
-  // ── Real-time subscription (Task 2.2 + 2.3) ─────────────────────────────
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    logger.info("Admin: Setting up local sync subscription on reported_issues");
-
-    const unsubscribe = subscribeToTable<IssueResponse>("reported_issues", (event) => {
-      logger.info("Admin sync event:", event.eventType, event);
-
-      const dept = userDepartmentRef.current;
-      const role = userRoleRef.current;
-
-      if (event.eventType === "INSERT" && event.new) {
-        const newIssue = issueService.mapResponseToDomain(event.new);
-
-        // Ignore duplicate/subscriber issues (only show master tickets)
-        if (newIssue.masterIssueId) {
-          return;
-        }
-
-        // Department admins: only process events for their department
-        if (role === UserRole.DEPARTMENT_ADMIN && !categoryMatchesDept(newIssue.category, dept ?? "")) {
-          return;
-        }
-
-        setIssues((prev) => [newIssue, ...prev]);
-        toast({
-          title: activeLanguage === "en" ? "🔴 New Issue Reported" : "🔴 नई समस्या दर्ज",
-          description: `${newIssue.title} — ${newIssue.category}`,
-        });
-
-      } else if (event.eventType === "UPDATE" && event.new) {
-        const updated = issueService.mapResponseToDomain(event.new);
-
-        // Ignore duplicate/subscriber issues (only show master tickets)
-        if (updated.masterIssueId) {
-          return;
-        }
-
-        // Department admins: skip updates for other departments
-        if (role === UserRole.DEPARTMENT_ADMIN && !categoryMatchesDept(updated.category, dept ?? "")) {
-          return;
-        }
-
-        setIssues((prev) =>
-          prev.map((i) => (i.id === updated.id ? updated : i))
-        );
-
-      } else if (event.eventType === "DELETE" && event.old) {
-        setIssues((prev) => prev.filter((i) => i.id !== event.old!.id));
-      }
-    });
-    setIsRealTimeConnected(true);
-
-    return () => {
-      logger.info("Admin: Tearing down local sync subscription");
-      unsubscribe();
-      setIsRealTimeConnected(false);
-    };
-  }, [isAdmin, activeLanguage]);
-
-  // ── Computed: visible issues based on active filter ──────────────────────
-  const filteredIssues = issues.filter((issue) => {
-    if (userRole === UserRole.DEPARTMENT_ADMIN) {
-      // Dept admins always see only their scoped category (enforced server-side too)
-      return categoryMatchesDept(issue.category, userDepartment ?? "");
+  // ── Load the queue whenever scope, filters or page change ────────────────
+  const loadQueue = useCallback(async () => {
+    if (!activeDepartmentId) return;
+    setLoading(true);
+    try {
+      const result = await adminService.fetchQueue({
+        ...filters,
+        departmentId: activeDepartmentId,
+        page,
+        pageSize: PAGE_SIZE,
+      });
+      setItems(result.items);
+      setTotal(result.total);
+      setError(null);
+    } catch (err: any) {
+      logger.error("Failed to load department queue:", err);
+      setError(err?.message || "Failed to load the department queue.");
+    } finally {
+      setLoading(false);
     }
-    // Super admins can toggle the filter dropdown
-    return categoryMatchesDept(issue.category, filterDepartment);
-  });
+  }, [activeDepartmentId, filters, page]);
+
+  useEffect(() => {
+    void loadQueue();
+  }, [loadQueue]);
+
+  // ── Live queue updates over SSE ──────────────────────────────────────────
+  const streamPath = isAdmin && activeDepartmentId ? `/departments/${activeDepartmentId}/stream` : null;
+
+  const { connected: isRealTimeConnected } = useEventStream(
+    streamPath,
+    useCallback(
+      (event) => {
+        logger.info("Admin stream event:", event.type);
+        if (event.type === "issue.created") {
+          toast({
+            title: activeLanguage === "en" ? "New issue reported" : "नई समस्या दर्ज",
+            description: String((event.payload as any)?.issue?.title ?? ""),
+          });
+        }
+        // The queue projection joins several tables; refetching is cheaper to
+        // reason about than patching rows in place, and keeps totals honest.
+        void loadQueue();
+      },
+      [activeLanguage, toast, loadQueue]
+    )
+  );
 
   // ── Mutations ────────────────────────────────────────────────────────────
-  const updateStatus = async (id: string, status: IssueStatus) => {
+
+  /**
+   * Moves an issue through the lifecycle. The backend rejects illegal
+   * transitions with 422 and requires a note + proof photo on "resolved";
+   * those errors are surfaced verbatim rather than swallowed.
+   */
+  const updateStatus = async (
+    issueId: string,
+    status: IssueStatus,
+    options: { reason?: string; resolutionNote?: string; proofUrl?: string } = {}
+  ) => {
+    setUpdatingId(issueId);
     try {
-      await adminService.updateIssueStatusAdmin(id, status);
-      setIssues((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, status } : i))
-      );
+      await adminService.updateIssueStatus(issueId, status, options);
+      toast({ title: activeLanguage === "en" ? "Status updated" : "स्थिति अपडेट की गई" });
+      await loadQueue();
+      return true;
+    } catch (err: any) {
+      logger.error("Failed to update status:", err);
       toast({
-        title: activeLanguage === "en" ? "Status updated" : "स्थिति अपडेट की गई",
-      });
-    } catch (error: any) {
-      logger.error("Failed to update status:", error);
-      toast({
-        title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to update issue status.",
+        title: activeLanguage === "en" ? "Could not update status" : "स्थिति अपडेट नहीं हुई",
+        description: err?.message || "Please try again.",
         variant: "destructive",
       });
+      return false;
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const deleteIssue = async (id: string) => {
-    try {
-      await adminService.deleteIssueAdmin(id);
-      setIssues((prev) => prev.filter((i) => i.id !== id));
-      toast({
-        title: activeLanguage === "en" ? "Issue deleted" : "समस्या हटा दी गई",
-      });
-    } catch (error: any) {
-      logger.error("Failed to delete issue:", error);
-      toast({
-        title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to delete issue report.",
-        variant: "destructive",
-      });
-    }
-  };
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
   return {
     isAdmin,
     userRole,
     userDepartment,
-    filterDepartment,
-    setFilterDepartment,
-    issues: filteredIssues,
-    totalIssues: issues,
+    departments,
+    activeDepartmentId,
+    setActiveDepartmentId: (id: string) => {
+      setActiveDepartmentId(id);
+      setPage(1);
+    },
+    items,
+    total,
+    page,
+    totalPages,
+    setPage,
+    filters,
+    setFilters: (next: Partial<typeof filters>) => {
+      setFilters((prev) => ({ ...prev, ...next }));
+      setPage(1);
+    },
     loading,
+    error,
+    updatingId,
     isRealTimeConnected,
     updateStatus,
-    deleteIssue,
-    refetch: loadIssues,
+    refetch: loadQueue,
   };
 }

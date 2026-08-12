@@ -52,13 +52,17 @@ export const analyticsService = {
           ORDER BY count DESC
         `
       ),
-      prisma.$queryRaw<{ total: bigint; geotagged: bigint; this_week: bigint; reopened: bigint }[]>(
+      prisma.$queryRaw<
+        { total: bigint; geotagged: bigint; this_week: bigint; reopened: bigint; supports: bigint; open: bigint }[]
+      >(
         Prisma.sql`
           SELECT
             COUNT(*)::bigint AS total,
             COUNT(*) FILTER (WHERE location IS NOT NULL)::bigint AS geotagged,
             COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::bigint AS this_week,
-            COUNT(*) FILTER (WHERE reopen_count > 0)::bigint AS reopened
+            COUNT(*) FILTER (WHERE reopen_count > 0)::bigint AS reopened,
+            COUNT(*) FILTER (WHERE status NOT IN ('resolved','verified','closed','rejected'))::bigint AS open,
+            COALESCE(SUM(supports_count), 0)::bigint AS supports
           FROM issues
         `
       ),
@@ -83,6 +87,8 @@ export const analyticsService = {
         reportedThisWeek: toNumber(t?.this_week),
         reopened: toNumber(t?.reopened),
         resolved: toNumber(d?.resolved_count),
+        open: toNumber(t?.open),
+        supports: toNumber(t?.supports),
       },
       byStatus: statusRows.map((r) => ({ status: r.status, count: toNumber(r.count) })),
       byCategory: categoryRows.map((r) => ({ code: r.code, nameEn: r.name_en, count: toNumber(r.count) })),

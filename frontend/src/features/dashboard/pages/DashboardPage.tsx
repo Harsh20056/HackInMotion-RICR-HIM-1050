@@ -52,6 +52,8 @@ import {
   X,
 } from "lucide-react";
 import { AnalyticsPanel } from "../components/AnalyticsPanel";
+import { useAnalytics } from "../hooks/useAnalytics";
+import { formatResolutionTime } from "../services/dashboardService";
 import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -139,10 +141,12 @@ export default function DashboardPage() {
     supportedIssues,
     loading,
     supportingId,
-    stats,
     handleSupport,
     isNearbyMode,
   } = useDashboardIssues(user, language, userCoords);
+
+  // Dashboard counters are server-computed over the whole dataset.
+  const { overview } = useAnalytics();
 
   const getTimeAgo = (date: Date) => getTimeAgoUtil(date, language);
 
@@ -238,35 +242,45 @@ export default function DashboardPage() {
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <StatCard 
-          value={stats.aiClassifiedCount.toString()} 
-          label={language === "en" ? "AI Classifications" : "एआई वर्गीकरण"}
-          trend={language === "en" ? "🤖 Powered by Gemini" : "🤖 जेमिनी द्वारा"} 
+        <StatCard
+          value={overview ? overview.totals.issues.toString() : "—"}
+          label={language === "en" ? "Total Reports" : "कुल रिपोर्ट"}
+          trend={language === "en" ? "Across all departments" : "सभी विभागों में"}
           color="primary"
         />
-        <StatCard 
-          value={stats.duplicateCount.toString()} 
-          label={language === "en" ? "Duplicates Prevented" : "रोके गए डुप्लिकेट"}
-          trend={language === "en" ? "Duplicate Issues Prevented" : "रोके गए डुप्लिकेट मुद्दे"} 
+        <StatCard
+          value={overview ? overview.totals.open.toString() : "—"}
+          label={language === "en" ? "Open Issues" : "खुली समस्याएं"}
+          trend={language === "en" ? "Awaiting resolution" : "समाधान प्रतीक्षित"}
           color="accent"
         />
-        <StatCard 
-          value={stats.avgResolutionDays !== null ? `${stats.avgResolutionDays} days` : (language === "en" ? "No resolved issues yet" : "कोई हल मुद्दा नहीं")} 
+        <StatCard
+          value={overview ? formatResolutionTime(overview.resolutionTime.avgHours, language) : "—"}
           label={language === "en" ? "Avg Resolution" : "औसत समाधान"}
-          trend={language === "en" ? "Dynamic resolution average" : "गतिशील समाधान औसत"} 
-          color="info" 
+          trend={
+            overview?.resolutionTime.p90Hours != null
+              ? `P90 ${formatResolutionTime(overview.resolutionTime.p90Hours, language)}`
+              : language === "en"
+                ? "From status history"
+                : "स्थिति इतिहास से"
+          }
+          color="info"
         />
-        <StatCard 
-          value={stats.geoTaggedCount.toString()} 
+        <StatCard
+          value={overview ? overview.totals.geoTagged.toString() : "—"}
           label={language === "en" ? "Geo-tagged Reports" : "जियो-टैग की गई रिपोर्ट"}
-          trend={language === "en" ? `${Math.round((stats.geoTaggedCount / (allIssues.length || 1)) * 100)}% map coverage` : `${Math.round((stats.geoTaggedCount / (allIssues.length || 1)) * 100)}% मानचित्र कवरेज`} 
+          trend={
+            overview && overview.totals.issues > 0
+              ? `${Math.round((overview.totals.geoTagged / overview.totals.issues) * 100)}% ${language === "en" ? "map coverage" : "मानचित्र कवरेज"}`
+              : "—"
+          }
           color="warning"
           mapHref={ROUTES.CIVIC_MAP}
         />
-        <StatCard 
-          value={stats.issuesThisWeek.toString()} 
+        <StatCard
+          value={overview ? overview.totals.reportedThisWeek.toString() : "—"}
           label={language === "en" ? "Issues This Week" : "इस सप्ताह के मुद्दे"}
-          trend={language === "en" ? "New reports (7d)" : "नई रिपोर्ट (7 दिन)"} 
+          trend={language === "en" ? "New reports (7d)" : "नई रिपोर्ट (7 दिन)"}
           color="primary"
         />
       </div>
@@ -283,7 +297,7 @@ export default function DashboardPage() {
             ? <ChevronUp className="w-3.5 h-3.5 ml-1 group-hover:text-primary transition-colors" />
             : <ChevronDown className="w-3.5 h-3.5 ml-1 group-hover:text-primary transition-colors" />}
         </button>
-        {showAnalytics && <AnalyticsPanel issues={allIssues} />}
+        {showAnalytics && <AnalyticsPanel />}
       </div>
 
       {/* Issues Grid */}

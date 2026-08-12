@@ -1,116 +1,89 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { useAuth } from "@/features/auth";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
+import { ResolveIssueDialog } from "../components/ResolveIssueDialog";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
+import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import {
-  Shield, Trash2, Loader2, ShieldAlert, ShieldCheck,
-  Droplets, Zap, Car, Trees, Building2, Recycle, LayoutDashboard
+  Shield, Loader2, ShieldAlert, LayoutDashboard, MapPin, ChevronLeft, ChevronRight,
+  Wifi, WifiOff, AlertTriangle, ThumbsUp, RotateCcw,
 } from "lucide-react";
-import { STATUSES, STATUS_LABELS } from "@/shared/constants/statuses";
 import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { UserRole } from "@/shared/types/domain/UserRole";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
-
-const statusesList = [STATUSES.REPORTED, STATUSES.IN_PROGRESS, STATUSES.RESOLVED, STATUSES.REJECTED];
-
-// ── Department metadata ────────────────────────────────────────────────────
-const DEPARTMENT_META: Record<string, {
-  labelEn: string;
-  labelHi: string;
-  icon: React.ReactNode;
-  color: string;
-  gradient: string;
-}> = {
-  all: {
-    labelEn: "All Departments",
-    labelHi: "सभी विभाग",
-    icon: <LayoutDashboard className="w-5 h-5" />,
-    color: "text-primary",
-    gradient: "from-primary/20 to-primary/5",
-  },
-  water_supply: {
-    labelEn: "Water Supply",
-    labelHi: "जल आपूर्ति",
-    icon: <Droplets className="w-5 h-5" />,
-    color: "text-blue-500",
-    gradient: "from-blue-500/20 to-blue-500/5",
-  },
-  sanitation: {
-    labelEn: "Sanitation",
-    labelHi: "स्वच्छता",
-    icon: <Recycle className="w-5 h-5" />,
-    color: "text-green-500",
-    gradient: "from-green-500/20 to-green-500/5",
-  },
-  electricity: {
-    labelEn: "Electricity",
-    labelHi: "बिजली",
-    icon: <Zap className="w-5 h-5" />,
-    color: "text-yellow-500",
-    gradient: "from-yellow-500/20 to-yellow-500/5",
-  },
-  roads: {
-    labelEn: "Roads",
-    labelHi: "सड़कें",
-    icon: <Car className="w-5 h-5" />,
-    color: "text-orange-500",
-    gradient: "from-orange-500/20 to-orange-500/5",
-  },
-  parks: {
-    labelEn: "Parks & Gardens",
-    labelHi: "पार्क और बगीचे",
-    icon: <Trees className="w-5 h-5" />,
-    color: "text-emerald-500",
-    gradient: "from-emerald-500/20 to-emerald-500/5",
-  },
-  buildings: {
-    labelEn: "Buildings",
-    labelHi: "भवन",
-    icon: <Building2 className="w-5 h-5" />,
-    color: "text-purple-500",
-    gradient: "from-purple-500/20 to-purple-500/5",
-  },
-};
+import { CATEGORIES, CATEGORY_LABELS } from "@/shared/constants/categories";
+import { QueueItem } from "../services/adminService";
 
 const STATUS_COLORS: Record<string, string> = {
-  reported:    "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
+  reported: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
+  acknowledged: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   in_progress: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  resolved:    "bg-green-500/10 text-green-600 border-green-500/20",
-  rejected:    "bg-red-500/10 text-red-600 border-red-500/20",
+  resolved: "bg-green-500/10 text-green-600 border-green-500/20",
+  verified: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  reopened: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  rejected: "bg-red-500/10 text-red-600 border-red-500/20",
+  closed: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+};
+
+const STATUS_LABEL: Record<string, { en: string; hi: string }> = {
+  reported: { en: "Reported", hi: "रिपोर्ट" },
+  acknowledged: { en: "Acknowledged", hi: "स्वीकृत" },
+  in_progress: { en: "In Progress", hi: "प्रगति में" },
+  resolved: { en: "Resolved", hi: "हल" },
+  verified: { en: "Verified", hi: "सत्यापित" },
+  reopened: { en: "Reopened", hi: "पुनः खोला" },
+  rejected: { en: "Rejected", hi: "अस्वीकृत" },
+  closed: { en: "Closed", hi: "बंद" },
+};
+
+/**
+ * The next lifecycle steps an admin may take from a given state. Mirrors the
+ * server's state machine; the server remains the authority and will reject
+ * anything else with 422.
+ */
+const NEXT_ADMIN_STATUSES: Record<string, string[]> = {
+  reported: ["acknowledged", "rejected"],
+  acknowledged: ["in_progress", "rejected"],
+  in_progress: ["resolved", "rejected"],
+  resolved: ["closed"],
+  verified: ["closed"],
+  reopened: ["acknowledged", "in_progress", "rejected"],
+  rejected: [],
+  closed: [],
 };
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
-  const navigate = useNavigate();
 
   const {
     isAdmin,
     userRole,
-    userDepartment,
-    filterDepartment,
-    setFilterDepartment,
-    issues,
-    totalIssues,
+    departments,
+    activeDepartmentId,
+    setActiveDepartmentId,
+    items,
+    total,
+    page,
+    totalPages,
+    setPage,
+    filters,
+    setFilters,
     loading,
+    error,
+    updatingId,
     isRealTimeConnected,
     updateStatus,
-    deleteIssue,
   } = useAdminDashboard(user, authLoading, language);
 
-  const handleDelete = async (id: string) => {
-    const confirmText = language === "en" ? "Delete this issue?" : "क्या आप इस समस्या को हटाना चाहते हैं?";
-    if (!confirm(confirmText)) return;
-    await deleteIssue(id);
-  };
+  const [resolving, setResolving] = useState<QueueItem | null>(null);
 
-  // ── Loading state ──────────────────────────────────────────────────────
-  if (loading || authLoading) {
+  if (authLoading || isAdmin === null) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <LoadingState message={language === "en" ? "Loading admin data..." : "प्रशासक डेटा लोड हो रहा है..."} />
@@ -118,222 +91,340 @@ export default function AdminPage() {
     );
   }
 
-  // ── Unauthorized state ─────────────────────────────────────────────────
   if (!isAdmin) {
     return (
       <div className="container mx-auto px-4 max-w-md text-center py-16">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto mb-6">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">
-          {language === "en" ? "Access Denied" : "पहुंच अस्वीकृत"}
-        </h2>
+        <h2 className="text-2xl font-bold mb-2">{language === "en" ? "Access Denied" : "पहुंच अस्वीकृत"}</h2>
         <p className="text-muted-foreground mb-6">
           {language === "en"
-            ? "You need admin privileges to view this page."
-            : "इस पृष्ठ को देखने के लिए आपके पास व्यवस्थापक विशेषाधिकार होने चाहिए।"}
+            ? "You need department admin privileges to view this page."
+            : "इस पृष्ठ को देखने के लिए विभागीय व्यवस्थापक अधिकार आवश्यक हैं।"}
         </p>
-        <p className="text-xs text-muted-foreground mb-4">
-          Admin roles are backend-pending (Phase 2). For local testing, grant
-          access from the browser console:
-          <br />
-          <code className="bg-muted px-2 py-1 rounded text-xs break-all">
-            {`localStorage.setItem("samadhan_mock_user_roles", JSON.stringify([{ user_id: "${user?.id}", role: "admin", department: null }]))`}
-          </code>
-        </p>
-        <Button onClick={() => navigate(ROUTES.DASHBOARD)}>
+        <Button onClick={() => (window.location.href = ROUTES.DASHBOARD)}>
           {language === "en" ? "Back to Dashboard" : "डैशबोर्ड पर वापस जाएं"}
         </Button>
       </div>
     );
   }
 
-  // ── Computed display metadata ──────────────────────────────────────────
   const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
-  const activeDept = isSuperAdmin ? filterDepartment : (userDepartment ?? "all");
-  const deptMeta = DEPARTMENT_META[activeDept] ?? DEPARTMENT_META["all"];
-  const userDeptMeta = DEPARTMENT_META[userDepartment ?? "all"] ?? DEPARTMENT_META["all"];
+  const activeDept = departments.find((d) => d.id === activeDepartmentId);
 
-  const dashboardTitle = isSuperAdmin
-    ? (language === "en" ? "Super Admin Dashboard" : "सुपर एडमिन डैशबोर्ड")
-    : `${language === "en" ? userDeptMeta.labelEn : userDeptMeta.labelHi} ${language === "en" ? "Department Dashboard" : "विभाग डैशबोर्ड"}`;
-
-  const dashboardSubtitle = isSuperAdmin
-    ? (language === "en" ? "Manage all civic issues across every department" : "सभी विभागों की नागरिक समस्याओं का प्रबंधन करें")
-    : (language === "en"
-        ? `Managing issues for the ${userDeptMeta.labelEn} department`
-        : `${userDeptMeta.labelHi} विभाग की समस्याओं का प्रबंधन`);
+  const handleTransition = async (item: QueueItem, status: string) => {
+    if (status === IssueStatus.RESOLVED) {
+      setResolving(item);
+      return;
+    }
+    await updateStatus(item.issue.id, status as IssueStatus);
+  };
 
   return (
-    <div className="container mx-auto px-4 max-w-6xl py-8">
-
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          {/* Department icon badge */}
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${deptMeta.gradient} border border-border flex items-center justify-center shadow-sm ${deptMeta.color}`}>
-            {isSuperAdmin ? <ShieldCheck className="w-7 h-7" /> : deptMeta.icon}
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold leading-tight">{dashboardTitle}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{dashboardSubtitle}</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {isSuperAdmin
+                ? language === "en"
+                  ? "Super Admin Dashboard"
+                  : "सुपर एडमिन डैशबोर्ड"
+                : `${activeDept?.nameEn ?? ""} ${language === "en" ? "Queue" : "कतार"}`}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {total} {language === "en" ? "work orders" : "कार्य आदेश"}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Dept scope badge for dept admins */}
-          {!isSuperAdmin && userDepartment && (
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-card text-sm font-medium ${userDeptMeta.color}`}>
-              {userDeptMeta.icon}
-              <span>{language === "en" ? userDeptMeta.labelEn : userDeptMeta.labelHi}</span>
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <span
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+              isRealTimeConnected
+                ? "text-green-600 border-green-500/20 bg-green-500/10"
+                : "text-muted-foreground border-border bg-muted/40"
+            }`}
+            title={
+              isRealTimeConnected
+                ? "Live updates connected"
+                : "Reconnecting — updates may lag until the stream is restored"
+            }
+          >
+            {isRealTimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {isRealTimeConnected ? (language === "en" ? "Live" : "लाइव") : language === "en" ? "Offline" : "ऑफ़लाइन"}
+          </span>
 
-          {/* Real-time connection indicator (Task 2.2) */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card shadow-sm text-sm">
-            <span className="relative flex h-2.5 w-2.5">
-              {isRealTimeConnected && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              )}
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isRealTimeConnected ? "bg-green-500" : "bg-yellow-500"}`} />
-            </span>
-            <span className="text-muted-foreground">
-              {isRealTimeConnected
-                ? (language === "en" ? "Live" : "लाइव")
-                : (language === "en" ? "Connecting…" : "कनेक्ट हो रहा…")}
-            </span>
-          </div>
+          {isSuperAdmin && departments.length > 0 && (
+            <Select value={activeDepartmentId ?? undefined} onValueChange={setActiveDepartmentId}>
+              <SelectTrigger className="w-56">
+                <LayoutDashboard className="w-4 h-4 mr-2 shrink-0" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {language === "en" ? d.nameEn : d.nameHi}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
-      {/* ── Super Admin: Department Filter ─────────────────────────────── */}
-      {isSuperAdmin && (
-        <div className="flex items-center gap-3 mb-6 p-4 rounded-xl border border-border bg-card/50">
-          <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm text-muted-foreground shrink-0">
-            {language === "en" ? "Filter by Department:" : "विभाग के अनुसार फ़िल्टर करें:"}
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(DEPARTMENT_META).map(([key, meta]) => (
-              <button
-                key={key}
-                onClick={() => setFilterDepartment(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                  filterDepartment === key
-                    ? `${meta.color} bg-gradient-to-br ${meta.gradient} border-current shadow-sm`
-                    : "text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
-                }`}
-              >
-                {meta.icon}
-                {language === "en" ? meta.labelEn : meta.labelHi}
-              </button>
-            ))}
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-card border border-border rounded-2xl">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+            {language === "en" ? "Status" : "स्थिति"}
+          </label>
+          <Select
+            value={filters.status ?? "all"}
+            onValueChange={(v) => setFilters({ status: v === "all" ? undefined : v })}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{language === "en" ? "All statuses" : "सभी"}</SelectItem>
+              {Object.keys(STATUS_LABEL).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s][language]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+            {language === "en" ? "Category" : "श्रेणी"}
+          </label>
+          <Select
+            value={filters.categoryCode ?? "all"}
+            onValueChange={(v) => setFilters({ categoryCode: v === "all" ? undefined : v })}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{language === "en" ? "All categories" : "सभी श्रेणियां"}</SelectItem>
+              {Object.values(CATEGORIES).map((code) => (
+                <SelectItem key={code} value={code}>
+                  {CATEGORY_LABELS[code][language]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+            {language === "en" ? "From" : "से"}
+          </label>
+          <Input
+            type="date"
+            className="w-40"
+            value={filters.from?.slice(0, 10) ?? ""}
+            onChange={(e) =>
+              setFilters({ from: e.target.value ? new Date(e.target.value).toISOString() : undefined })
+            }
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+            {language === "en" ? "To" : "तक"}
+          </label>
+          <Input
+            type="date"
+            className="w-40"
+            value={filters.to?.slice(0, 10) ?? ""}
+            onChange={(e) =>
+              setFilters({ to: e.target.value ? new Date(e.target.value).toISOString() : undefined })
+            }
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+            {language === "en" ? "Sort" : "क्रम"}
+          </label>
+          <Select value={filters.sort} onValueChange={(v) => setFilters({ sort: v as typeof filters.sort })}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_desc">{language === "en" ? "Newest first" : "नवीनतम"}</SelectItem>
+              <SelectItem value="created_asc">{language === "en" ? "Oldest first" : "पुराने"}</SelectItem>
+              <SelectItem value="priority">{language === "en" ? "Priority" : "प्राथमिकता"}</SelectItem>
+              <SelectItem value="status">{language === "en" ? "Status" : "स्थिति"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {(filters.status || filters.categoryCode || filters.from || filters.to) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setFilters({ status: undefined, categoryCode: undefined, from: undefined, to: undefined })
+            }
+          >
+            {language === "en" ? "Clear" : "साफ़ करें"}
+          </Button>
+        )}
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-6 bg-destructive/5 border border-destructive/20 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {language === "en" ? "Could not load the queue" : "कतार लोड नहीं हो सकी"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">{error}</p>
           </div>
         </div>
       )}
 
-      {/* ── Stats Grid ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {statusesList.map((s) => {
-          const count = issues.filter((i) => i.status === s).length;
-          const label = STATUS_LABELS[s]?.[language] || s;
-          const colorClass = STATUS_COLORS[s] ?? "bg-muted text-foreground border-border";
-          return (
-            <div key={s} className={`border rounded-xl p-4 shadow-sm ${colorClass}`}>
-              <p className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</p>
-              <p className="text-3xl font-bold mt-1">{count}</p>
-            </div>
-          );
-        })}
-      </div>
+      {/* Queue */}
+      {loading ? (
+        <LoadingState message={language === "en" ? "Loading queue…" : "कतार लोड हो रही है…"} />
+      ) : items.length === 0 ? (
+        <EmptyState
+          title={language === "en" ? "Nothing in this queue" : "इस कतार में कुछ नहीं"}
+          description={
+            language === "en"
+              ? "No work orders match the current filters."
+              : "वर्तमान फ़िल्टर से कोई कार्य आदेश मेल नहीं खाता।"
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          {items.map((item) => {
+            const issue = item.issue;
+            const nextStatuses = NEXT_ADMIN_STATUSES[issue.status] ?? [];
+            const isBusy = updatingId === issue.id;
 
-      {/* ── Issues Feed ────────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        {issues.length === 0 && (
-          <EmptyState
-            title={language === "en" ? "No Issues Found" : "कोई समस्या नहीं मिली"}
-            description={
-              language === "en"
-                ? "No issues match the current department filter."
-                : "वर्तमान विभाग फ़िल्टर से कोई समस्या मेल नहीं खाती।"
-            }
-          />
-        )}
-
-        {issues.map((issue) => {
-          const issueDeptKey = Object.entries(DEPARTMENT_META).find(([, meta]) =>
-            [meta.labelEn.toLowerCase(), meta.labelHi].includes(issue.category?.toLowerCase())
-          )?.[0] ?? "all";
-          const issueDeptMeta = DEPARTMENT_META[issueDeptKey] ?? DEPARTMENT_META["all"];
-
-          return (
-            <div
-              key={issue.id}
-              className="bg-card border border-border rounded-xl p-5 flex flex-col md:flex-row gap-4 shadow-sm hover:shadow-md hover:border-border/80 transition-all"
-            >
-              {issue.imageUrls?.[0] && (
-                <img
-                  src={issue.imageUrls[0]}
-                  alt=""
-                  className="w-full md:w-28 h-28 object-cover rounded-lg shrink-0"
-                />
-              )}
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-base leading-tight truncate">{issue.title}</h3>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {/* Department chip */}
-                      <span className={`flex items-center gap-1 text-xs font-medium ${issueDeptMeta.color}`}>
-                        {issueDeptMeta.icon}
-                        {issue.category}
-                      </span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground truncate">{issue.location}</span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{new Date(issue.createdAt).toLocaleDateString()}</span>
+            return (
+              <div
+                key={item.workOrderId}
+                className="bg-card border border-border rounded-2xl p-4 hover:border-primary/20 transition-colors"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <Badge variant="outline" className={STATUS_COLORS[issue.status] ?? ""}>
+                        {STATUS_LABEL[issue.status]?.[language] ?? issue.status}
+                      </Badge>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {issue.category.nameEn}
+                      </Badge>
+                      {item.role !== "primary" && (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                          {item.role}
+                        </Badge>
+                      )}
+                      <span className="text-[10px] text-muted-foreground font-mono">{issue.publicRef}</span>
                     </div>
+
+                    <h3 className="font-semibold text-foreground truncate">{issue.title}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{issue.description}</p>
+
+                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                      {issue.address && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {issue.address}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <ThumbsUp className="w-3 h-3" /> {issue.supportsCount}
+                      </span>
+                      <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+                      {issue.reporterName && (
+                        <span>
+                          {language === "en" ? "by" : "द्वारा"} {issue.reporterName}
+                        </span>
+                      )}
+                    </div>
+
+                    {issue.resolutionNote && (
+                      <p className="mt-2 text-xs bg-green-500/5 border border-green-500/15 rounded-lg p-2 text-muted-foreground">
+                        <strong className="text-foreground">
+                          {language === "en" ? "Resolution: " : "समाधान: "}
+                        </strong>
+                        {issue.resolutionNote}
+                      </p>
+                    )}
                   </div>
-                  <Badge variant="secondary" className="shrink-0 text-xs">
-                    ▲ {issue.supportsCount} {language === "en" ? "supports" : "समर्थन"}
-                  </Badge>
-                </div>
 
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{issue.description}</p>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Select value={issue.status} onValueChange={(v) => updateStatus(issue.id, v as IssueStatus)}>
-                    <SelectTrigger id={`status-${issue.id}`} className="w-40 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusesList.map((s) => {
-                        const label = STATUS_LABELS[s]?.[language] || s;
-                        return (
-                          <SelectItem key={s} value={s} className="text-xs capitalize">
-                            {label}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => handleDelete(issue.id)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1" />
-                    {language === "en" ? "Delete" : "हटाएं"}
-                  </Button>
+                  {/* Inline lifecycle actions */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isBusy && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                    {nextStatuses.length === 0 ? (
+                      <span className="text-[11px] text-muted-foreground italic">
+                        {language === "en" ? "No further action" : "कोई कार्रवाई नहीं"}
+                      </span>
+                    ) : (
+                      nextStatuses.map((status) => (
+                        <Button
+                          key={status}
+                          size="sm"
+                          variant={status === "rejected" ? "outline" : "default"}
+                          disabled={isBusy}
+                          onClick={() => handleTransition(item, status)}
+                        >
+                          {status === "reopened" && <RotateCcw className="w-3 h-3 mr-1" />}
+                          {STATUS_LABEL[status]?.[language] ?? status}
+                        </Button>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-6">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {language === "en" ? "Page" : "पृष्ठ"} {page} / {totalPages}
+          </span>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Resolve requires a note + proof photo, enforced server-side too */}
+      {resolving && (
+        <ResolveIssueDialog
+          item={resolving}
+          onClose={() => setResolving(null)}
+          onSubmit={async (note, proofUrl) => {
+            const ok = await updateStatus(resolving.issue.id, IssueStatus.RESOLVED, {
+              resolutionNote: note,
+              proofUrl,
+            });
+            if (ok) setResolving(null);
+            return ok;
+          }}
+        />
+      )}
     </div>
   );
 }
