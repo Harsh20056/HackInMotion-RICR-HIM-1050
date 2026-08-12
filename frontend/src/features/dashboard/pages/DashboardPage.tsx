@@ -290,14 +290,16 @@ export default function DashboardPage() {
       {/* Analytics Section */}
       <div className="mb-8">
         <button
-          className="flex items-center gap-2 mb-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors group"
+          className="flex items-center gap-2 mb-3 text-lg font-bold text-foreground hover:text-primary transition-colors group cursor-pointer"
           onClick={() => setShowAnalytics((v) => !v)}
         >
-          <BarChart3 className="w-4.5 h-4.5 text-primary" />
-          {language === "en" ? "Civic Analytics" : "नागरिक विश्लेषण"}
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <BarChart3 className="w-4 h-4 text-primary" />
+          </div>
+          <span>{language === "en" ? "Civic Analytics" : "नागरिक विश्लेषण"}</span>
           {showAnalytics
-            ? <ChevronUp className="w-3.5 h-3.5 ml-1 group-hover:text-primary transition-colors" />
-            : <ChevronDown className="w-3.5 h-3.5 ml-1 group-hover:text-primary transition-colors" />}
+            ? <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            : <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />}
         </button>
         {showAnalytics && <AnalyticsPanel />}
       </div>
