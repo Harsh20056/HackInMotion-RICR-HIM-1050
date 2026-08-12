@@ -64,3 +64,4 @@ skills-lock.json
 
 # Claude Code local configuration
 .claude/
+.claude
