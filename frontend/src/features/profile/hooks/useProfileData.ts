@@ -31,7 +31,7 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
     
     try {
       const [profResult, issuesResult, supportedResult, notifsResult] = await Promise.allSettled([
-        profileService.getProfile(user.id),
+        profileService.getProfile(user.id, user),
         issueRepository.fetchUserIssues(user.id),
         issueRepository.fetchUserSupportedIssues(user.id),
         profileService.getNotificationPreferences(user.id)

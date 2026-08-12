@@ -3,6 +3,7 @@
 
 import { mockTable } from "@/shared/mock/mockLocalStore";
 import { ProfileResponse } from "@/shared/contracts/ProfileResponse";
+import { AuthUser } from "@/shared/types/domain/AuthUser";
 
 const PROFILES_TABLE = "profiles";
 const NOTIFS_TABLE = "notification_preferences";
@@ -22,17 +23,40 @@ interface NotificationPreferencesRow {
 }
 
 export const profileRepository = {
-  async fetchProfile(userId: string): Promise<ProfileResponse> {
+  async fetchProfile(userId: string, authUser?: AuthUser | null): Promise<ProfileResponse> {
     const profiles = mockTable.getAll<ProfileResponse>(PROFILES_TABLE);
     const existing = profiles.find((p) => p.user_id === userId);
-    if (existing) return existing;
+    
+    const authFullName = (authUser?.user_metadata?.full_name as string) || "";
+    const authPhone = (authUser?.user_metadata?.phone as string) || null;
+
+    if (existing) {
+      // If existing profile has default placeholder name "User" or empty, update with real name from authUser
+      let needsUpdate = false;
+      const patch: Partial<ProfileResponse> = {};
+
+      if ((!existing.full_name || existing.full_name === "User") && authFullName && authFullName !== "User") {
+        patch.full_name = authFullName;
+        needsUpdate = true;
+      }
+      if (!existing.phone && authPhone) {
+        patch.phone = authPhone;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        const updated = mockTable.update<ProfileResponse>(PROFILES_TABLE, "user_id", userId, patch);
+        return updated || existing;
+      }
+      return existing;
+    }
 
     const now = new Date().toISOString();
     const created: ProfileResponse = {
       id: mockTable.genId(),
       user_id: userId,
-      full_name: "User",
-      phone: null,
+      full_name: authFullName || "User",
+      phone: authPhone,
       address: null,
       city: null,
       state: null,
@@ -43,6 +67,41 @@ export const profileRepository = {
       updated_at: now,
     };
     return mockTable.insert<ProfileResponse>(PROFILES_TABLE, created);
+  },
+
+  seedProfileFromAuth(userId: string, fullName?: string, phone?: string | null): void {
+    const profiles = mockTable.getAll<ProfileResponse>(PROFILES_TABLE);
+    const existing = profiles.find((p) => p.user_id === userId);
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const patch: Partial<ProfileResponse> = {};
+      if (fullName && (!existing.full_name || existing.full_name === "User")) {
+        patch.full_name = fullName;
+      }
+      if (phone && !existing.phone) {
+        patch.phone = phone;
+      }
+      if (Object.keys(patch).length > 0) {
+        mockTable.update<ProfileResponse>(PROFILES_TABLE, "user_id", userId, patch);
+      }
+    } else {
+      const created: ProfileResponse = {
+        id: mockTable.genId(),
+        user_id: userId,
+        full_name: fullName || "User",
+        phone: phone || null,
+        address: null,
+        city: null,
+        state: null,
+        pincode: null,
+        avatar_url: null,
+        preferred_language: "en",
+        created_at: now,
+        updated_at: now,
+      };
+      mockTable.insert<ProfileResponse>(PROFILES_TABLE, created);
+    }
   },
 
   async updateProfile(userId: string, profile: Partial<Omit<ProfileResponse, "id" | "user_id" | "created_at" | "updated_at">>): Promise<ProfileResponse> {

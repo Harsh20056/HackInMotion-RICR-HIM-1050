@@ -41,7 +41,6 @@ frontend/.env
 # Except README.md, project docs, and contributor-facing markdown
 !/README.md
 !/api-documentation.md
-!/docs/**/*.md
 !/backend/README.md
 !/CONTRIBUTING.md
 !/.github/**/*.md

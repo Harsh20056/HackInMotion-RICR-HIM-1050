@@ -5,6 +5,7 @@ import { AuthChangeEvent, AuthSession, AuthUser } from "@/shared/types/domain/Au
 import { LoginInput } from "../validation/loginSchema";
 import { SignupInput } from "../validation/signupSchema";
 import { AuthError } from "@/shared/errors/errors";
+import { profileRepository } from "@/features/profile/repositories/profileRepository";
 
 const AUTH_EVENT = "samadhan_auth_change";
 
@@ -18,7 +19,7 @@ interface ApiUser {
 }
 
 function toAuthUser(u: ApiUser): AuthUser {
-  return { id: u.id, email: u.email, user_metadata: { full_name: u.fullName, role: u.role, departmentId: u.departmentId } };
+  return { id: u.id, email: u.email, user_metadata: { full_name: u.fullName, phone: u.phone || undefined, role: u.role, departmentId: u.departmentId } };
 }
 
 function emitAuthChange(event: AuthChangeEvent, session: AuthSession | null): void {
@@ -33,8 +34,7 @@ export const authRepository = {
         auth: false,
         body: { email: input.email, password: input.password, fullName: input.fullName },
       });
-      // Matches the prior sign-up-then-sign-in UX: account is created but
-      // not persisted as the active session here.
+      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone);
       return { user: toAuthUser(data.user), access_token: data.accessToken };
     } catch (error: any) {
       throw new AuthError(error.message, error);
@@ -49,6 +49,7 @@ export const authRepository = {
         body: { email: input.email, password: input.password },
       });
       tokenStore.setTokens(data.accessToken, data.refreshToken);
+      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone);
       const session: AuthSession = { user: toAuthUser(data.user), access_token: data.accessToken };
       emitAuthChange("SIGNED_IN", session);
       return session;
@@ -66,6 +67,7 @@ export const authRepository = {
     if (!tokenStore.getAccessToken()) return null;
     try {
       const user = await apiRequest<ApiUser>("/auth/me");
+      profileRepository.seedProfileFromAuth(user.id, user.fullName, user.phone);
       return { user: toAuthUser(user), access_token: tokenStore.getAccessToken()! };
     } catch {
       tokenStore.clear();

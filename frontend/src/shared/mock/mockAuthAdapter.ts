@@ -6,6 +6,7 @@
 // by the Phase 2 backend.
 
 import { AuthUser, AuthSession, AuthChangeEvent } from "@/shared/types/domain/AuthUser";
+import { profileRepository } from "@/features/profile/repositories/profileRepository";
 
 const USERS_KEY = "samadhan_mock_auth_users";
 const SESSION_KEY = "samadhan_mock_auth_session";
@@ -74,6 +75,7 @@ export const mockAuthAdapter = {
     };
     users.push(user);
     writeUsers(users);
+    profileRepository.seedProfileFromAuth(user.id, user.full_name);
     // Account is created but not signed in yet — mirrors the sign-up-then-sign-in flow.
     return buildSession(user.id) ?? { user: toAuthUser(user), access_token: `mock-token-${user.id}` };
   },
@@ -87,6 +89,7 @@ export const mockAuthAdapter = {
       throw new Error("Invalid email or password.");
     }
     window.localStorage.setItem(SESSION_KEY, user.id);
+    profileRepository.seedProfileFromAuth(user.id, user.full_name);
     const session = buildSession(user.id)!;
     emitAuthChange("SIGNED_IN", session);
     return session;

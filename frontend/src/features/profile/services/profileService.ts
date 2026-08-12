@@ -1,6 +1,7 @@
 import { profileRepository } from "../repositories/profileRepository";
 import { Profile } from "@/shared/types/domain/Profile";
 import { ProfileResponse } from "@/shared/contracts/ProfileResponse";
+import { AuthUser } from "@/shared/types/domain/AuthUser";
 
 export const profileService = {
   mapResponseToDomain(raw: ProfileResponse): Profile {
@@ -19,8 +20,8 @@ export const profileService = {
     };
   },
 
-  async getProfile(userId: string): Promise<Profile> {
-    const raw = await profileRepository.fetchProfile(userId);
+  async getProfile(userId: string, authUser?: AuthUser | null): Promise<Profile> {
+    const raw = await profileRepository.fetchProfile(userId, authUser);
     return this.mapResponseToDomain(raw);
   },
 
