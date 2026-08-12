@@ -11,6 +11,7 @@ import { departmentsRouter } from "./modules/departments/departments.controller.
 import { workOrdersRouter } from "./modules/workOrders/workOrders.controller.js";
 import { uploadsRouter } from "./modules/uploads/uploads.controller.js";
 import { usersRouter } from "./modules/users/users.controller.js";
+import { analyticsRouter } from "./modules/analytics/analytics.controller.js";
 
 export function createApp() {
   const app = express();
@@ -28,6 +29,7 @@ export function createApp() {
   app.use("/work-orders", workOrdersRouter);
   app.use("/uploads", uploadsRouter);
   app.use("/users", usersRouter);
+  app.use("/analytics", analyticsRouter);
 
   app.use(errorHandler);
 

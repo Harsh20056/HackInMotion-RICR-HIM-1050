@@ -17,7 +17,9 @@ export const listIssuesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   categoryCode: z.string().optional(),
-  status: z.enum(["reported", "acknowledged", "in_progress", "resolved", "rejected", "closed"]).optional(),
+  status: z
+    .enum(["reported", "acknowledged", "in_progress", "resolved", "verified", "rejected", "reopened", "closed"])
+    .optional(),
   departmentId: z.string().uuid().optional(),
   reportedBy: z.string().uuid().optional(),
   supportedBy: z.string().uuid().optional(),
@@ -35,3 +37,32 @@ export const confirmDuplicateSchema = z.object({
   description: z.string().min(1).max(5000),
 });
 export type ConfirmDuplicateInput = z.infer<typeof confirmDuplicateSchema>;
+
+export const ISSUE_STATUSES = [
+  "reported",
+  "acknowledged",
+  "in_progress",
+  "resolved",
+  "verified",
+  "rejected",
+  "reopened",
+  "closed",
+] as const;
+
+export const transitionStatusSchema = z.object({
+  status: z.enum(ISSUE_STATUSES),
+  reason: z.string().max(1000).optional(),
+  resolutionNote: z.string().max(5000).optional(),
+  proofUrl: z.string().url().optional(),
+  proofPublicId: z.string().max(300).optional(),
+});
+export type TransitionStatusInput = z.infer<typeof transitionStatusSchema>;
+
+export const reopenSchema = z.object({
+  reason: z.string().min(1, "Please say why this issue should be reopened.").max(1000),
+});
+
+export const verifyIssueSchema = z.object({
+  /** true = confirms the issue is real, false = disputes it */
+  vote: z.boolean(),
+});

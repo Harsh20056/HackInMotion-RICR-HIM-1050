@@ -46,6 +46,15 @@ const CITIES: { name: string; lat: number; lng: number }[] = [
 
 const ISSUE_STATUSES = ["reported", "acknowledged", "in_progress", "resolved", "rejected"] as const;
 
+/** The transition chain that legitimately leads to each seeded end state. */
+const STATUS_CHAINS: Record<(typeof ISSUE_STATUSES)[number], string[]> = {
+  reported: ["reported"],
+  acknowledged: ["reported", "acknowledged"],
+  in_progress: ["reported", "acknowledged", "in_progress"],
+  resolved: ["reported", "acknowledged", "in_progress", "resolved"],
+  rejected: ["reported", "rejected"],
+};
+
 const TITLES: Record<string, string[]> = {
   water: ["Water pipeline leak on main road", "No water supply for 3 days", "Contaminated water in tap"],
   sanitation: ["Overflowing garbage bin", "Garbage not collected for a week", "Open dumping near residential area"],
@@ -194,10 +203,15 @@ async function upsertUsers(deptIds: Map<string, string>) {
     citizenIds.push(row.id);
   }
 
-  return { citizenIds };
+  return { citizenIds, deptAdminIds };
 }
 
-async function seedIssues(catIds: Map<string, string>, deptIds: Map<string, string>, citizenIds: string[]) {
+async function seedIssues(
+  catIds: Map<string, string>,
+  deptIds: Map<string, string>,
+  citizenIds: string[],
+  deptAdminIds: Map<string, string>
+) {
   const existingCount = await prisma.issue.count();
   if (existingCount > 0) {
     console.log(`Skipping issue seed — ${existingCount} issues already exist (idempotent).`);
@@ -257,20 +271,74 @@ async function seedIssues(catIds: Map<string, string>, deptIds: Map<string, stri
       });
     }
 
-    await prisma.issueStatusHistory.create({
-      data: {
-        issueId,
-        fromStatus: null,
-        toStatus: "reported",
-        actorId: reporterId,
-        actorRole: "citizen",
-        reason: "Issue reported",
-        createdAt,
-      },
-    });
+    // Write the full transition chain that would have produced this
+    // status, with realistic gaps between steps. Analytics derive
+    // resolution time from these rows, so an issue that merely *says*
+    // "resolved" without the matching history would be invisible to them.
+    const chain = STATUS_CHAINS[status];
+    const deptAdminId = deptAdminIds.get(category.dept)!;
+    let cursor = createdAt.getTime();
+
+    for (let step = 0; step < chain.length; step++) {
+      const toStatus = chain[step];
+      const fromStatus = step === 0 ? null : chain[step - 1];
+      if (step > 0) {
+        // 4h – 5d between transitions
+        cursor += (4 + Math.random() * 116) * 3_600_000;
+      }
+      const at = new Date(Math.min(cursor, Date.now()));
+      const byCitizen = toStatus === "reported";
+
+      await prisma.issueStatusHistory.create({
+        data: {
+          issueId,
+          fromStatus,
+          toStatus,
+          actorId: byCitizen ? reporterId : deptAdminId,
+          actorRole: byCitizen ? "citizen" : "dept_admin",
+          reason: byCitizen ? "Issue reported" : `Status moved to ${toStatus}`,
+          createdAt: at,
+        },
+      });
+
+      if (toStatus === "acknowledged") {
+        await prisma.issue.update({ where: { id: issueId }, data: { acknowledgedAt: at } });
+      }
+      if (toStatus === "resolved") {
+        await prisma.issue.update({
+          where: { id: issueId },
+          data: {
+            resolvedAt: at,
+            resolvedById: deptAdminId,
+            resolutionNote: "Work completed and inspected by the department team.",
+          },
+        });
+        await prisma.issueMedia.create({
+          data: {
+            issueId,
+            kind: "resolution_proof",
+            url: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+            publicId: `seed/resolution-${issueId}`,
+            uploadedBy: deptAdminId,
+          },
+        });
+      }
+    }
+
+    // A few resolved issues also carry citizen verification votes so the
+    // community-confidence UI has genuine rows to read.
+    if (status === "resolved" || status === "in_progress") {
+      for (const voterId of citizenIds) {
+        if (Math.random() < 0.55) {
+          await prisma.citizenVerification.create({
+            data: { issueId, userId: voterId, vote: Math.random() < 0.8 },
+          });
+        }
+      }
+    }
   }
 
-  console.log("Seeded 40 issues.");
+  console.log("Seeded 40 issues with full status history.");
 }
 
 async function main() {
@@ -284,10 +352,10 @@ async function main() {
   await upsertRoutingRules(deptIds, catIds);
 
   console.log("Seeding users...");
-  const { citizenIds } = await upsertUsers(deptIds);
+  const { citizenIds, deptAdminIds } = await upsertUsers(deptIds);
 
   console.log("Seeding issues...");
-  await seedIssues(catIds, deptIds, citizenIds);
+  await seedIssues(catIds, deptIds, citizenIds, deptAdminIds);
 
   console.log("Seed complete.");
 }

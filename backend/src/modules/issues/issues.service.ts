@@ -1,4 +1,5 @@
 import { prisma } from "../../shared/lib/prisma.js";
+import { eventBus } from "../../shared/lib/eventBus.js";
 import { issuesRepository, IssueRow } from "./issues.repository.js";
 import { generatePublicRef } from "../../shared/lib/publicRef.js";
 import { NotFoundError, ValidationError, ConflictError } from "../../shared/errors/AppError.js";
@@ -128,7 +129,17 @@ export const issuesService = {
     });
 
     const row = await issuesRepository.findById(issue.id);
-    return { issue: toApiIssue(row!) };
+    const apiIssue = toApiIssue(row!);
+
+    eventBus.emitIssueEvent({
+      type: "issue.created",
+      issueId: issue.id,
+      departmentIds: rules.map((r) => r.departmentId),
+      payload: { issue: apiIssue },
+      at: new Date().toISOString(),
+    });
+
+    return { issue: apiIssue };
   },
 
   /** Citizen confirms an existing issue matches theirs — adds a corroborating report, no new issue. */

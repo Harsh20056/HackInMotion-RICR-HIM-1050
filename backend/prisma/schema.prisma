@@ -24,7 +24,9 @@ enum IssueStatus {
   acknowledged
   in_progress
   resolved
+  verified
   rejected
+  reopened
   closed
 }
 
@@ -117,11 +119,13 @@ model User {
   createdAt    DateTime   @default(now()) @map("created_at")
 
   reportedIssues     Issue[]         @relation("IssueReportedBy")
+  resolvedIssues     Issue[]         @relation("IssueResolvedBy")
   issueReports       IssueReport[]
   uploadedMedia      IssueMedia[]
   assignedWorkOrders WorkOrder[]     @relation("WorkOrderAssignee")
   statusHistoryEntries IssueStatusHistory[]
   auditLogEntries    AuditLog[]
+  verifications      CitizenVerification[]
 
   @@index([departmentId, role])
   @@map("users")
@@ -147,9 +151,14 @@ model Issue {
   reporter        User        @relation("IssueReportedBy", fields: [reportedBy], references: [id])
   dedupClusterId  String?     @map("dedup_cluster_id") @db.Uuid
   supportsCount   Int         @default(0) @map("supports_count")
+  resolutionNote  String?     @map("resolution_note")
+  resolvedById    String?     @map("resolved_by") @db.Uuid
+  resolvedByUser  User?       @relation("IssueResolvedBy", fields: [resolvedById], references: [id])
+  reopenCount     Int         @default(0) @map("reopen_count")
   createdAt       DateTime    @default(now()) @map("created_at")
   acknowledgedAt  DateTime?   @map("acknowledged_at")
   resolvedAt      DateTime?   @map("resolved_at")
+  verifiedAt      DateTime?   @map("verified_at")
   closedAt        DateTime?   @map("closed_at")
 
   reports        IssueReport[]
@@ -157,9 +166,28 @@ model Issue {
   workOrders     WorkOrder[]
   statusHistory  IssueStatusHistory[]
   supports       IssueSupport[]
+  verifications  CitizenVerification[]
 
   @@index([categoryId, status, createdAt])
   @@map("issues")
+}
+
+// Citizen confirm/dispute vote on whether an issue is real, one per
+// (issue, user). Replaces the previous localStorage-only implementation.
+model CitizenVerification {
+  id        String   @id @default(uuid()) @db.Uuid
+  issueId   String   @map("issue_id") @db.Uuid
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// true = confirms the issue is real, false = disputes it
+  vote      Boolean
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([issueId, userId])
+  @@index([issueId])
+  @@map("citizen_verifications")
 }
 
 // A citizen "support" (upvote) on an issue — one per user per issue.
