@@ -62,3 +62,6 @@ __pycache__/
 # Firebase AI Agent
 .agents/
 skills-lock.json
+
+# Claude Code local configuration
+.claude/
