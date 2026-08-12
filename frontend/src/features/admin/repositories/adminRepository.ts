@@ -68,6 +68,15 @@ const ISSUE_STATUS_TO_WORK_ORDER_STATUS: Record<string, string> = {
   [IssueStatus.REJECTED]: "rejected",
 };
 
+// The backend's role enum ("citizen" | "dept_admin" | "super_admin") doesn't
+// share string values with the frontend's UserRole domain type, which is
+// off-limits to change. Map explicitly rather than casting.
+const API_ROLE_TO_USER_ROLE: Record<string, UserRole> = {
+  citizen: UserRole.USER,
+  dept_admin: UserRole.DEPARTMENT_ADMIN,
+  super_admin: UserRole.SUPER_ADMIN,
+};
+
 async function fetchMe(): Promise<ApiMeUser | null> {
   try {
     return await apiRequest<ApiMeUser>("/auth/me");
@@ -79,12 +88,12 @@ async function fetchMe(): Promise<ApiMeUser | null> {
 export const adminRepository = {
   async checkIsAdmin(_userId: string): Promise<boolean> {
     const me = await fetchMe();
-    return me?.role === UserRole.ADMIN || me?.role === UserRole.SUPER_ADMIN || me?.role === UserRole.DEPARTMENT_ADMIN;
+    return me?.role === "dept_admin" || me?.role === "super_admin";
   },
 
   async getUserRole(_userId: string): Promise<{ role: UserRole | null; department: string | null }> {
     const me = await fetchMe();
-    return { role: (me?.role as UserRole) ?? null, department: me?.departmentId ?? null };
+    return { role: me ? (API_ROLE_TO_USER_ROLE[me.role] ?? null) : null, department: me?.departmentId ?? null };
   },
 
   async fetchAllIssuesAdmin(): Promise<IssueResponse[]> {
