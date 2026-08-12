@@ -8,6 +8,8 @@ declare global {
         actorId: string | null;
         ipHash: string | null;
       };
+      /** Set by the `validate(schema, "query")` middleware — req.query itself is read-only in Express 5. */
+      validatedQuery?: unknown;
     }
   }
 }

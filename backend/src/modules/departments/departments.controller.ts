@@ -16,7 +16,7 @@ departmentsRouter.get(
   validate(paginationQuery, "query"),
   async (req, res, next) => {
     try {
-      const { page, pageSize } = req.query as unknown as { page: number; pageSize: number };
+      const { page, pageSize } = req.validatedQuery as { page: number; pageSize: number };
       const departmentId = req.params.departmentId as string;
 
       const [workOrders, total] = await Promise.all([

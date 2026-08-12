@@ -10,7 +10,7 @@ export const issuesRouter = Router();
 
 issuesRouter.get("/", validate(listIssuesQuerySchema, "query"), async (req, res, next) => {
   try {
-    res.json(await issuesService.list(req.query as any));
+    res.json(await issuesService.list(req.validatedQuery as any));
   } catch (err) {
     next(err);
   }
