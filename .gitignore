@@ -44,6 +44,11 @@ frontend/.env
 !/backend/README.md
 !/CONTRIBUTING.md
 !/.github/**/*.md
+# docs/ is committed project documentation. Without this exception the
+# blanket **/*.md rule above silently swallowed it — which is why the
+# Phase 1.5 docs were written to disk but never landed in a commit.
+!/docs/
+!/docs/**/*.md
 
 # Python virtual environments & cache files
 .venv/
