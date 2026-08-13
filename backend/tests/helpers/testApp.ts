@@ -2,6 +2,7 @@ import { createApp } from "../../src/app.js";
 import { prisma } from "../../src/shared/lib/prisma.js";
 import bcrypt from "bcrypt";
 import { Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 
 export const app = createApp();
 
@@ -49,8 +50,9 @@ export async function insertRawIssue(opts: {
   title?: string;
 }) {
   const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    INSERT INTO issues (public_ref, title, description, category_id, reported_by, location)
+    INSERT INTO issues (id, public_ref, title, description, category_id, reported_by, location)
     VALUES (
+      ${randomUUID()}::uuid,
       ${"SAM-TEST-" + Math.random().toString(36).slice(2, 8).toUpperCase()},
       ${opts.title ?? "Test issue"}, 'Test issue description', ${opts.categoryId}::uuid, ${opts.reportedBy}::uuid,
       ST_SetSRID(ST_MakePoint(${opts.longitude}, ${opts.latitude}), 4326)::geography
