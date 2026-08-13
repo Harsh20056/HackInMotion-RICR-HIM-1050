@@ -111,7 +111,27 @@ try {
         { timeout: 20_000 }
       );
 
-      const html = await page.content();
+      let html = await page.content();
+
+      // Keep the resolved <head>, drop the rendered body.
+      //
+      // The app mounts with createRoot, not hydrateRoot, so React discards
+      // whatever markup is already in #root and renders from scratch. Shipping
+      // the rendered DOM therefore costs a larger document to download and
+      // parse for markup that is immediately thrown away — measured at
+      // Lighthouse performance 88 -> 68 on /transparency. The SEO value lives
+      // in the head (title, description, canonical, OG/Twitter, JSON-LD),
+      // which is what social unfurlers read and what JS-executing crawlers
+      // confirm, so that is what we keep.
+      const rootOpen = '<div id="root">';
+      const start = html.indexOf(rootOpen);
+      const bodyEnd = html.lastIndexOf("</body>");
+      if (start !== -1 && bodyEnd > start) {
+        const closeIdx = html.lastIndexOf("</div>", bodyEnd);
+        if (closeIdx > start) {
+          html = html.slice(0, start + rootOpen.length) + html.slice(closeIdx);
+        }
+      }
       const outDir = route === "/" ? DIST : path.join(DIST, route.replace(/^\//, ""));
       await mkdir(outDir, { recursive: true });
       await writeFile(path.join(outDir, "index.html"), html, "utf8");
