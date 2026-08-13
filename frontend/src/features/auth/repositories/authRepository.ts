@@ -6,9 +6,13 @@ import { LoginInput } from "../validation/loginSchema";
 import { SignupInput } from "../validation/signupSchema";
 import { AuthError } from "@/shared/errors/errors";
 import { profileRepository } from "@/features/profile/repositories/profileRepository";
-import { DEMO_CREDENTIALS } from "../config/demoCredentials";
 
 const AUTH_EVENT = "samadhan_auth_change";
+
+// The backend user table carries no location, so a locally-seeded profile
+// starts on the demo city until the citizen edits it in /profile.
+const DEFAULT_PROFILE_CITY = "Bhopal";
+const DEFAULT_PROFILE_STATE = "Madhya Pradesh";
 
 interface ApiUser {
   id: string;
@@ -43,29 +47,6 @@ export const authRepository = {
   },
 
   async signIn(input: LoginInput): Promise<AuthSession> {
-    const demo = DEMO_CREDENTIALS.find(c => c.email.toLowerCase() === input.email.toLowerCase());
-    if (demo) {
-      if (input.password !== demo.password) {
-        throw new AuthError("Invalid password for demo account");
-      }
-      const demoToken = `demo-token-${demo.id}`;
-      tokenStore.setTokens(demoToken, `demo-refresh-${demo.id}`);
-      profileRepository.seedProfileFromAuth(`demo-${demo.id}`, demo.fullName, null, demo.city, demo.state);
-      
-      const apiUser: ApiUser = {
-        id: `demo-${demo.id}`,
-        email: demo.email,
-        fullName: demo.fullName,
-        phone: null,
-        role: demo.role,
-        departmentId: demo.departmentId,
-      };
-      
-      const session: AuthSession = { user: toAuthUser(apiUser), access_token: demoToken };
-      emitAuthChange("SIGNED_IN", session);
-      return session;
-    }
-
     try {
       const data = await apiRequest<{ user: ApiUser; accessToken: string; refreshToken: string }>("/auth/login", {
         method: "POST",
@@ -73,7 +54,7 @@ export const authRepository = {
         body: { email: input.email, password: input.password },
       });
       tokenStore.setTokens(data.accessToken, data.refreshToken);
-      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone);
+      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone, DEFAULT_PROFILE_CITY, DEFAULT_PROFILE_STATE);
       const session: AuthSession = { user: toAuthUser(data.user), access_token: data.accessToken };
       emitAuthChange("SIGNED_IN", session);
       return session;
@@ -90,27 +71,10 @@ export const authRepository = {
   async getSession(): Promise<AuthSession | null> {
     const token = tokenStore.getAccessToken();
     if (!token) return null;
-    
-    if (token.startsWith("demo-token-")) {
-      const id = token.substring("demo-token-".length);
-      const demo = DEMO_CREDENTIALS.find(c => c.id === id);
-      if (demo) {
-        const apiUser: ApiUser = {
-          id: `demo-${demo.id}`,
-          email: demo.email,
-          fullName: demo.fullName,
-          phone: null,
-          role: demo.role,
-          departmentId: demo.departmentId,
-        };
-        profileRepository.seedProfileFromAuth(apiUser.id, demo.fullName, null, demo.city, demo.state);
-        return { user: toAuthUser(apiUser), access_token: token };
-      }
-    }
 
     try {
       const user = await apiRequest<ApiUser>("/auth/me");
-      profileRepository.seedProfileFromAuth(user.id, user.fullName, user.phone);
+      profileRepository.seedProfileFromAuth(user.id, user.fullName, user.phone, DEFAULT_PROFILE_CITY, DEFAULT_PROFILE_STATE);
       return { user: toAuthUser(user), access_token: tokenStore.getAccessToken()! };
     } catch {
       tokenStore.clear();

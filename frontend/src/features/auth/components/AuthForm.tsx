@@ -23,7 +23,34 @@ import {
   Building
 } from "lucide-react";
 import { logger } from "@/shared/services/logger";
-import { DEMO_CREDENTIALS, DemoCredential } from "../config/demoCredentials";
+
+/**
+ * Autofill shortcuts for the seeded demo accounts. Display-only — these
+ * emails/passwords exist in the database (see backend/prisma/seed.ts), so
+ * sign-in still goes through the real /auth/login endpoint.
+ */
+interface DemoCredential {
+  email: string;
+  password: string;
+  fullName: string;
+  city: string;
+  state: string;
+  roleLabel: string;
+}
+
+const DEMO_CITY = "Bhopal";
+const DEMO_STATE = "Madhya Pradesh";
+
+const DEMO_CREDENTIALS: DemoCredential[] = [
+  { email: "admin@samadhan.gov", password: "admin123", fullName: "Super Admin", roleLabel: "Super Admin", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.water@samadhan.gov", password: "dept123", fullName: "Jal Board Admin", roleLabel: "Water Supply", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.sanitation@samadhan.gov", password: "dept123", fullName: "Sanitation Admin", roleLabel: "Sanitation", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.electricity@samadhan.gov", password: "dept123", fullName: "Electricity Admin", roleLabel: "Electricity", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.pwd@samadhan.gov", password: "dept123", fullName: "PWD Admin", roleLabel: "Roads (PWD)", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.parks@samadhan.gov", password: "dept123", fullName: "Parks Admin", roleLabel: "Parks & Gardens", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.buildings@samadhan.gov", password: "dept123", fullName: "Buildings Admin", roleLabel: "Buildings", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "citizen@samadhan.gov", password: "citizen123", fullName: "Citizen User", roleLabel: "Citizen", city: DEMO_CITY, state: DEMO_STATE },
+];
 
 export function AuthForm() {
   const location = useLocation();
@@ -399,7 +426,7 @@ export function AuthForm() {
             <div className="flex flex-wrap gap-2.5 justify-center">
               {DEMO_CREDENTIALS.map((demo) => (
                 <button
-                  key={demo.id}
+                  key={demo.email}
                   type="button"
                   onClick={() => handleSelectDemo(demo)}
                   className="bg-card border border-border/80 hover:border-primary/50 rounded-lg px-3 py-1 text-xs font-mono font-medium hover:bg-muted text-foreground transition-all cursor-pointer shadow-sm hover:shadow"

@@ -357,6 +357,16 @@ async function upsertUsers(deptIds: Map<string, string>) {
 
   const citizenHash = await bcrypt.hash(requireEnv("SEED_CITIZEN_PASSWORD"), BCRYPT_ROUNDS);
   const citizenIds: string[] = [];
+  
+  // Seed the standard demo citizen
+  const citizenDemoEmail = "citizen@samadhan.gov";
+  const citizenDemoRow = await prisma.user.upsert({
+    where: { email: citizenDemoEmail },
+    update: { fullName: "Citizen User" },
+    create: { email: citizenDemoEmail, passwordHash: citizenHash, fullName: "Citizen User", role: "citizen" },
+  });
+  citizenIds.push(citizenDemoRow.id);
+
   for (let i = 0; i < CITIZEN_NAMES.length; i++) {
     const email = `citizen${i + 1}@samadhan.gov.in`;
     const row = await prisma.user.upsert({
