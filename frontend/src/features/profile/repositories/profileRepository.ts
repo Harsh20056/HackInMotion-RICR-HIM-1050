@@ -4,9 +4,32 @@
 import { mockTable } from "@/shared/mock/mockLocalStore";
 import { ProfileResponse } from "@/shared/contracts/ProfileResponse";
 import { AuthUser } from "@/shared/types/domain/AuthUser";
+import { apiRequest } from "@/shared/lib/apiClient";
+import { logger } from "@/shared/services/logger";
 
 const PROFILES_TABLE = "profiles";
 const NOTIFS_TABLE = "notification_preferences";
+
+/**
+ * Backend notification_preference row. Only email/in-app delivery and issue
+ * status updates actually exist server-side — SMS, scheme alerts, document
+ * reminders and the weekly digest have no backend channel yet, so those
+ * toggles stay mock-only below.
+ */
+interface BackendNotificationPreferences {
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+  statusChanges: boolean;
+  assignments: boolean;
+  slaAlerts: boolean;
+}
+
+/** Local mock field -> real backend field, for the toggles that actually control delivery. */
+const BACKEND_BACKED_FIELDS: Record<string, keyof BackendNotificationPreferences> = {
+  email_notifications: "emailEnabled",
+  push_notifications: "inAppEnabled",
+  issue_updates: "statusChanges",
+};
 
 interface NotificationPreferencesRow {
   id: string;
@@ -126,27 +149,52 @@ export const profileRepository = {
 
   async fetchNotificationPreferences(userId: string): Promise<NotificationPreferencesRow> {
     const rows = mockTable.getAll<NotificationPreferencesRow>(NOTIFS_TABLE);
-    const existing = rows.find((r) => r.user_id === userId);
-    if (existing) return existing;
+    let row = rows.find((r) => r.user_id === userId);
 
-    const now = new Date().toISOString();
-    const created: NotificationPreferencesRow = {
-      id: mockTable.genId(),
-      user_id: userId,
-      email_notifications: true,
-      sms_notifications: false,
-      push_notifications: true,
-      issue_updates: true,
-      scheme_alerts: true,
-      document_reminders: true,
-      weekly_digest: false,
-      created_at: now,
-      updated_at: now,
-    };
-    return mockTable.insert<NotificationPreferencesRow>(NOTIFS_TABLE, created);
+    if (!row) {
+      const now = new Date().toISOString();
+      const created: NotificationPreferencesRow = {
+        id: mockTable.genId(),
+        user_id: userId,
+        email_notifications: true,
+        sms_notifications: false,
+        push_notifications: true,
+        issue_updates: true,
+        scheme_alerts: true,
+        document_reminders: true,
+        weekly_digest: false,
+        created_at: now,
+        updated_at: now,
+      };
+      row = mockTable.insert<NotificationPreferencesRow>(NOTIFS_TABLE, created);
+    }
+
+    // The channels that actually gate delivery live on the real backend —
+    // overlay them so the toggle reflects what will really happen.
+    try {
+      const backendPrefs = await apiRequest<BackendNotificationPreferences>("/notifications/preferences");
+      row = {
+        ...row,
+        email_notifications: backendPrefs.emailEnabled,
+        push_notifications: backendPrefs.inAppEnabled,
+        issue_updates: backendPrefs.statusChanges,
+      };
+    } catch (err) {
+      logger.error("Failed to fetch backend notification preferences:", err);
+    }
+
+    return row;
   },
 
   async updateNotificationPreferences(userId: string, key: string, value: boolean): Promise<NotificationPreferencesRow> {
+    const backendField = BACKEND_BACKED_FIELDS[key];
+    if (backendField) {
+      await apiRequest<BackendNotificationPreferences>("/notifications/preferences", {
+        method: "PATCH",
+        body: { [backendField]: value },
+      });
+    }
+
     const updated = mockTable.update<NotificationPreferencesRow>(NOTIFS_TABLE, "user_id", userId, {
       [key]: value,
       updated_at: new Date().toISOString(),
