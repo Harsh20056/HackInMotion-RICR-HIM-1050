@@ -10,7 +10,22 @@ import { prisma } from "../../shared/lib/prisma.js";
  * edit would corrupt.
  */
 
-const RESOLUTION_DURATIONS = Prisma.sql`
+/**
+ * `AND <alias>.city = ...` / `WHERE <alias>.city = ...` fragments, empty when
+ * the caller is unscoped (a citizen or super_admin reading state-wide figures).
+ *
+ * `Prisma.raw` is only ever handed a literal alias written in this file — the
+ * city value itself stays a bound parameter.
+ */
+function cityAnd(alias: string, city: string | null): Prisma.Sql {
+  return city === null ? Prisma.empty : Prisma.sql`AND ${Prisma.raw(alias)}.city = ${city}`;
+}
+
+function cityWhere(alias: string, city: string | null): Prisma.Sql {
+  return city === null ? Prisma.empty : Prisma.sql`WHERE ${Prisma.raw(alias)}.city = ${city}`;
+}
+
+const resolutionDurations = (city: string | null) => Prisma.sql`
   SELECT
     i.id,
     i.category_id,
@@ -22,6 +37,7 @@ const RESOLUTION_DURATIONS = Prisma.sql`
     WHERE to_status = 'resolved'
     GROUP BY issue_id
   ) h ON h.issue_id = i.id
+  ${cityWhere("i", city)}
 `;
 
 function toNumber(v: unknown): number {
@@ -38,16 +54,25 @@ function toHours(seconds: unknown): number | null {
 }
 
 export const analyticsService = {
-  async overview() {
+  async overview(city: string | null = null) {
     const [statusRows, categoryRows, totals, durations] = await Promise.all([
       prisma.$queryRaw<{ status: string; count: bigint }[]>(
-        Prisma.sql`SELECT status::text AS status, COUNT(*)::bigint AS count FROM issues GROUP BY status ORDER BY count DESC`
+        Prisma.sql`
+          SELECT status::text AS status, COUNT(*)::bigint AS count
+          FROM issues i
+          ${cityWhere("i", city)}
+          GROUP BY status
+          ORDER BY count DESC
+        `
       ),
       prisma.$queryRaw<{ code: string; name_en: string; count: bigint }[]>(
         Prisma.sql`
           SELECT c.code, c.name_en, COUNT(i.id)::bigint AS count
           FROM issue_categories c
-          LEFT JOIN issues i ON i.category_id = c.id
+          -- City goes in the ON clause, not a WHERE: a category with no
+          -- issues in this city must still appear with a count of 0 rather
+          -- than dropping out of the breakdown entirely.
+          LEFT JOIN issues i ON i.category_id = c.id ${cityAnd("i", city)}
           GROUP BY c.code, c.name_en
           ORDER BY count DESC
         `
@@ -63,7 +88,8 @@ export const analyticsService = {
             COUNT(*) FILTER (WHERE reopen_count > 0)::bigint AS reopened,
             COUNT(*) FILTER (WHERE status NOT IN ('resolved','verified','closed','rejected'))::bigint AS open,
             COALESCE(SUM(supports_count), 0)::bigint AS supports
-          FROM issues
+          FROM issues i
+          ${cityWhere("i", city)}
         `
       ),
       prisma.$queryRaw<{ avg_seconds: number | null; p90_seconds: number | null; resolved_count: bigint }[]>(
@@ -72,7 +98,7 @@ export const analyticsService = {
             AVG(seconds) AS avg_seconds,
             PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY seconds) AS p90_seconds,
             COUNT(*)::bigint AS resolved_count
-          FROM (${RESOLUTION_DURATIONS}) d
+          FROM (${resolutionDurations(city)}) d
         `
       ),
     ]);
@@ -99,7 +125,7 @@ export const analyticsService = {
     };
   },
 
-  async departments() {
+  async departments(city: string | null = null) {
     const rows = await prisma.$queryRaw<
       {
         id: string;
@@ -112,21 +138,25 @@ export const analyticsService = {
         p90_seconds: number | null;
       }[]
     >(Prisma.sql`
-      WITH durations AS (${RESOLUTION_DURATIONS})
+      WITH durations AS (${resolutionDurations(city)})
       SELECT
         d.id, d.code, d.name_en,
-        COUNT(DISTINCT wo.issue_id)::bigint AS total,
-        COUNT(DISTINCT wo.issue_id) FILTER (
+        -- Counts DISTINCT i.id, not wo.issue_id: when the city filter below
+        -- excludes an issue the work_orders row survives the LEFT JOIN, so
+        -- counting wo.issue_id would still tally out-of-city work. i.id is
+        -- NULL for those rows and COUNT ignores NULLs.
+        COUNT(DISTINCT i.id)::bigint AS total,
+        COUNT(DISTINCT i.id) FILTER (
           WHERE i.status NOT IN ('resolved','verified','closed','rejected')
         )::bigint AS open,
-        COUNT(DISTINCT wo.issue_id) FILTER (
+        COUNT(DISTINCT i.id) FILTER (
           WHERE i.status IN ('resolved','verified','closed')
         )::bigint AS resolved,
         AVG(dur.seconds) AS avg_seconds,
         PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY dur.seconds) AS p90_seconds
       FROM departments d
       LEFT JOIN work_orders wo ON wo.department_id = d.id AND wo.role = 'primary'
-      LEFT JOIN issues i ON i.id = wo.issue_id
+      LEFT JOIN issues i ON i.id = wo.issue_id ${cityAnd("i", city)}
       LEFT JOIN durations dur ON dur.id = i.id
       WHERE d.active = true
       GROUP BY d.id, d.code, d.name_en
@@ -157,7 +187,7 @@ export const analyticsService = {
    * ~precision-degree grid and counted; cells with a single report are
    * dropped so the map shows genuine clusters rather than every pin.
    */
-  async hotspots(params: { precision?: number; minCount?: number } = {}) {
+  async hotspots(params: { precision?: number; minCount?: number } = {}, city: string | null = null) {
     const precision = params.precision ?? 0.02; // ≈2 km at the equator
     const minCount = params.minCount ?? 2;
 
@@ -172,6 +202,7 @@ export const analyticsService = {
         MODE() WITHIN GROUP (ORDER BY c.name_en) AS top_category
       FROM issues i
       JOIN issue_categories c ON c.id = i.category_id
+      ${cityWhere("i", city)}
       GROUP BY cell_lat, cell_lng
       HAVING COUNT(*) >= ${minCount}
       ORDER BY count DESC
@@ -191,7 +222,7 @@ export const analyticsService = {
   },
 
   /** Monthly report + resolution counts for the trailing N months. */
-  async trends(months = 6) {
+  async trends(months = 6, city: string | null = null) {
     const rows = await prisma.$queryRaw<{ month: Date; reported: bigint; resolved: bigint }[]>(Prisma.sql`
       WITH span AS (
         SELECT generate_series(
@@ -203,15 +234,18 @@ export const analyticsService = {
       -- Aggregate each series independently; joining the raw rows together
       -- would multiply them into a cartesian product per month.
       reported_by_month AS (
-        SELECT DATE_TRUNC('month', created_at) AS month, COUNT(*)::bigint AS n
-        FROM issues GROUP BY 1
+        SELECT DATE_TRUNC('month', i.created_at) AS month, COUNT(*)::bigint AS n
+        FROM issues i ${cityWhere("i", city)} GROUP BY 1
       ),
       resolved_by_month AS (
-        SELECT DATE_TRUNC('month', resolved_at) AS month, COUNT(*)::bigint AS n
+        SELECT DATE_TRUNC('month', f.resolved_at) AS month, COUNT(*)::bigint AS n
         FROM (
           SELECT issue_id, MIN(created_at) AS resolved_at
           FROM issue_status_history WHERE to_status = 'resolved' GROUP BY issue_id
         ) f
+        -- History rows carry no city of their own, so join back to the issue
+        -- to scope the resolved series the same way as the reported series.
+        JOIN issues i ON i.id = f.issue_id ${cityWhere("i", city)}
         GROUP BY 1
       )
       SELECT

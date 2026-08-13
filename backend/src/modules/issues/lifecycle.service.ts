@@ -3,6 +3,7 @@ import { prisma } from "../../shared/lib/prisma.js";
 import { eventBus } from "../../shared/lib/eventBus.js";
 import { AppError, ForbiddenError, NotFoundError } from "../../shared/errors/AppError.js";
 import { AccessTokenClaims } from "../../shared/lib/jwt.js";
+import { assertCityAccess } from "../../shared/middleware/rbac.js";
 import { isTransitionAllowed, actorMayTransition, timestampFieldFor, ALLOWED_ISSUE_TRANSITIONS } from "./lifecycle.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 
@@ -102,12 +103,15 @@ export const lifecycleService = {
     const permission = actorMayTransition(to, actor.role, isReporter);
     if (!permission.allowed) throw new ForbiddenError(permission.reason);
 
-    // A dept_admin may only act on issues routed to their own department.
+    // A dept_admin may only act on issues routed to their own department AND
+    // located in their own city — the department alone is shared across every
+    // city it operates in, so it is not a jurisdiction by itself.
     if (actor.role === "dept_admin") {
       const ownsWorkOrder = issue.workOrders.some((wo) => wo.departmentId === actor.departmentId);
       if (!ownsWorkOrder) {
         throw new ForbiddenError("This issue is not routed to your department.");
       }
+      assertCityAccess(actor, issue.city);
     }
 
     // Resolution evidence is mandatory (PS #5): a note explaining what was
@@ -187,6 +191,7 @@ export const lifecycleService = {
       type: "issue.status_changed",
       issueId,
       departmentIds: issue.workOrders.map((wo) => wo.departmentId),
+      city: issue.city,
       payload: { from, to, actorRole: actor.role, reason: input.reason ?? null },
       at: now.toISOString(),
     });

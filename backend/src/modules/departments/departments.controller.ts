@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../shared/lib/prisma.js";
 import { authenticate, authenticateSse } from "../../shared/middleware/authenticate.js";
-import { requireDepartmentAccess } from "../../shared/middleware/rbac.js";
+import { requireDepartmentAccess, resolveCityScope } from "../../shared/middleware/rbac.js";
 import { validate } from "../../shared/middleware/validate.js";
 import { uuidParam } from "../../shared/schemas/common.js";
 import { openSseStream } from "../../shared/lib/sse.js";
@@ -18,6 +18,12 @@ const queueQuerySchema = z.object({
     .enum(["reported", "acknowledged", "in_progress", "resolved", "verified", "rejected", "reopened", "closed"])
     .optional(),
   categoryCode: z.string().optional(),
+  /**
+   * Super-admin-only narrowing filter. A dept_admin's city comes from their
+   * token and this param is ignored for them, so it cannot be used to widen
+   * scope — see the effectiveCity resolution in the handler.
+   */
+  city: z.string().optional(),
   /** ISO timestamps bounding issue creation. */
   from: z.string().optional(),
   to: z.string().optional(),
@@ -50,7 +56,14 @@ departmentsRouter.get(
       const q = req.validatedQuery as z.infer<typeof queueQuerySchema>;
       const departmentId = req.params.departmentId as string;
 
+      // A department row is shared by every city it operates in, so the
+      // department filter alone is not a jurisdiction. Narrow to the caller's
+      // own city; a super_admin (null scope) may optionally pick one.
+      const cityScope = resolveCityScope(req.auth!);
+      const effectiveCity = cityScope ?? q.city ?? null;
+
       const conditions: Prisma.Sql[] = [Prisma.sql`wo.department_id = ${departmentId}::uuid`];
+      if (effectiveCity !== null) conditions.push(Prisma.sql`i.city = ${effectiveCity}`);
       if (q.status) conditions.push(Prisma.sql`i.status = ${q.status}::"IssueStatus"`);
       if (q.categoryCode) conditions.push(Prisma.sql`c.code = ${q.categoryCode}`);
       if (q.from) conditions.push(Prisma.sql`i.created_at >= ${new Date(q.from)}`);
@@ -77,6 +90,7 @@ departmentsRouter.get(
           latitude: number;
           longitude: number;
           address: string | null;
+          city: string | null;
           priority: number;
           reported_by: string;
           reporter_name: string | null;
@@ -92,7 +106,7 @@ departmentsRouter.get(
         SELECT
           wo.id AS work_order_id, wo.status AS work_order_status, wo.role AS work_order_role,
           wo.priority AS work_order_priority, wo.assignee_id, au.full_name AS assignee_name,
-          i.id, i.public_ref, i.title, i.description, i.status, i.address, i.priority,
+          i.id, i.public_ref, i.title, i.description, i.status, i.address, i.city, i.priority,
           i.reported_by, ru.full_name AS reporter_name, i.supports_count, i.resolution_note,
           i.created_at, i.acknowledged_at, i.resolved_at, i.verified_at, i.closed_at,
           ST_Y(i.location::geometry) AS latitude,
@@ -134,6 +148,7 @@ departmentsRouter.get(
             latitude: r.latitude,
             longitude: r.longitude,
             address: r.address,
+            city: r.city,
             priority: r.priority,
             reportedBy: r.reported_by,
             reporterName: r.reporter_name,
@@ -164,9 +179,39 @@ departmentsRouter.get(
   requireDepartmentAccess("departmentId"),
   (req, res) => {
     const departmentId = req.params.departmentId as string;
-    openSseStream(req, res, (push) => eventBus.onDepartment(departmentId, push));
+    // Same city scope as the paged queue, so the live feed and the fetched
+    // list never disagree about what this admin is allowed to see.
+    const cityScope = resolveCityScope(req.auth!);
+    openSseStream(req, res, (push) => eventBus.onDepartment(departmentId, cityScope, push));
   }
 );
+
+/**
+ * City directory — backs the super-admin city filter.
+ *
+ * Derived from the issues table rather than a cities table because a city is
+ * only meaningful here once it has issues in it. A dept_admin gets back just
+ * their own city, so the filter control cannot be used to probe which other
+ * jurisdictions exist.
+ */
+departmentsRouter.get("/cities", authenticate, async (req, res, next) => {
+  try {
+    const cityScope = resolveCityScope(req.auth!);
+    if (cityScope !== null) {
+      res.json({ items: cityScope ? [cityScope] : [] });
+      return;
+    }
+    const rows = await prisma.issue.findMany({
+      where: { city: { not: null } },
+      distinct: ["city"],
+      select: { city: true },
+      orderBy: { city: "asc" },
+    });
+    res.json({ items: rows.map((r) => r.city).filter((c): c is string => !!c) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 /** Department directory — backs the super-admin department filter. */
 departmentsRouter.get("/", authenticate, async (_req, res, next) => {

@@ -18,6 +18,7 @@ export interface QueueIssue {
   latitude: number;
   longitude: number;
   address: string | null;
+  city: string | null;
   priority: number;
   reportedBy: string;
   reporterName: string | null;
@@ -46,6 +47,12 @@ export interface QueueFilters {
   pageSize?: number;
   status?: string;
   categoryCode?: string;
+  /**
+   * Only honoured for a super admin. A department admin's city comes from
+   * their token, so sending it here cannot widen what they see — the backend
+   * overrides this value with their own city.
+   */
+  city?: string;
   from?: string;
   to?: string;
   sort?: "created_desc" | "created_asc" | "priority" | "status";
@@ -63,15 +70,18 @@ interface ApiMeUser {
   id: string;
   role: string;
   departmentId: string | null;
+  city: string | null;
 }
 
 export const adminService = {
-  async getUserRole(_userId: string): Promise<{ role: UserRole | null; department: string | null }> {
+  async getUserRole(
+    _userId: string
+  ): Promise<{ role: UserRole | null; department: string | null; city: string | null }> {
     try {
       const me = await apiRequest<ApiMeUser>("/auth/me");
-      return { role: API_ROLE_TO_USER_ROLE[me.role] ?? null, department: me.departmentId };
+      return { role: API_ROLE_TO_USER_ROLE[me.role] ?? null, department: me.departmentId, city: me.city ?? null };
     } catch {
-      return { role: null, department: null };
+      return { role: null, department: null, city: null };
     }
   },
 
@@ -87,12 +97,23 @@ export const adminService = {
     return data.items;
   },
 
+  /**
+   * Cities the caller may view. A super admin gets every serviced city; a
+   * department admin gets only their own, so this doubles as the source of
+   * truth for whether the city picker is worth rendering at all.
+   */
+  async listCities() {
+    const data = await apiRequest<{ items: string[] }>("/departments/cities");
+    return data.items;
+  },
+
   async fetchQueue(filters: QueueFilters): Promise<{ items: QueueItem[]; total: number; page: number }> {
     const params = new URLSearchParams();
     if (filters.page) params.set("page", String(filters.page));
     if (filters.pageSize) params.set("pageSize", String(filters.pageSize));
     if (filters.status) params.set("status", filters.status);
     if (filters.categoryCode) params.set("categoryCode", filters.categoryCode);
+    if (filters.city) params.set("city", filters.city);
     if (filters.from) params.set("from", filters.from);
     if (filters.to) params.set("to", filters.to);
     if (filters.sort) params.set("sort", filters.sort);

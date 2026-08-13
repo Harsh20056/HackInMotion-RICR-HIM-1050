@@ -46,7 +46,7 @@ export const verificationService = {
   async vote(issueId: string, userId: string, vote: boolean): Promise<VerificationState> {
     const issue = await prisma.issue.findUnique({
       where: { id: issueId },
-      select: { id: true, workOrders: { select: { departmentId: true } } },
+      select: { id: true, city: true, workOrders: { select: { departmentId: true } } },
     });
     if (!issue) throw new NotFoundError("Issue not found");
 
@@ -62,6 +62,7 @@ export const verificationService = {
       type: "issue.verification_changed",
       issueId,
       departmentIds: issue.workOrders.map((wo) => wo.departmentId),
+      city: issue.city,
       payload: { confirmations: state.confirmations, disagreements: state.disagreements, confidence: state.confidence },
       at: new Date().toISOString(),
     });

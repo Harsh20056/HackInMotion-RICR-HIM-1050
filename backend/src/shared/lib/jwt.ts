@@ -5,6 +5,12 @@ export interface AccessTokenClaims {
   sub: string; // user id
   role: "citizen" | "dept_admin" | "super_admin";
   departmentId: string | null;
+  /**
+   * Municipal jurisdiction a staff account is scoped to. Optional rather than
+   * required because tokens minted before city scoping shipped do not carry
+   * it — `resolveCityScope` treats a missing claim the same as null.
+   */
+  city?: string | null;
 }
 
 export interface RefreshTokenClaims {

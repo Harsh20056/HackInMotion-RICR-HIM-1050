@@ -7,6 +7,12 @@
  * GET /departments/:id/queue — a dept_admin cannot widen their own scope by
  * editing client state, because the route enforces the department itself.
  *
+ * Scope has two dimensions: department AND city. A department row is shared by
+ * every city it operates in, so the backend also narrows the queue to the
+ * admin's own city and ignores any `city` param they send. The city state here
+ * is therefore presentational for a dept_admin (it labels the jurisdiction) and
+ * only functional for a super admin, who may switch between cities.
+ *
  * Live updates arrive over SSE (GET /departments/:id/stream) rather than
  * polling; EventSource reconnects on its own if the connection drops.
  */
@@ -40,6 +46,11 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
   const [userDepartment, setUserDepartment] = useState<string | null>(null);
   const [departments, setDepartments] = useState<AdminDepartment[]>([]);
   const [activeDepartmentId, setActiveDepartmentId] = useState<string | null>(null);
+  /** The signed-in admin's own city — null for a super admin (state-wide). */
+  const [userCity, setUserCity] = useState<string | null>(null);
+  const [cities, setCities] = useState<string[]>([]);
+  /** Super-admin city selection; null means "all cities". */
+  const [activeCity, setActiveCity] = useState<string | null>(null);
 
   const [items, setItems] = useState<QueueItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -62,20 +73,30 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
 
     (async () => {
       try {
-        const { role, department } = await adminService.getUserRole(user.id);
+        const { role, department, city } = await adminService.getUserRole(user.id);
         const admin = role === UserRole.DEPARTMENT_ADMIN || role === UserRole.SUPER_ADMIN;
         setIsAdmin(admin);
         setUserRole(role);
         setUserDepartment(department);
+        setUserCity(city);
 
         if (!admin) return;
 
         if (role === UserRole.SUPER_ADMIN) {
-          const list = await adminService.listDepartments();
+          const [list, cityList] = await Promise.all([
+            adminService.listDepartments(),
+            adminService.listCities(),
+          ]);
           setDepartments(list);
           setActiveDepartmentId(list[0]?.id ?? null);
+          setCities(cityList);
+          // Defaults to "all cities" so the super admin's landing view is the
+          // state-wide picture their role exists to provide.
+          setActiveCity(null);
         } else {
           setActiveDepartmentId(department);
+          setCities(city ? [city] : []);
+          setActiveCity(city);
         }
       } catch (err) {
         logger.error("Failed to resolve admin permissions:", err);
@@ -94,6 +115,10 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
       const result = await adminService.fetchQueue({
         ...filters,
         departmentId: activeDepartmentId,
+        // Ignored by the backend for a dept_admin, who is pinned to their own
+        // city regardless. Sent unconditionally so the super-admin path needs
+        // no special case here.
+        city: activeCity ?? undefined,
         page,
         pageSize: PAGE_SIZE,
       });
@@ -106,7 +131,7 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
     } finally {
       setLoading(false);
     }
-  }, [activeDepartmentId, filters, page]);
+  }, [activeDepartmentId, activeCity, filters, page]);
 
   useEffect(() => {
     void loadQueue();
@@ -177,6 +202,19 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
       setActiveDepartmentId(id);
       setPage(1);
     },
+    userCity,
+    cities,
+    activeCity,
+    setActiveCity: (city: string | null) => {
+      setActiveCity(city);
+      setPage(1);
+    },
+    /**
+     * True when the account is a department admin with no city on record. The
+     * backend fails closed in that case, so the queue is legitimately empty —
+     * the UI needs to say why rather than imply there is no work.
+     */
+    missingCityAssignment: userRole === UserRole.DEPARTMENT_ADMIN && !userCity,
     items,
     total,
     page,

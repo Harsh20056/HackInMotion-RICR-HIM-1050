@@ -167,6 +167,9 @@ export const notificationsService = {
       type: "issue.status_changed",
       issueId: String(input.payload?.issueId ?? ""),
       departmentIds: [],
+      // Addressed to a single recipient, never fanned out to a department
+      // channel, so there is no city to scope it by.
+      city: null,
       payload: { notificationFor: input.recipientId },
       at: new Date().toISOString(),
     });

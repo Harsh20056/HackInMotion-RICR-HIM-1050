@@ -36,13 +36,33 @@ const rand = mulberry32(20260813);
 const randInt = (min: number, max: number) => Math.floor(rand() * (max - min + 1)) + min;
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
 
+/**
+ * `city` is the jurisdiction the department's single seeded admin account is
+ * posted to — staff reads are scoped to it, so this decides which half of the
+ * dataset that login can see.
+ *
+ * Split across both seeded cities rather than pinned to one so the isolation is
+ * demonstrable: log in as the water admin (Bhopal) and the parks admin
+ * (Indore) and the two queues share no issues, while the super admin sees
+ * both. Override per department with SEED_<CODE>_ADMIN_CITY.
+ *
+ * water_supply and roads are deliberately in the SAME city: the compound
+ * coordination demo in seedCoordination.ts is one Bhopal issue needing both
+ * departments in sequence, and splitting that pair would hide half of it from
+ * each admin.
+ *
+ * The consequence of one admin per department is that each department is only
+ * staffed in one city — Indore's roads backlog has no dept_admin and is
+ * visible only to the super admin. Adding a second admin row per department
+ * with the other city is all that is needed to close that gap.
+ */
 const DEPARTMENTS = [
-  { code: "water_supply", nameEn: "Jal Board / Water Corporation", nameHi: "जल बोर्ड" },
-  { code: "sanitation", nameEn: "Municipal Solid Waste Management", nameHi: "नगर निगम स्वच्छता विभाग" },
-  { code: "electricity", nameEn: "State Electricity Board / DISCOM", nameHi: "राज्य विद्युत बोर्ड" },
-  { code: "roads", nameEn: "Public Works Department (PWD)", nameHi: "लोक निर्माण विभाग" },
-  { code: "parks", nameEn: "Horticulture Department", nameHi: "उद्यान विभाग" },
-  { code: "buildings", nameEn: "Building & Construction Department", nameHi: "भवन एवं निर्माण विभाग" },
+  { code: "water_supply", nameEn: "Jal Board / Water Corporation", nameHi: "जल बोर्ड", adminCity: "Bhopal" },
+  { code: "roads", nameEn: "Public Works Department (PWD)", nameHi: "लोक निर्माण विभाग", adminCity: "Bhopal" },
+  { code: "sanitation", nameEn: "Municipal Solid Waste Management", nameHi: "नगर निगम स्वच्छता विभाग", adminCity: "Bhopal" },
+  { code: "electricity", nameEn: "State Electricity Board / DISCOM", nameHi: "राज्य विद्युत बोर्ड", adminCity: "Indore" },
+  { code: "parks", nameEn: "Horticulture Department", nameHi: "उद्यान विभाग", adminCity: "Indore" },
+  { code: "buildings", nameEn: "Building & Construction Department", nameHi: "भवन एवं निर्माण विभाग", adminCity: "Indore" },
 ];
 
 const CATEGORIES = [
@@ -255,7 +275,9 @@ async function upsertDepartments() {
     const row = await prisma.department.upsert({
       where: { code: dept.code },
       update: { nameEn: dept.nameEn, nameHi: dept.nameHi },
-      create: dept,
+      // Listed field by field rather than spreading `dept`: the constant also
+      // carries `adminCity`, which belongs to the admin user, not this row.
+      create: { code: dept.code, nameEn: dept.nameEn, nameHi: dept.nameHi },
     });
     map.set(dept.code, row.id);
   }
@@ -341,15 +363,20 @@ async function upsertUsers(deptIds: Map<string, string>) {
     const envPrefix = `SEED_${dept.code.toUpperCase()}_ADMIN`;
     const email = requireEnv(`${envPrefix}_EMAIL`);
     const passwordHash = await bcrypt.hash(requireEnv(`${envPrefix}_PASSWORD`), BCRYPT_ROUNDS);
+    const city = process.env[`${envPrefix}_CITY`]?.trim() || dept.adminCity;
     const row = await prisma.user.upsert({
       where: { email },
-      update: { departmentId: deptIds.get(dept.code) },
+      // City is in the update branch, not just create: re-running the seed
+      // against a database where these accounts predate city scoping has to
+      // backfill them, or every department login stays fail-closed and empty.
+      update: { departmentId: deptIds.get(dept.code), city },
       create: {
         email,
         passwordHash,
         fullName: `${dept.nameEn} Admin`,
         role: "dept_admin",
         departmentId: deptIds.get(dept.code),
+        city,
       },
     });
     deptAdminIds.set(dept.code, row.id);
@@ -387,6 +414,7 @@ type PlannedIssue = {
   title: string;
   description: string;
   address: string;
+  city: string;
   lat: number;
   lng: number;
   createdAt: Date;
@@ -439,6 +467,7 @@ function planIssues(citizenIds: string[]): PlannedIssue[] {
           title: pick(TITLES[code]),
           description: pick(DESCRIPTIONS[code]),
           address: `${ward.area}, ${ward.city}, Madhya Pradesh`,
+          city: ward.city,
           lat,
           lng,
           createdAt: randomDateIn(bucket.start, bucket.end),
@@ -513,7 +542,7 @@ async function seedIssues(
       ${p.ref}, ${p.title}, ${p.description}, ${catIds.get(p.categoryCode)!}::uuid,
       ${p.finalStatus}::"IssueStatus",
       ${CATEGORIES.find((c) => c.code === p.categoryCode)!.priority},
-      ${p.reporterId}::uuid, ${p.address},
+      ${p.reporterId}::uuid, ${p.address}, ${p.city},
       ST_SetSRID(ST_MakePoint(${p.lng}, ${p.lat}), 4326)::geography,
       ${p.createdAt}
     )`
@@ -525,7 +554,7 @@ async function seedIssues(
   return prisma.$transaction(
     async (tx) => {
       const inserted = await tx.$queryRaw<{ id: string; public_ref: string }[]>(Prisma.sql`
-        INSERT INTO issues (public_ref, title, description, category_id, status, priority, reported_by, address, location, created_at)
+        INSERT INTO issues (public_ref, title, description, category_id, status, priority, reported_by, address, city, location, created_at)
         VALUES ${Prisma.join(values, ", ")}
         RETURNING id, public_ref
       `);

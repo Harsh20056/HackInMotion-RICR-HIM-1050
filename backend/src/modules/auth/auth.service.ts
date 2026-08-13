@@ -6,11 +6,12 @@ import { RegisterInput, LoginInput } from "./auth.schemas.js";
 
 const BCRYPT_ROUNDS = 12;
 
-function issueTokens(user: { id: string; role: string; departmentId: string | null }) {
+function issueTokens(user: { id: string; role: string; departmentId: string | null; city: string | null }) {
   const accessToken = signAccessToken({
     sub: user.id,
     role: user.role as "citizen" | "dept_admin" | "super_admin",
     departmentId: user.departmentId,
+    city: user.city,
   });
   const refreshToken = signRefreshToken({ sub: user.id });
   return { accessToken, refreshToken };
@@ -23,6 +24,7 @@ function toPublicUser(user: {
   phone: string | null;
   role: string;
   departmentId: string | null;
+  city: string | null;
 }) {
   return {
     id: user.id,
@@ -31,6 +33,10 @@ function toPublicUser(user: {
     phone: user.phone,
     role: user.role,
     departmentId: user.departmentId,
+    // The client needs this to label the dashboard with the jurisdiction being
+    // shown, and to distinguish "your city has no open issues" from
+    // "no city assigned to your account".
+    city: user.city,
   };
 }
 

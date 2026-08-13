@@ -14,14 +14,27 @@ const DEFAULT_CHAIN: EscalationStep[] = [
   { level: 2, afterMinutes: 60 * 24, notify: "super_admin" },
 ];
 
-/** Who should hear about a breach at this level. */
-async function resolveRecipients(step: EscalationStep, departmentId: string): Promise<string[]> {
+/**
+ * Who should hear about a breach at this level.
+ *
+ * Department heads are narrowed to the breaching issue's own city. Without
+ * that, one department's admins are paged for every city it operates in — a
+ * Bhopal roads admin would get Indore's breach notices, complete with the
+ * issue title and public reference in the payload, for work they cannot see in
+ * their queue or act on. Level-2 escalation to super_admin stays state-wide,
+ * which is the point of that role.
+ */
+async function resolveRecipients(
+  step: EscalationStep,
+  departmentId: string,
+  city: string | null
+): Promise<string[]> {
   if (step.notify === "super_admin") {
     const admins = await prisma.user.findMany({ where: { role: "super_admin" }, select: { id: true } });
     return admins.map((a) => a.id);
   }
   const heads = await prisma.user.findMany({
-    where: { departmentId, role: "dept_admin" },
+    where: { departmentId, role: "dept_admin", city },
     select: { id: true },
   });
   return heads.map((h) => h.id);
@@ -35,7 +48,7 @@ export async function runSlaSweep(now = new Date()): Promise<{ breached: number;
     },
     include: {
       slaPolicy: true,
-      issue: { select: { id: true, publicRef: true, title: true } },
+      issue: { select: { id: true, publicRef: true, title: true, city: true } },
       department: { select: { id: true, nameEn: true } },
     },
     take: 500,
@@ -65,7 +78,7 @@ export async function runSlaSweep(now = new Date()): Promise<{ breached: number;
     // Fire every level between the current one and the target, so a long
     // outage doesn't skip the intermediate audit rows.
     for (const step of due.filter((s) => s.level > wo.escalationLevel)) {
-      const recipients = await resolveRecipients(step, wo.departmentId);
+      const recipients = await resolveRecipients(step, wo.departmentId, wo.issue.city);
 
       try {
         await prisma.escalation.create({

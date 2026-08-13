@@ -15,6 +15,7 @@ export interface IssueRow {
   latitude: number;
   longitude: number;
   address: string | null;
+  city: string | null;
   priority: number;
   reported_by: string;
   supports_count: number;
@@ -28,7 +29,7 @@ export interface IssueRow {
 
 const ISSUE_SELECT = Prisma.sql`
   SELECT
-    i.id, i.public_ref, i.title, i.description, i.status, i.address, i.priority,
+    i.id, i.public_ref, i.title, i.description, i.status, i.address, i.city, i.priority,
     i.reported_by, i.supports_count, i.resolution_note,
     i.created_at, i.acknowledged_at, i.resolved_at, i.verified_at, i.closed_at,
     ST_Y(i.location::geometry) AS latitude,
@@ -83,14 +84,15 @@ export const issuesRepository = {
       latitude: number;
       longitude: number;
       address: string | null;
+      city: string | null;
     }
   ): Promise<{ id: string; createdAt: Date }> {
     const rows = await tx.$queryRaw<{ id: string; created_at: Date }[]>(
       Prisma.sql`
-        INSERT INTO issues (public_ref, title, description, category_id, priority, reported_by, address, location)
+        INSERT INTO issues (public_ref, title, description, category_id, priority, reported_by, address, city, location)
         VALUES (
           ${data.publicRef}, ${data.title}, ${data.description}, ${data.categoryId}::uuid, ${data.priority},
-          ${data.reportedBy}::uuid, ${data.address},
+          ${data.reportedBy}::uuid, ${data.address}, ${data.city},
           ST_SetSRID(ST_MakePoint(${data.longitude}, ${data.latitude}), 4326)::geography
         )
         RETURNING id, created_at
@@ -107,6 +109,10 @@ export const issuesRepository = {
   async list(filters: ListIssuesQuery): Promise<{ rows: IssueRow[]; total: number }> {
     const conditions: Prisma.Sql[] = [];
 
+    // Compared against undefined, not truthiness: the fail-closed scope
+    // sentinel for a city-less dept_admin is the empty string, and a
+    // truthiness check would drop the filter and show them everything.
+    if (filters.city !== undefined) conditions.push(Prisma.sql`i.city = ${filters.city}`);
     if (filters.categoryCode) conditions.push(Prisma.sql`c.code = ${filters.categoryCode}`);
     if (filters.status) conditions.push(Prisma.sql`i.status = ${filters.status}::"IssueStatus"`);
     if (filters.reportedBy) conditions.push(Prisma.sql`i.reported_by = ${filters.reportedBy}::uuid`);

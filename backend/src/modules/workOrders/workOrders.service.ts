@@ -2,6 +2,7 @@ import { IssueStatus, Prisma, WorkOrderStatus } from "@prisma/client";
 import { prisma } from "../../shared/lib/prisma.js";
 import { eventBus } from "../../shared/lib/eventBus.js";
 import { AppError, ForbiddenError, NotFoundError, ValidationError } from "../../shared/errors/AppError.js";
+import { assertCityAccess } from "../../shared/middleware/rbac.js";
 import { AccessTokenClaims } from "../../shared/lib/jwt.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 import { slaService } from "../sla/sla.service.js";
@@ -79,22 +80,37 @@ async function findBlockers(workOrderId: string) {
 }
 
 export const workOrdersService = {
-  async getById(workOrderId: string) {
+  async getById(workOrderId: string, actor?: AccessTokenClaims) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
       include: {
         department: { select: { id: true, code: true, nameEn: true } },
         assignee: { select: { id: true, fullName: true } },
-        issue: { select: { id: true, publicRef: true, title: true, status: true, categoryId: true } },
+        issue: { select: { id: true, publicRef: true, title: true, status: true, categoryId: true, city: true } },
         slaPolicy: true,
       },
     });
     if (!wo) throw new NotFoundError("Work order not found");
+    // Looked up by id with no department filter at all, so the city gate is
+    // the only thing standing between a dept_admin and another jurisdiction's
+    // assignee names and SLA policy.
+    if (actor) assertCityAccess(actor, wo.issue.city);
     return wo;
   },
 
-  /** Full coordination view for an issue: work orders, dependencies, blockers. */
-  async listForIssue(issueId: string) {
+  /**
+   * Full coordination view for an issue: work orders, dependencies, blockers.
+   *
+   * `actor` is optional because the citizen-facing issue detail renders this
+   * too; when present the city gate applies.
+   */
+  async listForIssue(issueId: string, actor?: AccessTokenClaims) {
+    if (actor) {
+      const issue = await prisma.issue.findUnique({ where: { id: issueId }, select: { city: true } });
+      if (!issue) throw new NotFoundError("Issue not found");
+      assertCityAccess(actor, issue.city);
+    }
+
     const workOrders = await prisma.workOrder.findMany({
       where: { issueId },
       orderBy: [{ sequence: "asc" }, { createdAt: "asc" }],
@@ -202,13 +218,14 @@ export const workOrdersService = {
   ) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
-      include: { issue: { select: { id: true, publicRef: true, title: true } } },
+      include: { issue: { select: { id: true, publicRef: true, title: true, city: true } } },
     });
     if (!wo) throw new NotFoundError("Work order not found");
 
     if (actor.role === "dept_admin" && actor.departmentId !== wo.departmentId) {
       throw new ForbiddenError("This work order belongs to another department.");
     }
+    assertCityAccess(actor, wo.issue.city);
 
     const allowed = ALLOWED_WO_TRANSITIONS[wo.status];
     if (!allowed.includes(input.status)) {
@@ -272,6 +289,7 @@ export const workOrdersService = {
       type: "issue.status_changed",
       issueId: wo.issueId,
       departmentIds: [wo.departmentId],
+      city: wo.issue.city,
       payload: { workOrderId, from: wo.status, to: input.status },
       at: now.toISOString(),
     });
@@ -337,13 +355,14 @@ export const workOrdersService = {
   ) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
-      include: { issue: { select: { id: true, publicRef: true, title: true, categoryId: true } } },
+      include: { issue: { select: { id: true, publicRef: true, title: true, categoryId: true, city: true } } },
     });
     if (!wo) throw new NotFoundError("Work order not found");
 
     if (actor.role === "dept_admin" && actor.departmentId !== wo.departmentId) {
       throw new ForbiddenError("This work order belongs to another department.");
     }
+    assertCityAccess(actor, wo.issue.city);
     // Moving work to a different department is a referral, and referrals
     // need the receiving department's consent — see requestTransfer.
     if (input.departmentId && input.departmentId !== wo.departmentId && actor.role !== "super_admin") {

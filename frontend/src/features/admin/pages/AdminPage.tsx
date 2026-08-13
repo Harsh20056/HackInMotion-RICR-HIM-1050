@@ -19,6 +19,13 @@ import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 import { CATEGORIES, CATEGORY_LABELS } from "@/shared/constants/categories";
 import { QueueItem } from "../services/adminService";
 
+/**
+ * Sentinel for the "no city filter" option. Radix Select treats "" as
+ * "nothing selected" and would render a blank trigger, so the unfiltered
+ * choice needs a real value that maps back to null.
+ */
+const ALL_CITIES = "__all__";
+
 const STATUS_COLORS: Record<string, string> = {
   reported: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
   acknowledged: "bg-purple-500/10 text-purple-600 border-purple-500/20",
@@ -67,6 +74,10 @@ export default function AdminPage() {
     departments,
     activeDepartmentId,
     setActiveDepartmentId,
+    cities,
+    activeCity,
+    setActiveCity,
+    missingCityAssignment,
     items,
     total,
     page,
@@ -139,6 +150,14 @@ export default function AdminPage() {
             </h1>
             <p className="text-xs text-muted-foreground">
               {total} {language === "en" ? "work orders" : "कार्य आदेश"}
+              {/* Naming the jurisdiction is what makes a short queue legible:
+                  without it a city-scoped list looks like missing data. */}
+              {" · "}
+              {activeCity
+                ? activeCity
+                : language === "en"
+                  ? "All cities"
+                  : "सभी शहर"}
             </p>
           </div>
         </div>
@@ -159,6 +178,29 @@ export default function AdminPage() {
             {isRealTimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
             {isRealTimeConnected ? (language === "en" ? "Live" : "लाइव") : language === "en" ? "Offline" : "ऑफ़लाइन"}
           </span>
+
+          {/* A department admin has no city control: the backend pins them to
+              their own jurisdiction, so a picker here would only ever be a
+              read-only echo of it. It is shown in the header line instead. */}
+          {isSuperAdmin && cities.length > 0 && (
+            <Select
+              value={activeCity ?? ALL_CITIES}
+              onValueChange={(v) => setActiveCity(v === ALL_CITIES ? null : v)}
+            >
+              <SelectTrigger className="w-44">
+                <MapPin className="w-4 h-4 mr-2 shrink-0" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CITIES}>{language === "en" ? "All cities" : "सभी शहर"}</SelectItem>
+                {cities.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {isSuperAdmin && departments.length > 0 && (
             <Select value={activeDepartmentId ?? undefined} onValueChange={setActiveDepartmentId}>
@@ -281,6 +323,25 @@ export default function AdminPage() {
           </Button>
         )}
       </div>
+
+      {/* No city on the account. The backend fails closed rather than showing
+          every city, so the queue below is genuinely empty — say why instead
+          of letting it read as "no work to do". */}
+      {missingCityAssignment && (
+        <div className="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {language === "en" ? "No city assigned to this account" : "इस खाते को कोई शहर नहीं सौंपा गया"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {language === "en"
+                ? "Department accounts only see issues in their own city. Ask a super admin to set yours before working the queue."
+                : "विभागीय खाते केवल अपने शहर की समस्याएं देखते हैं। कतार देखने से पहले सुपर एडमिन से अपना शहर सेट करवाएं।"}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (

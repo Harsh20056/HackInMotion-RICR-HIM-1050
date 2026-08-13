@@ -149,6 +149,10 @@ model User {
   role         UserRole   @default(citizen)
   departmentId String?    @map("department_id") @db.Uuid
   department   Department? @relation(fields: [departmentId], references: [id])
+  /// Municipal jurisdiction a staff account works in. Scopes every read a
+  /// dept_admin makes to their own city; null on super_admin (state-wide)
+  /// and on citizens (who are scoped by authorship, not geography).
+  city         String?
   createdAt    DateTime   @default(now()) @map("created_at")
 
   reportedIssues     Issue[]         @relation("IssueReportedBy")
@@ -168,6 +172,7 @@ model User {
   notificationPreference NotificationPreference?
 
   @@index([departmentId, role])
+  @@index([city])
   @@map("users")
 }
 
@@ -186,6 +191,10 @@ model Issue {
   // PostGIS geography point (lon, lat), SRID 4326
   location        Unsupported("geography(Point, 4326)")
   address         String?
+  /// Municipal jurisdiction that owns this issue, denormalised from the
+  /// reverse-geocoded address so it can be indexed and filtered. Staff reads
+  /// are scoped on this column.
+  city            String?
   priority        Int         @default(3)
   reportedBy      String      @map("reported_by") @db.Uuid
   reporter        User        @relation("IssueReportedBy", fields: [reportedBy], references: [id])
@@ -209,6 +218,7 @@ model Issue {
   verifications  CitizenVerification[]
 
   @@index([categoryId, status, createdAt])
+  @@index([city, status, createdAt])
   @@map("issues")
 }
 

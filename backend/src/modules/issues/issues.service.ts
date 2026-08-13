@@ -4,6 +4,7 @@ import { issuesRepository, IssueRow } from "./issues.repository.js";
 import { generatePublicRef } from "../../shared/lib/publicRef.js";
 import { NotFoundError, ValidationError, ConflictError } from "../../shared/errors/AppError.js";
 import { CreateIssueInput, ListIssuesQuery, ConfirmDuplicateInput } from "./issues.schemas.js";
+import { cityFromLocation } from "../../shared/lib/cityFromLocation.js";
 import { slaService } from "../sla/sla.service.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 
@@ -18,6 +19,7 @@ function toApiIssue(row: IssueRow) {
     latitude: row.latitude,
     longitude: row.longitude,
     address: row.address,
+    city: row.city,
     priority: row.priority,
     reportedBy: row.reported_by,
     supportsCount: row.supports_count,
@@ -110,6 +112,11 @@ export const issuesService = {
       throw new ValidationError(`No routing rules configured for category: ${input.categoryCode}`);
     }
 
+    // Derived from the coordinates, never taken from the request body — city
+    // is what scopes staff access, so the reporter must not be able to choose
+    // which department's jurisdiction their report lands in.
+    const city = cityFromLocation(input.latitude, input.longitude);
+
     const issue = await prisma.$transaction(async (tx) => {
       const inserted = await issuesRepository.insertIssue(tx, {
         publicRef: generatePublicRef(),
@@ -121,6 +128,7 @@ export const issuesService = {
         latitude: input.latitude,
         longitude: input.longitude,
         address: input.address ?? null,
+        city,
       });
 
       await tx.issueReport.create({
@@ -188,6 +196,7 @@ export const issuesService = {
       type: "issue.created",
       issueId: issue.id,
       departmentIds: rules.map((r) => r.departmentId),
+      city,
       payload: { issue: apiIssue },
       at: new Date().toISOString(),
     });

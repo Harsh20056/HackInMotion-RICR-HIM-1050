@@ -26,6 +26,12 @@ export const listIssuesQuerySchema = z.object({
     .enum(["reported", "acknowledged", "in_progress", "resolved", "verified", "rejected", "reopened", "closed"])
     .optional(),
   departmentId: z.string().uuid().optional(),
+  /**
+   * Municipal jurisdiction filter. Callers may narrow to a city; for a
+   * dept_admin the controller overrides whatever is passed here with the city
+   * on their token, so it can only ever narrow, never widen.
+   */
+  city: z.string().max(120).optional(),
   reportedBy: z.string().uuid().optional(),
   supportedBy: z.string().uuid().optional(),
   // bbox = minLng,minLat,maxLng,maxLat

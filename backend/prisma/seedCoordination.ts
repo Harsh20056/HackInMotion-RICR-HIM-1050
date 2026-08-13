@@ -121,20 +121,33 @@ async function seedCompoundDemo() {
     prisma.department.findUniqueOrThrow({ where: { code: "water_supply" } }),
     prisma.department.findUniqueOrThrow({ where: { code: "roads" } }),
     prisma.user.findFirstOrThrow({ where: { role: "citizen" }, orderBy: { email: "asc" } }),
-    prisma.user.findUniqueOrThrow({ where: { email: "water_supply.admin@samadhan.gov.in" } }),
-    prisma.user.findUniqueOrThrow({ where: { email: "roads.admin@samadhan.gov.in" } }),
+    // Resolved by department + role rather than a hardcoded address: the admin
+    // emails come from SEED_<CODE>_ADMIN_EMAIL and differ per deployment, so
+    // literal addresses here threw findUniqueOrThrow and aborted this seed.
+    prisma.user.findFirstOrThrow({
+      where: { role: "dept_admin", department: { code: "water_supply" } },
+      orderBy: { email: "asc" },
+    }),
+    prisma.user.findFirstOrThrow({
+      where: { role: "dept_admin", department: { code: "roads" } },
+      orderBy: { email: "asc" },
+    }),
   ]);
 
   const createdAt = new Date(Date.now() - 5 * 24 * 3600 * 1000);
 
   const [{ id: issueId }] = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    INSERT INTO issues (public_ref, title, description, category_id, status, priority, reported_by, address, location, created_at)
+    INSERT INTO issues (public_ref, title, description, category_id, status, priority, reported_by, address, city, location, created_at)
     VALUES (
       ${DEMO_REF},
       ${"Road collapsed over a leaking water main"},
       ${"The road surface has caved in above a burst pipe. The leak has to be fixed before the road can be repaved, otherwise the new surface will simply collapse again."},
       ${roadsCat.id}::uuid, ${"in_progress"}::"IssueStatus", 1, ${citizen.id}::uuid,
       ${"MP Nagar Zone-I, Bhopal, Madhya Pradesh"},
+      -- Must be set explicitly: an issue with no city is fail-closed and
+      -- invisible to every dept_admin, which would silently empty the
+      -- coordination demo for both of the admins it is built for.
+      ${"Bhopal"},
       ST_SetSRID(ST_MakePoint(77.4340, 23.2330), 4326)::geography,
       ${createdAt}
     )

@@ -2,6 +2,7 @@ import { DependencyType, NoteVisibility } from "@prisma/client";
 import { prisma } from "../../shared/lib/prisma.js";
 import { ForbiddenError, NotFoundError } from "../../shared/errors/AppError.js";
 import { AccessTokenClaims } from "../../shared/lib/jwt.js";
+import { assertCityAccess } from "../../shared/middleware/rbac.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 import { UnprocessableError } from "./workOrders.service.js";
 
@@ -48,14 +49,20 @@ export const coordinationService = {
     const [predecessor, successor] = await Promise.all([
       prisma.workOrder.findUnique({
         where: { id: input.predecessorId },
-        include: { department: { select: { nameEn: true } } },
+        include: { department: { select: { nameEn: true } }, issue: { select: { city: true } } },
       }),
       prisma.workOrder.findUnique({
         where: { id: input.successorId },
-        include: { department: { select: { nameEn: true } } },
+        include: { department: { select: { nameEn: true } }, issue: { select: { city: true } } },
       }),
     ]);
     if (!predecessor || !successor) throw new NotFoundError("Work order not found");
+
+    // Both ends, before the cycle guard: its 422 message names the other
+    // departments, so an out-of-city admin could otherwise probe the graph
+    // through error text alone.
+    assertCityAccess(actor, successor.issue.city);
+    assertCityAccess(actor, predecessor.issue.city);
 
     // Dependencies only make sense between work orders on the same issue.
     if (predecessor.issueId !== successor.issueId) {
@@ -92,12 +99,13 @@ export const coordinationService = {
   async removeDependency(dependencyId: string, actor: AccessTokenClaims) {
     const dep = await prisma.workOrderDependency.findUnique({
       where: { id: dependencyId },
-      include: { successor: { select: { departmentId: true } } },
+      include: { successor: { select: { departmentId: true, issue: { select: { city: true } } } } },
     });
     if (!dep) throw new NotFoundError("Dependency not found");
     if (actor.role === "dept_admin" && actor.departmentId !== dep.successor.departmentId) {
       throw new ForbiddenError("Only the waiting department can remove its own blocker.");
     }
+    assertCityAccess(actor, dep.successor.issue.city);
     await prisma.workOrderDependency.delete({ where: { id: dependencyId } });
   },
 
@@ -110,18 +118,22 @@ export const coordinationService = {
   ) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
-      include: { issue: { select: { id: true, publicRef: true, reportedBy: true } } },
+      include: { issue: { select: { id: true, publicRef: true, reportedBy: true, city: true } } },
     });
     if (!wo) throw new NotFoundError("Work order not found");
 
     // Any department involved in the issue may comment; that is the point of
-    // an inter-departmental thread.
+    // an inter-departmental thread. Involvement is not enough on its own
+    // though — the same department serves several cities, so without the city
+    // check a Bhopal admin could post a citizen-visible note (which notifies
+    // the reporter) on an Indore issue.
     if (actor.role === "dept_admin") {
       const involved = await prisma.workOrder.count({
         where: { issueId: wo.issueId, departmentId: actor.departmentId! },
       });
       if (involved === 0) throw new ForbiddenError("Your department is not involved in this issue.");
     }
+    assertCityAccess(actor, wo.issue.city);
 
     const note = await prisma.workOrderNote.create({
       data: {
@@ -142,7 +154,14 @@ export const coordinationService = {
       });
       const recipients: string[] = others.map((o) => o.assigneeId).filter((x): x is string => !!x);
       const admins = await prisma.user.findMany({
-        where: { departmentId: { in: others.map((o) => o.departmentId) }, role: "dept_admin" },
+        where: {
+          departmentId: { in: others.map((o) => o.departmentId) },
+          role: "dept_admin",
+          // Only the admins posted to this issue's city. Otherwise every
+          // same-department admin state-wide is notified, and the payload
+          // carries the issue's publicRef into other jurisdictions' bells.
+          city: wo.issue.city,
+        },
         select: { id: true },
       });
       recipients.push(...admins.map((a) => a.id));
@@ -176,9 +195,13 @@ export const coordinationService = {
   async listNotes(workOrderId: string, actor?: AccessTokenClaims) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
-      select: { departmentId: true },
+      select: { departmentId: true, issue: { select: { city: true } } },
     });
     if (!wo) throw new NotFoundError("Work order not found");
+
+    // Matching on departmentId alone would hand a dept_admin the `internal`
+    // thread of the same department in another city.
+    if (actor) assertCityAccess(actor, wo.issue.city);
 
     const visibilities: NoteVisibility[] =
       !actor || actor.role === "citizen"
@@ -211,13 +234,17 @@ export const coordinationService = {
   ) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
-      include: { issue: { select: { id: true, publicRef: true } }, department: { select: { nameEn: true } } },
+      include: {
+        issue: { select: { id: true, publicRef: true, city: true } },
+        department: { select: { nameEn: true } },
+      },
     });
     if (!wo) throw new NotFoundError("Work order not found");
 
     if (actor.role === "dept_admin" && actor.departmentId !== wo.departmentId) {
       throw new ForbiddenError("Only the owning department can refer this work order.");
     }
+    assertCityAccess(actor, wo.issue.city);
     if (input.toDepartmentId === wo.departmentId) {
       throw new UnprocessableError("A work order cannot be referred to its own department.", "INVALID_TRANSFER");
     }
@@ -239,8 +266,11 @@ export const coordinationService = {
       },
     });
 
+    // The receiving department's admins in THIS city — a referral is a local
+    // handover, so admins of the same department elsewhere are not parties to
+    // it and must not receive the issue reference.
     const receivers = await prisma.user.findMany({
-      where: { departmentId: input.toDepartmentId, role: "dept_admin" },
+      where: { departmentId: input.toDepartmentId, role: "dept_admin", city: wo.issue.city },
       select: { id: true },
     });
     await notificationsService.enqueueMany(
@@ -268,7 +298,7 @@ export const coordinationService = {
     const transfer = await prisma.workOrderTransfer.findUnique({
       where: { id: transferId },
       include: {
-        workOrder: { include: { issue: { select: { id: true, publicRef: true } } } },
+        workOrder: { include: { issue: { select: { id: true, publicRef: true, city: true } } } },
         toDepartment: { select: { nameEn: true } },
       },
     });
@@ -280,6 +310,7 @@ export const coordinationService = {
     if (actor.role === "dept_admin" && actor.departmentId !== transfer.toDepartmentId) {
       throw new ForbiddenError("Only the receiving department can decide this referral.");
     }
+    assertCityAccess(actor, transfer.workOrder.issue.city);
 
     const now = new Date();
     const result = await prisma.$transaction(async (tx) => {
@@ -332,7 +363,21 @@ export const coordinationService = {
     return result;
   },
 
-  async listTransfers(workOrderId: string) {
+  /**
+   * Referral history for a work order. Reveals referral reasons, decision
+   * notes and the names of the staff involved, so it takes the same city gate
+   * as the work order itself.
+   */
+  async listTransfers(workOrderId: string, actor?: AccessTokenClaims) {
+    if (actor) {
+      const wo = await prisma.workOrder.findUnique({
+        where: { id: workOrderId },
+        select: { issue: { select: { city: true } } },
+      });
+      if (!wo) throw new NotFoundError("Work order not found");
+      assertCityAccess(actor, wo.issue.city);
+    }
+
     const rows = await prisma.workOrderTransfer.findMany({
       where: { workOrderId },
       orderBy: { createdAt: "desc" },
@@ -346,10 +391,19 @@ export const coordinationService = {
     return rows;
   },
 
-  /** Referrals waiting on a department's decision. */
-  async pendingForDepartment(departmentId: string) {
+  /**
+   * Referrals waiting on a department's decision, optionally narrowed to one
+   * city. `city` is a required parameter rather than an optional filter so
+   * that whoever eventually exposes this over HTTP has to decide the scope —
+   * defaulting to state-wide here would make the leak the easy path.
+   */
+  async pendingForDepartment(departmentId: string, city: string | null) {
     return prisma.workOrderTransfer.findMany({
-      where: { toDepartmentId: departmentId, status: "requested" },
+      where: {
+        toDepartmentId: departmentId,
+        status: "requested",
+        ...(city === null ? {} : { workOrder: { issue: { city } } }),
+      },
       orderBy: { createdAt: "asc" },
       include: {
         fromDepartment: { select: { nameEn: true } },

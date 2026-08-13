@@ -72,7 +72,7 @@ workOrdersRouter.patch(
 
 workOrdersRouter.get("/:id", authenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
   try {
-    res.json(await workOrdersService.getById(req.params.id as string));
+    res.json(await workOrdersService.getById(req.params.id as string, req.auth!));
   } catch (err) {
     next(err);
   }
@@ -172,7 +172,7 @@ const transferSchema = z.object({
 
 workOrdersRouter.get("/:id/transfers", authenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
   try {
-    res.json({ items: await coordinationService.listTransfers(req.params.id as string) });
+    res.json({ items: await coordinationService.listTransfers(req.params.id as string, req.auth!) });
   } catch (err) {
     next(err);
   }
