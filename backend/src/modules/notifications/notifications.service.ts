@@ -17,7 +17,8 @@ export type NotificationTemplate =
   | "sla.escalated"
   | "issue.resolution_confirmation_request"
   | "issue.status_changed"
-  | "issue.duplicate_linked";
+  | "issue.duplicate_linked"
+  | "sla.digest";
 
 interface TemplateCopy {
   title: string;
@@ -38,6 +39,41 @@ const ISSUE_STATUS_LABELS: Record<string, string> = {
 
 function issueStatusLabel(status: string): string {
   return ISSUE_STATUS_LABELS[status] ?? status;
+}
+
+/** Priority is stored 1..5, highest first. Staff read words, not numbers. */
+const PRIORITY_LABELS: Record<number, string> = {
+  1: "Critical",
+  2: "High",
+  3: "Medium",
+  4: "Low",
+  5: "Routine",
+};
+
+function priorityLabel(priority: unknown): string {
+  return typeof priority === "number" ? PRIORITY_LABELS[priority] ?? `P${priority}` : "Unset";
+}
+
+/**
+ * Minutes -> the coarsest unit that still reads honestly. A work order six
+ * weeks past due should say "6 weeks overdue", not "60480 minutes".
+ */
+export function formatOverdue(minutes: number): string {
+  const m = Math.max(0, Math.floor(minutes));
+  if (m < 60) return `${m} minute${m === 1 ? "" : "s"}`;
+  const hours = Math.floor(m / 60);
+  if (hours < 48) return `${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.floor(hours / 24);
+  if (days < 14) return `${days} day${days === 1 ? "" : "s"}`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks} week${weeks === 1 ? "" : "s"}`;
+}
+
+/** Shared subject line for the two single-work-order SLA templates. */
+function slaBody(payload: Record<string, any>): string {
+  const title = payload.issueTitle ? `"${payload.issueTitle}"` : "This report";
+  const dept = payload.department ?? "the assigned department";
+  return `${title} — ${dept} · ${priorityLabel(payload.priority)} priority · ${formatOverdue(payload.overdueMinutes)} overdue.`;
 }
 
 export function renderTemplate(
@@ -80,14 +116,24 @@ export function renderTemplate(
           };
     case "sla.breached":
       return {
-        title: "SLA breached",
-        body: `${ref} has passed its resolution deadline by ${payload.overdueMinutes} minutes.`,
+        title: `Overdue: ${ref}`,
+        body: slaBody(payload),
       };
     case "sla.escalated":
       return {
-        title: `Escalation level ${payload.level}`,
-        body: `${ref} is ${payload.overdueMinutes} minutes overdue and has escalated to level ${payload.level}.`,
+        title: `Escalated to level ${payload.level}: ${ref}`,
+        body: `${slaBody(payload)} Still unresolved, so it has escalated to level ${payload.level}.`,
       };
+    case "sla.digest": {
+      const count = Number(payload.count ?? 0);
+      const oldest = payload.oldestRef
+        ? ` Oldest: ${payload.oldestRef} (${formatOverdue(payload.oldestOverdueMinutes)} overdue).`
+        : "";
+      return {
+        title: `${count} work order${count === 1 ? "" : "s"} overdue`,
+        body: `${count} work order${count === 1 ? " has" : "s have"} passed the resolution deadline and need attention.${oldest}`,
+      };
+    }
     case "issue.resolution_confirmation_request":
       return {
         title: "Please confirm your issue is fixed",
@@ -120,7 +166,7 @@ export function renderTemplate(
 /** Which preference flag governs each template. */
 function preferenceKeyFor(template: NotificationTemplate): "statusChanges" | "assignments" | "slaAlerts" {
   if (template === "work_order.assigned") return "assignments";
-  if (template === "sla.breached" || template === "sla.escalated") return "slaAlerts";
+  if (template === "sla.breached" || template === "sla.escalated" || template === "sla.digest") return "slaAlerts";
   return "statusChanges";
 }
 
