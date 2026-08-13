@@ -15,11 +15,29 @@ export type NotificationTemplate =
   | "work_order.note_added"
   | "sla.breached"
   | "sla.escalated"
-  | "issue.resolution_confirmation_request";
+  | "issue.resolution_confirmation_request"
+  | "issue.status_changed"
+  | "issue.duplicate_linked";
 
 interface TemplateCopy {
   title: string;
   body: string;
+}
+
+/** Citizen-facing labels for issue statuses — never show the raw enum value. */
+const ISSUE_STATUS_LABELS: Record<string, string> = {
+  reported: "reported",
+  acknowledged: "acknowledged by the department",
+  in_progress: "being worked on",
+  resolved: "marked as resolved",
+  verified: "verified as fixed",
+  rejected: "rejected",
+  reopened: "reopened",
+  closed: "closed",
+};
+
+function issueStatusLabel(status: string): string {
+  return ISSUE_STATUS_LABELS[status] ?? status;
 }
 
 export function renderTemplate(
@@ -49,10 +67,17 @@ export function renderTemplate(
         body: `Your referral of ${ref} to ${payload.toDepartment} was ${payload.decision}.`,
       };
     case "work_order.note_added":
-      return {
-        title: "New note on a shared work order",
-        body: `${payload.authorName ?? "A colleague"} commented on ${ref}.`,
-      };
+      // Citizens only ever see this template for a "citizen"-visibility note
+      // (coordination.service.ts); staff see it for inter-department notes too.
+      return payload.audience === "citizen"
+        ? {
+            title: `Update on your report ${ref}`,
+            body: `There's a new update on your report ${ref}: "${payload.note ?? payload.authorName ?? "see details"}"`,
+          }
+        : {
+            title: "New note on a shared work order",
+            body: `${payload.authorName ?? "A colleague"} commented on ${ref}.`,
+          };
     case "sla.breached":
       return {
         title: "SLA breached",
@@ -66,7 +91,26 @@ export function renderTemplate(
     case "issue.resolution_confirmation_request":
       return {
         title: "Please confirm your issue is fixed",
-        body: `${ref} has been marked resolved. Tell us whether the problem is actually gone.`,
+        body: `Your report ${ref} has been marked resolved. Please check and let us know if the problem is actually gone.`,
+      };
+    case "issue.status_changed": {
+      const label = issueStatusLabel(payload.to);
+      const reasonSuffix = payload.reason ? ` Reason: ${payload.reason}` : "";
+      if (payload.audience === "staff") {
+        return {
+          title: `Citizen reopened ${ref}`,
+          body: `The citizen who filed ${ref} was not satisfied and reopened it.${reasonSuffix}`,
+        };
+      }
+      return {
+        title: `Update on your report ${ref}`,
+        body: `Your report ${ref} is now ${label}.${reasonSuffix}`,
+      };
+    }
+    case "issue.duplicate_linked":
+      return {
+        title: `Someone else reported the same issue`,
+        body: `Another citizen reported the same problem as your report ${ref}. It now has ${payload.supportsCount ?? "more"} people affected by it.`,
       };
     default:
       return { title: "Samadhan update", body: "You have a new notification." };

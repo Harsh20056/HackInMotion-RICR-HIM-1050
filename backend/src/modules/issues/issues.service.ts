@@ -5,6 +5,7 @@ import { generatePublicRef } from "../../shared/lib/publicRef.js";
 import { NotFoundError, ValidationError, ConflictError } from "../../shared/errors/AppError.js";
 import { CreateIssueInput, ListIssuesQuery, ConfirmDuplicateInput } from "./issues.schemas.js";
 import { slaService } from "../sla/sla.service.js";
+import { notificationsService } from "../notifications/notifications.service.js";
 
 function toApiIssue(row: IssueRow) {
   return {
@@ -207,6 +208,15 @@ export const issuesService = {
     ]);
 
     const row = await issuesRepository.findById(existing.id);
+
+    if (existing.reported_by !== reporterId) {
+      await notificationsService.enqueue({
+        recipientId: existing.reported_by,
+        template: "issue.duplicate_linked",
+        payload: { issueId: existing.id, publicRef: existing.public_ref, supportsCount: row!.supports_count },
+      });
+    }
+
     return toApiIssue(row!);
   },
 
