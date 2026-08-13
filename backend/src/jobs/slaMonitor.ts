@@ -1,13 +1,28 @@
 import { prisma } from "../shared/lib/prisma.js";
 import { logger } from "../shared/lib/logger.js";
+import { env } from "../config/env.js";
 import { slaService, EscalationStep } from "../modules/sla/sla.service.js";
-import { notificationsService } from "../modules/notifications/notifications.service.js";
+import { notificationsService, NotificationTemplate } from "../modules/notifications/notifications.service.js";
 
 /**
  * SLA sweeper. Runs every 5 minutes and is deliberately idempotent: the
  * unique (work_order_id, level) index on escalations means a re-run — or two
  * overlapping runs — cannot double-escalate or double-notify.
+ *
+ * Two things keep the noise down. A grace period means a deadline missed by
+ * seconds does not page anyone. And alerts are collected per recipient for
+ * the whole sweep, so a backlog that breaches all at once (a seeded or
+ * migrated dataset, typically) arrives as one digest rather than dozens of
+ * near-identical rows.
  */
+
+/** One pending alert, held until we know whether to digest the recipient's batch. */
+interface PendingAlert {
+  template: NotificationTemplate;
+  payload: Record<string, unknown>;
+  overdueMinutes: number;
+  publicRef: string;
+}
 
 const DEFAULT_CHAIN: EscalationStep[] = [
   { level: 1, afterMinutes: 0, notify: "department_head" },
@@ -41,9 +56,14 @@ async function resolveRecipients(
 }
 
 export async function runSlaSweep(now = new Date()): Promise<{ breached: number; escalated: number }> {
+  // Anything inside the grace window is treated as not yet breached, so a
+  // deadline that slipped by a minute waits for the next sweep instead of
+  // firing immediately.
+  const graceCutoff = new Date(now.getTime() - env.SLA_GRACE_MINUTES * 60_000);
+
   const overdue = await prisma.workOrder.findMany({
     where: {
-      dueAt: { not: null, lt: now },
+      dueAt: { not: null, lt: graceCutoff },
       status: { notIn: ["done", "rejected"] },
     },
     include: {
@@ -56,6 +76,7 @@ export async function runSlaSweep(now = new Date()): Promise<{ breached: number;
 
   let breached = 0;
   let escalated = 0;
+  const pendingByRecipient = new Map<string, PendingAlert[]>();
 
   for (const wo of overdue) {
     const overdueMinutes = Math.floor((now.getTime() - wo.dueAt!.getTime()) / 60_000);
@@ -97,15 +118,26 @@ export async function runSlaSweep(now = new Date()): Promise<{ breached: number;
         throw err;
       }
 
-      await notificationsService.enqueueMany(recipients, step.level === 1 ? "sla.breached" : "sla.escalated", {
-        workOrderId: wo.id,
-        issueId: wo.issueId,
-        publicRef: wo.issue.publicRef,
-        issueTitle: wo.issue.title,
-        department: wo.department.nameEn,
-        level: step.level,
+      const alert: PendingAlert = {
+        template: step.level === 1 ? "sla.breached" : "sla.escalated",
+        payload: {
+          workOrderId: wo.id,
+          issueId: wo.issueId,
+          publicRef: wo.issue.publicRef,
+          issueTitle: wo.issue.title,
+          department: wo.department.nameEn,
+          priority: wo.priority,
+          level: step.level,
+          overdueMinutes,
+        },
         overdueMinutes,
-      });
+        publicRef: wo.issue.publicRef,
+      };
+      for (const recipientId of recipients) {
+        const list = pendingByRecipient.get(recipientId) ?? [];
+        list.push(alert);
+        pendingByRecipient.set(recipientId, list);
+      }
 
       escalated++;
     }
@@ -116,8 +148,34 @@ export async function runSlaSweep(now = new Date()): Promise<{ breached: number;
     });
   }
 
+  let digested = 0;
+  for (const [recipientId, alerts] of pendingByRecipient) {
+    if (alerts.length < env.SLA_DIGEST_THRESHOLD) {
+      for (const a of alerts) {
+        await notificationsService.enqueue({ recipientId, template: a.template, payload: a.payload });
+      }
+      continue;
+    }
+
+    // One row for the whole batch, pointing at the worst offender so the
+    // click-through still lands somewhere useful.
+    const oldest = alerts.reduce((worst, a) => (a.overdueMinutes > worst.overdueMinutes ? a : worst));
+    await notificationsService.enqueue({
+      recipientId,
+      template: "sla.digest",
+      payload: {
+        count: alerts.length,
+        oldestRef: oldest.publicRef,
+        oldestOverdueMinutes: oldest.overdueMinutes,
+        issueId: oldest.payload.issueId,
+        workOrderId: oldest.payload.workOrderId,
+      },
+    });
+    digested++;
+  }
+
   if (breached || escalated) {
-    logger.info({ breached, escalated }, "SLA sweep complete");
+    logger.info({ breached, escalated, digested, graceMinutes: env.SLA_GRACE_MINUTES }, "SLA sweep complete");
   }
   return { breached, escalated };
 }
