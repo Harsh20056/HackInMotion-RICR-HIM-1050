@@ -244,27 +244,33 @@ export default function AdminPage() {
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-            {language === "en" ? "Category" : "श्रेणी"}
-          </label>
-          <Select
-            value={filters.categoryCode ?? "all"}
-            onValueChange={(v) => setFilters({ categoryCode: v === "all" ? undefined : v })}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{language === "en" ? "All categories" : "सभी श्रेणियां"}</SelectItem>
-              {Object.values(CATEGORIES).map((code) => (
-                <SelectItem key={code} value={code}>
-                  {CATEGORY_LABELS[code][language]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Category maps one-to-one onto the owning department, so for a
+            dept_admin this control is a department switcher wearing a different
+            label — every value but their own returns an empty queue. Only a
+            super admin, who spans departments, has anything to pick here. */}
+        {isSuperAdmin && (
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              {language === "en" ? "Category" : "श्रेणी"}
+            </label>
+            <Select
+              value={filters.categoryCode ?? "all"}
+              onValueChange={(v) => setFilters({ categoryCode: v === "all" ? undefined : v })}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{language === "en" ? "All categories" : "सभी श्रेणियां"}</SelectItem>
+                {Object.values(CATEGORIES).map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {CATEGORY_LABELS[code][language]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1">
           <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
