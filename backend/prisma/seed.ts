@@ -333,16 +333,20 @@ async function upsertUsers(deptIds: Map<string, string>) {
     create: { email: superAdminEmail, passwordHash: superAdminHash, fullName: "Super Admin", role: "super_admin" },
   });
 
-  const deptAdminHash = await bcrypt.hash(requireEnv("SEED_DEPT_ADMIN_PASSWORD"), BCRYPT_ROUNDS);
+  // Each department admin has its own email + password env var.
+  // Env key is derived from the department code uppercased:
+  //   water_supply → SEED_WATER_SUPPLY_ADMIN_EMAIL / SEED_WATER_SUPPLY_ADMIN_PASSWORD
   const deptAdminIds = new Map<string, string>();
   for (const dept of DEPARTMENTS) {
-    const email = `${dept.code}.admin@samadhan.gov.in`;
+    const envPrefix = `SEED_${dept.code.toUpperCase()}_ADMIN`;
+    const email = requireEnv(`${envPrefix}_EMAIL`);
+    const passwordHash = await bcrypt.hash(requireEnv(`${envPrefix}_PASSWORD`), BCRYPT_ROUNDS);
     const row = await prisma.user.upsert({
       where: { email },
       update: { departmentId: deptIds.get(dept.code) },
       create: {
         email,
-        passwordHash: deptAdminHash,
+        passwordHash,
         fullName: `${dept.nameEn} Admin`,
         role: "dept_admin",
         departmentId: deptIds.get(dept.code),
