@@ -4,6 +4,7 @@ import { issuesRepository, IssueRow } from "./issues.repository.js";
 import { generatePublicRef } from "../../shared/lib/publicRef.js";
 import { NotFoundError, ValidationError, ConflictError } from "../../shared/errors/AppError.js";
 import { CreateIssueInput, ListIssuesQuery, ConfirmDuplicateInput } from "./issues.schemas.js";
+import { slaService } from "../sla/sla.service.js";
 
 function toApiIssue(row: IssueRow) {
   return {
@@ -139,16 +140,31 @@ export const issuesService = {
         });
       }
 
-      // Data-driven routing: one work order per matching department rule.
-      await tx.workOrder.createMany({
-        data: rules.map((rule, idx) => ({
-          issueId: inserted.id,
-          departmentId: rule.departmentId,
-          role: rule.role,
-          priority: rule.priority,
-          sequence: idx,
-        })),
-      });
+      // Data-driven routing: one work order per matching rule — the primary
+      // department plus every supporting/notify department the category
+      // declares. Each carries its own SLA clock.
+      const createdAt = inserted.createdAt ?? new Date();
+      const workOrderRows = await Promise.all(
+        rules.map(async (rule, idx) => {
+          const sla = await slaService.computeDueDates({
+            categoryId: category.id,
+            departmentId: rule.departmentId,
+            priority: rule.priority,
+            from: createdAt,
+          });
+          return {
+            issueId: inserted.id,
+            departmentId: rule.departmentId,
+            role: rule.role,
+            priority: rule.priority,
+            sequence: idx,
+            slaPolicyId: sla.slaPolicyId,
+            ackDueAt: sla.ackDueAt,
+            dueAt: sla.dueAt,
+          };
+        })
+      );
+      await tx.workOrder.createMany({ data: workOrderRows });
 
       await tx.issueStatusHistory.create({
         data: {
