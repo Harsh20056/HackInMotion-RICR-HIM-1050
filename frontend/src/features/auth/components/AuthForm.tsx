@@ -23,6 +23,7 @@ import {
   Building
 } from "lucide-react";
 import { logger } from "@/shared/services/logger";
+import { DEMO_CREDENTIALS, DemoCredential } from "../config/demoCredentials";
 
 export function AuthForm() {
   const location = useLocation();
@@ -39,6 +40,21 @@ export function AuthForm() {
   const [state, setState] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleSelectDemo = (demo: DemoCredential) => {
+    setEmail(demo.email);
+    setPassword(demo.password);
+    if (isSignUp) {
+      setFullName(demo.fullName);
+      setCity(demo.city);
+      setState(demo.state);
+      setConfirmPassword(demo.password);
+    }
+    toast({
+      title: language === "en" ? "Demo Account Selected" : "डेमो खाता चुना गया",
+      description: `${demo.roleLabel} (${demo.email})`,
+    });
+  };
 
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "hi" : "en");
@@ -143,229 +159,264 @@ export function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 civic-gradient relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23fff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        
-        <div className="relative z-10 flex flex-col justify-center px-12 text-primary-foreground">
-          <Link to={ROUTES.LANDING} className="flex items-center gap-3 mb-12">
-            <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center shadow-lg">
-              <span className="text-primary-foreground font-bold text-2xl">स</span>
-            </div>
-            <div>
-              <h1 className="font-bold text-2xl">Samadhan</h1>
-              <p className="text-sm text-primary-foreground/70">समाधान</p>
-            </div>
-          </Link>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ── ORIGINAL FULL SCREEN SPLIT LOGIN LAYOUT ── */}
+      <div className="flex flex-1 w-full min-h-screen">
+        {/* Left Panel - Branding */}
+        <div className="hidden lg:flex lg:w-1/2 civic-gradient relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23fff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }} />
+          </div>
           
-          <h2 className="text-4xl font-bold mb-6 leading-tight">
-            {language === "en" 
-              ? "Empowering Citizens Through Technology" 
-              : "प्रौद्योगिकी के माध्यम से नागरिकों को सशक्त बनाना"}
-          </h2>
-          <p className="text-lg text-primary-foreground/80 mb-8">
-            {language === "en"
-              ? "Report issues, access schemes, and get AI assistance—all in one place."
-              : "समस्याओं की रिपोर्ट करें, योजनाओं तक पहुंचें, और AI सहायता प्राप्त करें—सब एक जगह।"}
-          </p>
-          
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold">50K+</p>
-              <p className="text-sm text-primary-foreground/70">{t("hero.issuesResolved")}</p>
-            </div>
-            <div className="w-px h-12 bg-primary-foreground/20" />
-            <div className="text-center">
-              <p className="text-3xl font-bold">2.5L+</p>
-              <p className="text-sm text-primary-foreground/70">{t("hero.activeCitizens")}</p>
+          <div className="relative z-10 flex flex-col justify-center px-12 text-primary-foreground">
+            <Link to={ROUTES.LANDING} className="flex items-center gap-3 mb-12">
+              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center shadow-lg">
+                <span className="text-primary-foreground font-bold text-2xl">स</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-2xl">Samadhan</h1>
+                <p className="text-sm text-primary-foreground/70">समाधान</p>
+              </div>
+            </Link>
+            
+            <h2 className="text-4xl font-bold mb-6 leading-tight">
+              {language === "en" 
+                ? "Empowering Citizens Through Technology" 
+                : "प्रौद्योगिकी के माध्यम से नागरिकों को सशक्त बनाना"}
+            </h2>
+            <p className="text-lg text-primary-foreground/80 mb-8">
+              {language === "en"
+                ? "Report issues, access schemes, and get AI assistance—all in one place."
+                : "समस्याओं की रिपोर्ट करें, योजनाओं तक पहुंचें, और AI सहायता प्राप्त करें—सब एक जगह।"}
+            </p>
+            
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-3xl font-bold">50K+</p>
+                <p className="text-sm text-primary-foreground/70">{t("hero.issuesResolved")}</p>
+              </div>
+              <div className="w-px h-12 bg-primary-foreground/20" />
+              <div className="text-center">
+                <p className="text-3xl font-bold">2.5L+</p>
+                <p className="text-sm text-primary-foreground/70">{t("hero.activeCitizens")}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Right Panel - Form */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between p-4 sm:p-6">
-          <Link to={ROUTES.LANDING} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">{language === "en" ? "Back to Home" : "होम पर वापस"}</span>
-          </Link>
-          <Button variant="ghost" size="sm" onClick={toggleLanguage} className="gap-2">
-            <Globe className="w-4 h-4" />
-            {language === "en" ? "हिंदी" : "English"}
-          </Button>
-        </div>
+        {/* Right Panel - Form */}
+        <div className="flex-1 flex flex-col min-h-screen justify-between">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between p-4 sm:p-6">
+            <Link to={ROUTES.LANDING} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm">{language === "en" ? "Back to Home" : "होम पर वापस"}</span>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={toggleLanguage} className="gap-2">
+              <Globe className="w-4 h-4" />
+              {language === "en" ? "हिंदी" : "English"}
+            </Button>
+          </div>
 
-        {/* Form Container */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-8">
-          <div className="w-full max-w-md">
-            {/* Mobile Logo */}
-            <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-              <div className="w-12 h-12 rounded-xl civic-gradient flex items-center justify-center shadow-md">
-                <span className="text-primary-foreground font-bold text-xl">स</span>
+          {/* Form Container */}
+          <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-8">
+            <div className="w-full max-w-md">
+              {/* Mobile Logo */}
+              <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
+                <div className="w-12 h-12 rounded-xl civic-gradient flex items-center justify-center shadow-md">
+                  <span className="text-primary-foreground font-bold text-xl">स</span>
+                </div>
+                <div>
+                  <h1 className="font-bold text-xl text-foreground">Samadhan</h1>
+                  <p className="text-xs text-muted-foreground">समाधान</p>
+                </div>
               </div>
-              <div>
-                <h1 className="font-bold text-xl text-foreground">Samadhan</h1>
-                <p className="text-xs text-muted-foreground">समाधान</p>
+
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                  {isSignUp ? t("auth.createAccount") : t("auth.welcomeBack")}
+                </h2>
+                <p className="text-muted-foreground">
+                  {isSignUp ? t("auth.joinCommunity") : t("auth.signInContinue")}
+                </p>
               </div>
-            </div>
 
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                {isSignUp ? t("auth.createAccount") : t("auth.welcomeBack")}
-              </h2>
-              <p className="text-muted-foreground">
-                {isSignUp ? t("auth.joinCommunity") : t("auth.signInContinue")}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">{t("auth.fullName")}</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="fullName"
-                        type="text"
-                        placeholder={language === "en" ? "Enter your full name" : "अपना पूरा नाम दर्ज करें"}
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isSignUp && (
+                  <>
                     <div className="space-y-2">
-                      <Label htmlFor="city">{language === "en" ? "City *" : "शहर *"}</Label>
+                      <Label htmlFor="fullName">{t("auth.fullName")}</Label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
-                          id="city"
+                          id="fullName"
                           type="text"
-                          placeholder={language === "en" ? "e.g. Bhopal" : "जैसे भोपाल"}
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
+                          placeholder={language === "en" ? "Enter your full name" : "अपना पूरा नाम दर्ज करें"}
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
                           className="pl-10"
                           required
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="state">{language === "en" ? "State *" : "राज्य *"}</Label>
-                      <div className="relative">
-                        <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="state"
-                          type="text"
-                          placeholder={language === "en" ? "e.g. Madhya Pradesh" : "जैसे मध्य प्रदेश"}
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">{language === "en" ? "City *" : "शहर *"}</Label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="city"
+                            type="text"
+                            placeholder={language === "en" ? "e.g. Bhopal" : "जैसे भोपाल"}
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="state">{language === "en" ? "State *" : "राज्य *"}</Label>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="state"
+                            type="text"
+                            placeholder={language === "en" ? "e.g. Madhya Pradesh" : "जैसे मध्य प्रदेश"}
+                            value={state}
+                            onChange={(e) => setState(e.target.value)}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">{t("auth.email")}</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={language === "en" ? "Enter your email" : "अपना ईमेल दर्ज करें"}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{t("auth.password")}</Label>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder={language === "en" ? "Enter your password" : "अपना पासवर्ड दर्ज करें"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {isSignUp && (
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
+                  <Label htmlFor="email">{t("auth.email")}</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      id="confirmPassword"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={language === "en" ? "Confirm your password" : "अपना पासवर्ड पुष्टि करें"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder={language === "en" ? "Enter your email" : "अपना ईमेल दर्ज करें"}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       required
                     />
                   </div>
                 </div>
-              )}
 
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    {isSignUp ? t("auth.signingUp") : t("auth.signingIn")}
-                  </>
-                ) : (
-                  <>
-                    <Shield className="w-4 h-4 mr-2" />
-                    {isSignUp ? t("auth.signUp") : t("auth.signIn")}
-                  </>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">{t("auth.password")}</Label>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={language === "en" ? "Enter your password" : "अपना पासवर्ड दर्ज करें"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {isSignUp && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="confirmPassword"
+                        type={showPassword ? "text" : "password"}
+                        placeholder={language === "en" ? "Confirm your password" : "अपना पासवर्ड पुष्टि करें"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
                 )}
-              </Button>
-            </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              {isSignUp ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
-              <Link 
-                to={isSignUp ? ROUTES.SIGN_IN : ROUTES.SIGN_UP} 
-                className="text-primary font-medium hover:underline"
-              >
-                {isSignUp ? t("auth.signIn") : t("auth.signUp")}
-              </Link>
+                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      {isSignUp ? t("auth.signingUp") : t("auth.signingIn")}
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4 mr-2" />
+                      {isSignUp ? t("auth.signUp") : t("auth.signIn")}
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                {isSignUp ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
+                <Link 
+                  to={isSignUp ? ROUTES.SIGN_IN : ROUTES.SIGN_UP} 
+                  className="text-primary font-medium hover:underline"
+                >
+                  {isSignUp ? t("auth.signIn") : t("auth.signUp")}
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom spacer padding to balance layout */}
+          <div className="h-12" />
+        </div>
+      </div>
+
+      {/* ── DEMO ACCESS CREDENTIALS CARD - SEEN AFTER SCROLL ── */}
+      {!isLoading && (
+        <div className="w-full bg-[#f8fafc] dark:bg-muted/10 border-t border-border/60 p-6 text-center space-y-3 shadow-inner">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">
+              {language === "en" ? "DEMO ACCESS CREDENTIALS" : "डेमो लॉगिन क्रेडेंशियल्स"}
+            </p>
+            <div className="flex flex-wrap gap-2.5 justify-center">
+              {DEMO_CREDENTIALS.map((demo) => (
+                <button
+                  key={demo.id}
+                  type="button"
+                  onClick={() => handleSelectDemo(demo)}
+                  className="bg-card border border-border/80 hover:border-primary/50 rounded-lg px-3 py-1 text-xs font-mono font-medium hover:bg-muted text-foreground transition-all cursor-pointer shadow-sm hover:shadow"
+                  title={`${demo.fullName} - ${demo.city}, ${demo.state}`}
+                >
+                  {demo.email}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              {language === "en" 
+                ? "Click credentials to auto-fill details (Bhopal, Madhya Pradesh)" 
+                : "विवरण भरने के लिए क्रेडेंशियल्स पर क्लिक करें (भोपाल, मध्य प्रदेश)"}
             </p>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

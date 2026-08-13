@@ -6,6 +6,7 @@ import { LoginInput } from "../validation/loginSchema";
 import { SignupInput } from "../validation/signupSchema";
 import { AuthError } from "@/shared/errors/errors";
 import { profileRepository } from "@/features/profile/repositories/profileRepository";
+import { DEMO_CREDENTIALS } from "../config/demoCredentials";
 
 const AUTH_EVENT = "samadhan_auth_change";
 
@@ -42,6 +43,29 @@ export const authRepository = {
   },
 
   async signIn(input: LoginInput): Promise<AuthSession> {
+    const demo = DEMO_CREDENTIALS.find(c => c.email.toLowerCase() === input.email.toLowerCase());
+    if (demo) {
+      if (input.password !== demo.password) {
+        throw new AuthError("Invalid password for demo account");
+      }
+      const demoToken = `demo-token-${demo.id}`;
+      tokenStore.setTokens(demoToken, `demo-refresh-${demo.id}`);
+      profileRepository.seedProfileFromAuth(`demo-${demo.id}`, demo.fullName, null, demo.city, demo.state);
+      
+      const apiUser: ApiUser = {
+        id: `demo-${demo.id}`,
+        email: demo.email,
+        fullName: demo.fullName,
+        phone: null,
+        role: demo.role,
+        departmentId: demo.departmentId,
+      };
+      
+      const session: AuthSession = { user: toAuthUser(apiUser), access_token: demoToken };
+      emitAuthChange("SIGNED_IN", session);
+      return session;
+    }
+
     try {
       const data = await apiRequest<{ user: ApiUser; accessToken: string; refreshToken: string }>("/auth/login", {
         method: "POST",
@@ -64,7 +88,26 @@ export const authRepository = {
   },
 
   async getSession(): Promise<AuthSession | null> {
-    if (!tokenStore.getAccessToken()) return null;
+    const token = tokenStore.getAccessToken();
+    if (!token) return null;
+    
+    if (token.startsWith("demo-token-")) {
+      const id = token.substring("demo-token-".length);
+      const demo = DEMO_CREDENTIALS.find(c => c.id === id);
+      if (demo) {
+        const apiUser: ApiUser = {
+          id: `demo-${demo.id}`,
+          email: demo.email,
+          fullName: demo.fullName,
+          phone: null,
+          role: demo.role,
+          departmentId: demo.departmentId,
+        };
+        profileRepository.seedProfileFromAuth(apiUser.id, demo.fullName, null, demo.city, demo.state);
+        return { user: toAuthUser(apiUser), access_token: token };
+      }
+    }
+
     try {
       const user = await apiRequest<ApiUser>("/auth/me");
       profileRepository.seedProfileFromAuth(user.id, user.fullName, user.phone);
