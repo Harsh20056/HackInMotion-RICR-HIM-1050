@@ -56,6 +56,7 @@ import {
 import { useAnalytics } from "../hooks/useAnalytics";
 import { formatResolutionTime } from "../services/dashboardService";
 import { DepartmentPerformanceCard, IssueHotspotsCard } from "../components/PerformanceCards";
+import { imageProps } from "@/shared/lib/imageUrl";
 
 // Charts and the issue-detail panels are deliberately split out of this
 // route's chunk. AnalyticsPanel pulls in recharts (~46 KB gz on its own) and
@@ -799,8 +800,8 @@ export default function DashboardPage() {
                   {/* Header Image or Colored Banner */}
                   {selectedIssue.imageUrls && selectedIssue.imageUrls.length > 0 ? (
                     <div className="relative w-full h-56 bg-muted overflow-hidden">
-                      <img 
-                        src={selectedIssue.imageUrls[0]} 
+                      <img
+                        {...imageProps(selectedIssue.imageUrls[0], "detail", { eager: true })}
                         alt={selectedIssue.title}
                         className="w-full h-full object-cover animate-fade-in"
                       />
@@ -1161,9 +1162,8 @@ function IssueCard({
       {issue.imageUrls && issue.imageUrls.length > 0 ? (
         <div className="h-36 w-full bg-muted overflow-hidden relative shrink-0">
           <img
-            src={issue.imageUrls[0]}
+            {...imageProps(issue.imageUrls[0], "thumbnail")}
             alt={issue.title}
-            loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               (e.currentTarget.parentElement as HTMLElement).style.display = "none";

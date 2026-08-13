@@ -70,8 +70,8 @@ export default defineConfig(() => ({
     react(),
     // Emit both, so a host that only understands gzip still gets a
     // precompressed file and does not have to compress per request.
-    compression({ algorithm: "brotliCompress", exclude: [/\.(br|gz)$/] }),
-    compression({ algorithm: "gzip", exclude: [/\.(br|gz)$/] }),
+    compression({ algorithms: ["brotliCompress"], exclude: [/\.(br|gz)$/] }),
+    compression({ algorithms: ["gzip"], exclude: [/\.(br|gz)$/] }),
     servePrecompressed(),
   ],
   resolve: {
