@@ -56,6 +56,11 @@ export function CommunityHeroWidget() {
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // Gamification is a citizen-engagement feature. Staff have no reports,
+  // supports or verifications of their own, so a level badge in their header
+  // is meaningless — and the three stat calls behind it are pure waste.
+  const isCitizen = user?.user_metadata?.role === "citizen";
+
   const refreshStats = async () => {
     if (!user) return;
     try {
@@ -80,7 +85,7 @@ export function CommunityHeroWidget() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && isCitizen) {
       refreshStats();
       window.addEventListener("gamification_updated", refreshStats);
       return () => {
@@ -92,7 +97,7 @@ export function CommunityHeroWidget() {
       setUserProfile(null);
       setStatsLoaded(false);
     }
-  }, [user]);
+  }, [user, isCitizen]);
 
   const progress = gamificationService.computeProgress(issues, supportedIssues, verificationsCount);
 
@@ -176,7 +181,7 @@ export function CommunityHeroWidget() {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  if (!user || !progress) return null;
+  if (!user || !isCitizen || !progress) return null;
 
   const unlockedBadges = progress.achievements.filter((a) => a.unlocked).slice(0, 4);
 
