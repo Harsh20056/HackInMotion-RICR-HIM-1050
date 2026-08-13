@@ -123,8 +123,11 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
               </span>
             </Button>
 
-            {/* Notifications Dropdown */}
-            <DropdownMenu>
+            {/* Notifications Dropdown — signed-out visitors only. Signed-in
+                users get the backend-connected NotificationBell below;
+                showing both here would render two separate, inconsistent
+                bells. */}
+            {!user && <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="iconSm" className="relative">
                   <Bell className="w-4 h-4" />
@@ -177,7 +180,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                   ))
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu>}
 
             {/* User Menu or Sign In */}
             {loading ? (

@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiRequest } from "@/shared/lib/apiClient";
 import { useAuth } from "@/features/auth";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { logger } from "@/shared/services/logger";
 import { Bell, Loader2 } from "lucide-react";
+import { ROUTES } from "@/shared/config/routes";
 
 interface FeedItem {
   id: string;
   template: string;
   title: string;
   body: string;
+  payload: Record<string, unknown> | null;
   readAt: string | null;
   createdAt: string;
 }
@@ -25,6 +28,7 @@ const POLL_MS = 60_000;
 export function NotificationBell() {
   const { user } = useAuth();
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [unread, setUnread] = useState(0);
@@ -87,6 +91,23 @@ export function NotificationBell() {
     }
   };
 
+  const handleItemClick = async (item: FeedItem) => {
+    setOpen(false);
+    if (!item.readAt) {
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, readAt: new Date().toISOString() } : i)));
+      setUnread((prev) => Math.max(0, prev - 1));
+      try {
+        await apiRequest("/notifications/read", { method: "POST", body: { ids: [item.id] } });
+      } catch (err) {
+        logger.error("Failed to mark notification read:", err);
+      }
+    }
+    const issueId = item.payload?.issueId;
+    if (typeof issueId === "string" && issueId) {
+      navigate(`${ROUTES.DASHBOARD}?issueId=${issueId}`);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -105,7 +126,10 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl z-[1100]">
+        // Anchoring to the button's own edge overflows off-screen on narrow
+        // viewports where the button isn't flush with the viewport edge —
+        // pin to the viewport itself below sm, anchor to the button above it.
+        <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 max-h-96 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl z-[1100]">
           <div className="flex items-center justify-between px-3 py-2 border-b border-border sticky top-0 bg-card">
             <span className="text-xs font-bold text-foreground">
               {language === "en" ? "Notifications" : "सूचनाएं"}
@@ -128,12 +152,18 @@ export function NotificationBell() {
           ) : (
             <ul className="divide-y divide-border/60">
               {items.map((n) => (
-                <li key={n.id} className={`px-3 py-2 ${n.readAt ? "" : "bg-primary/5"}`}>
-                  <p className="text-xs font-semibold text-foreground">{n.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{n.body}</p>
-                  <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    {new Date(n.createdAt).toLocaleString()}
-                  </p>
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleItemClick(n)}
+                    className={`w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors ${n.readAt ? "" : "bg-primary/5"}`}
+                  >
+                    <p className="text-xs font-semibold text-foreground">{n.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{n.body}</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </p>
+                  </button>
                 </li>
               ))}
             </ul>

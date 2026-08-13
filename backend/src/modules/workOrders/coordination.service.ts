@@ -160,6 +160,8 @@ export const coordinationService = {
           issueId: wo.issueId,
           publicRef: wo.issue.publicRef,
           authorName: note.author.fullName,
+          audience: "citizen",
+          note: note.body,
         },
       });
     }

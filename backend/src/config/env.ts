@@ -17,6 +17,10 @@ const envSchema = z.object({
   // with a stated reason rather than silently dropped.
   RESEND_API_KEY: z.string().optional().default(""),
   NOTIFICATION_FROM_EMAIL: z.string().default("Samadhan <onboarding@resend.dev>"),
+  // Seeded/dev users live on @samadhan.gov.in, a domain we don't own — Resend
+  // will reject sends to it. In non-production, set this to a real address
+  // you've verified with Resend and every outbound email redirects there.
+  DEV_EMAIL_OVERRIDE: z.string().optional().default(""),
   // Escape hatch for running the API without background workers.
   DISABLE_JOBS: z
     .string()

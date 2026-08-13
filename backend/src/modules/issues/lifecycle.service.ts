@@ -4,6 +4,7 @@ import { eventBus } from "../../shared/lib/eventBus.js";
 import { AppError, ForbiddenError, NotFoundError } from "../../shared/errors/AppError.js";
 import { AccessTokenClaims } from "../../shared/lib/jwt.js";
 import { isTransitionAllowed, actorMayTransition, timestampFieldFor, ALLOWED_ISSUE_TRANSITIONS } from "./lifecycle.js";
+import { notificationsService } from "../notifications/notifications.service.js";
 
 /** 422 — the request was well-formed but the state change isn't legal. */
 class UnprocessableError extends AppError {
@@ -31,6 +32,48 @@ export interface TransitionInput {
   /** Cloudinary URL + public id of the proof-of-resolution photo. */
   proofUrl?: string;
   proofPublicId?: string;
+}
+
+/**
+ * The citizen who filed an issue only ever sees it change from the outside —
+ * this is the one place that tells them. Staff-initiated moves notify the
+ * reporter; a citizen-initiated reopen (disputing a resolution/rejection)
+ * notifies the owning department instead.
+ */
+async function notifyOnTransition(
+  issue: { id: string; publicRef: string; title: string; reportedBy: string; workOrders: { departmentId: string }[] },
+  to: IssueStatus,
+  reason: string | null,
+  actor: AccessTokenClaims
+) {
+  const actorIsStaff = actor.role === "dept_admin" || actor.role === "super_admin";
+  const actorIsReporter = actor.sub === issue.reportedBy;
+
+  if (actorIsStaff && !actorIsReporter) {
+    if (to === "resolved") {
+      await notificationsService.enqueue({
+        recipientId: issue.reportedBy,
+        template: "issue.resolution_confirmation_request",
+        payload: { issueId: issue.id, publicRef: issue.publicRef, issueTitle: issue.title },
+      });
+    } else if (to === "acknowledged" || to === "in_progress" || to === "rejected" || to === "closed") {
+      await notificationsService.enqueue({
+        recipientId: issue.reportedBy,
+        template: "issue.status_changed",
+        payload: { issueId: issue.id, publicRef: issue.publicRef, to, reason },
+      });
+    }
+  } else if (!actorIsStaff && to === "reopened") {
+    const admins = await prisma.user.findMany({
+      where: { role: "dept_admin", departmentId: { in: issue.workOrders.map((wo) => wo.departmentId) } },
+      select: { id: true },
+    });
+    await notificationsService.enqueueMany(
+      admins.map((a) => a.id),
+      "issue.status_changed",
+      { issueId: issue.id, publicRef: issue.publicRef, to, reason, audience: "staff" }
+    );
+  }
 }
 
 export const lifecycleService = {
@@ -147,6 +190,8 @@ export const lifecycleService = {
       payload: { from, to, actorRole: actor.role, reason: input.reason ?? null },
       at: now.toISOString(),
     });
+
+    await notifyOnTransition(issue, to, input.reason ?? null, actor);
 
     return updated;
   },
