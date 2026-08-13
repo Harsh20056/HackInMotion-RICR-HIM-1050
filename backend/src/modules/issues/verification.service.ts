@@ -42,6 +42,49 @@ export const verificationService = {
     return summarise(confirmations, disagreements, own?.vote ?? null);
   },
 
+  /**
+   * Same shape as getState, for many issues in one round trip. The dashboard
+   * renders 20 cards at a time and each needs its verification badge; asking
+   * per issue cost 20 requests plus 20 CORS preflights on first paint.
+   *
+   * Two grouped queries regardless of how many ids come in, so this stays
+   * flat as the page size grows.
+   */
+  async getStates(issueIds: string[], userId?: string): Promise<Record<string, VerificationState>> {
+    const ids = [...new Set(issueIds.filter(Boolean))];
+    if (ids.length === 0) return {};
+
+    const [grouped, own] = await Promise.all([
+      prisma.citizenVerification.groupBy({
+        by: ["issueId", "vote"],
+        where: { issueId: { in: ids } },
+        _count: { _all: true },
+      }),
+      userId
+        ? prisma.citizenVerification.findMany({
+            where: { issueId: { in: ids }, userId },
+            select: { issueId: true, vote: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const tally = new Map<string, { yes: number; no: number }>();
+    for (const row of grouped) {
+      const t = tally.get(row.issueId) ?? { yes: 0, no: 0 };
+      if (row.vote) t.yes = row._count._all;
+      else t.no = row._count._all;
+      tally.set(row.issueId, t);
+    }
+    const ownVote = new Map(own.map((o) => [o.issueId, o.vote]));
+
+    const out: Record<string, VerificationState> = {};
+    for (const id of ids) {
+      const t = tally.get(id) ?? { yes: 0, no: 0 };
+      out[id] = summarise(t.yes, t.no, ownVote.get(id) ?? null);
+    }
+    return out;
+  },
+
   /** Upserts the caller's vote — one per (issue, user), changeable. */
   async vote(issueId: string, userId: string, vote: boolean): Promise<VerificationState> {
     const issue = await prisma.issue.findUnique({

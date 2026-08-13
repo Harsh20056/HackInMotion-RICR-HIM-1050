@@ -77,3 +77,16 @@ export const verifyIssueSchema = z.object({
   /** true = confirms the issue is real, false = disputes it */
   vote: z.boolean(),
 });
+
+/**
+ * Bulk verification lookup. Accepts a comma-separated id list and caps it at
+ * the largest page the UI ever renders, so the endpoint cannot be used to
+ * pull the whole table in one request.
+ */
+export const bulkVerificationQuerySchema = z.object({
+  ids: z
+    .string()
+    .min(1)
+    .transform((raw) => raw.split(",").map((s) => s.trim()).filter(Boolean))
+    .pipe(z.array(z.string().uuid()).min(1).max(100)),
+});
