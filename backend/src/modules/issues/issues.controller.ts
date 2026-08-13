@@ -15,6 +15,7 @@ import { authenticate, authenticateSse, optionalAuthenticate } from "../../share
 import { uuidParam } from "../../shared/schemas/common.js";
 import { writeAuditLog } from "../../shared/lib/auditLog.js";
 import { openSseStream } from "../../shared/lib/sse.js";
+import { workOrdersService } from "../workOrders/workOrders.service.js";
 import { eventBus } from "../../shared/lib/eventBus.js";
 
 export const issuesRouter = Router();
@@ -187,6 +188,17 @@ issuesRouter.post(
     }
   }
 );
+
+// ── Coordination ───────────────────────────────────────────────────────────
+
+/** All work orders on this issue, with dependency + blocker state. */
+issuesRouter.get("/:id/work-orders", validate(uuidParam("id"), "params"), async (req, res, next) => {
+  try {
+    res.json({ items: await workOrdersService.listForIssue(req.params.id as string) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── Real-time (PS #5) ──────────────────────────────────────────────────────
 

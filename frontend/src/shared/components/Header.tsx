@@ -30,6 +30,7 @@ import {
 } from "@/shared/components/ui/dropdown-menu";
 import { notificationService, AppNotification } from "@/shared/services/notificationService";
 import { CommunityHeroWidget } from "@/features/profile/components/CommunityHeroWidget";
+import { NotificationBell } from "@/shared/components/NotificationBell";
 
 interface NavItem {
   labelKey: string;
@@ -184,7 +185,10 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                 <Loader2 className="w-4 h-4 animate-spin" />
               </Button>
             ) : user ? (
-              <CommunityHeroWidget />
+              <>
+                <NotificationBell />
+                <CommunityHeroWidget />
+              </>
             ) : (
               <Link to={ROUTES.SIGN_IN}>
                 <Button variant="outline" size="sm" className="hidden sm:flex gap-2">

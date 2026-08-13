@@ -13,6 +13,15 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   CORS_ORIGIN: z.string().default("http://localhost:8080"),
+  // Email delivery. Absent key => email notifications are marked failed
+  // with a stated reason rather than silently dropped.
+  RESEND_API_KEY: z.string().optional().default(""),
+  NOTIFICATION_FROM_EMAIL: z.string().default("Samadhan <onboarding@resend.dev>"),
+  // Escape hatch for running the API without background workers.
+  DISABLE_JOBS: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
 });
 
 const parsed = envSchema.safeParse(process.env);
