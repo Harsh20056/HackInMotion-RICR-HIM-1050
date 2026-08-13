@@ -341,6 +341,10 @@ export default function DashboardPage() {
     setSearchParams({ issueId });
   };
 
+  const handleViewOnMap = (issueId: string) => {
+    navigate(`${ROUTES.CIVIC_MAP}?issueId=${issueId}`);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === " " && e.target === e.currentTarget) {
       e.preventDefault();
