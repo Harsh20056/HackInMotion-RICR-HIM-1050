@@ -44,6 +44,11 @@ export const profileRepository = {
         needsUpdate = true;
       }
 
+      if (existing.city && existing.city === "BhopalBhopal") {
+        patch.city = "Bhopal";
+        needsUpdate = true;
+      }
+
       if (needsUpdate) {
         const updated = mockTable.update<ProfileResponse>(PROFILES_TABLE, "user_id", userId, patch);
         return updated || existing;
@@ -69,7 +74,7 @@ export const profileRepository = {
     return mockTable.insert<ProfileResponse>(PROFILES_TABLE, created);
   },
 
-  seedProfileFromAuth(userId: string, fullName?: string, phone?: string | null): void {
+  seedProfileFromAuth(userId: string, fullName?: string, phone?: string | null, city?: string | null, state?: string | null): void {
     const profiles = mockTable.getAll<ProfileResponse>(PROFILES_TABLE);
     const existing = profiles.find((p) => p.user_id === userId);
     const now = new Date().toISOString();
@@ -82,6 +87,12 @@ export const profileRepository = {
       if (phone && !existing.phone) {
         patch.phone = phone;
       }
+      if (city && !existing.city) {
+        patch.city = city;
+      }
+      if (state && !existing.state) {
+        patch.state = state;
+      }
       if (Object.keys(patch).length > 0) {
         mockTable.update<ProfileResponse>(PROFILES_TABLE, "user_id", userId, patch);
       }
@@ -92,8 +103,8 @@ export const profileRepository = {
         full_name: fullName || "User",
         phone: phone || null,
         address: null,
-        city: null,
-        state: null,
+        city: city || null,
+        state: state || null,
         pincode: null,
         avatar_url: null,
         preferred_language: "en",

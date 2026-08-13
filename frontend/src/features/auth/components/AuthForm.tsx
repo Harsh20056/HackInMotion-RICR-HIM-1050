@@ -18,7 +18,9 @@ import {
   EyeOff,
   Loader2,
   ArrowLeft,
-  Globe
+  Globe,
+  MapPin,
+  Building
 } from "lucide-react";
 import { logger } from "@/shared/services/logger";
 
@@ -33,6 +35,8 @@ export function AuthForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,6 +54,8 @@ export function AuthForm() {
         const validation = signupSchema.safeParse({
           fullName,
           email,
+          city,
+          state,
           password,
           confirmPassword,
         });
@@ -68,6 +74,8 @@ export function AuthForm() {
         await authService.signUp({
           fullName: validation.data.fullName,
           email: validation.data.email,
+          city: validation.data.city,
+          state: validation.data.state,
           password: validation.data.password,
           confirmPassword: validation.data.confirmPassword,
         });
@@ -219,21 +227,57 @@ export function AuthForm() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">{t("auth.fullName")}</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder={language === "en" ? "Enter your full name" : "अपना पूरा नाम दर्ज करें"}
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">{t("auth.fullName")}</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="fullName"
+                        type="text"
+                        placeholder={language === "en" ? "Enter your full name" : "अपना पूरा नाम दर्ज करें"}
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">{language === "en" ? "City *" : "शहर *"}</Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="city"
+                          type="text"
+                          placeholder={language === "en" ? "e.g. Bhopal" : "जैसे भोपाल"}
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="state">{language === "en" ? "State *" : "राज्य *"}</Label>
+                      <div className="relative">
+                        <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="state"
+                          type="text"
+                          placeholder={language === "en" ? "e.g. Madhya Pradesh" : "जैसे मध्य प्रदेश"}
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
 
               <div className="space-y-2">

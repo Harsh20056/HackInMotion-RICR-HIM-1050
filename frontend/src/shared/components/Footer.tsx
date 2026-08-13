@@ -37,9 +37,7 @@ export const Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
     const quickLinks = [
       { labelKey: "nav.report",    href: ROUTES.REPORT_ISSUE },
       { labelKey: "nav.dashboard", href: ROUTES.DASHBOARD },
-      { labelKey: "nav.schemes",   href: ROUTES.SCHEMES },
-      { labelKey: "nav.analyzer",  href: ROUTES.FORM_ANALYZER },
-      { labelKey: "nav.documents", href: ROUTES.DOCUMENTS },
+      { labelKey: "nav.map",       href: ROUTES.CIVIC_MAP },
     ];
 
     const resources = [

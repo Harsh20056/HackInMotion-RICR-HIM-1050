@@ -10,6 +10,7 @@ const AUTH_ROUTES = [ROUTES.SIGN_IN, ROUTES.SIGN_UP];
 export function MainLayout() {
   const { pathname } = useLocation();
   const isAuthPage = AUTH_ROUTES.includes(pathname as typeof ROUTES.SIGN_IN);
+  const showFooter = pathname === ROUTES.DASHBOARD || pathname === ROUTES.HOME;
 
   return (
     <div className="min-h-screen bg-background relative flex flex-col justify-between">
@@ -19,7 +20,7 @@ export function MainLayout() {
       <main className={`flex-1 w-full ${!isAuthPage ? "pt-16" : ""}`}>
         <Outlet />
       </main>
-      {!isAuthPage && <Footer />}
+      {showFooter && <Footer />}
     </div>
   );
 }

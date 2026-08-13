@@ -87,7 +87,10 @@ export default function ReportIssuePage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form 
+          onSubmit={handleSubmit} 
+          className="bg-card border-2 border-border/90 rounded-3xl p-6 sm:p-10 shadow-xl space-y-8"
+        >
           {/* Category Selection */}
           <div>
             <Label className="text-base mb-4 block">

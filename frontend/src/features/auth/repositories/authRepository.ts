@@ -34,7 +34,7 @@ export const authRepository = {
         auth: false,
         body: { email: input.email, password: input.password, fullName: input.fullName },
       });
-      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone);
+      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone, input.city, input.state);
       return { user: toAuthUser(data.user), access_token: data.accessToken };
     } catch (error: any) {
       throw new AuthError(error.message, error);

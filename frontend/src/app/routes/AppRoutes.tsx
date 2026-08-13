@@ -36,7 +36,6 @@ export function AppRoutes() {
           <Route path={ROUTES.LANDING} element={<Landing />} />
           <Route path={ROUTES.SIGN_IN} element={<Auth />} />
           <Route path={ROUTES.SIGN_UP} element={<Auth />} />
-          <Route path={ROUTES.SCHEMES} element={<Schemes />} />
           <Route path={ROUTES.FORM_ANALYZER} element={<FormAnalyzer />} />
           <Route path={ROUTES.CIVIC_MAP} element={<CivicMap />} />
           
@@ -54,14 +53,6 @@ export function AppRoutes() {
             element={
               <AuthGuard>
                 <ReportIssue />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path={ROUTES.DOCUMENTS}
-            element={
-              <AuthGuard>
-                <Documents />
               </AuthGuard>
             }
           />
