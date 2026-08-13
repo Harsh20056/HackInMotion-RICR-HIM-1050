@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "@/shared/lib/apiClient";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { LoadingState } from "@/shared/components/LoadingState";
-import { PageMeta } from "@/shared/components/PageMeta";
 import { Badge } from "@/shared/components/ui/badge";
 import { ShieldCheck, AlertTriangle, Clock, TrendingUp, Building2 } from "lucide-react";
 
@@ -62,17 +61,21 @@ export default function TransparencyPage() {
       .catch((err) => setError(err?.message ?? "Could not load the scorecard."));
   }, []);
 
-  // The heading and page metadata render unconditionally, before the data
-  // arrives or fails. This route is one of only two crawlable pages, so a
-  // prerender or a slow connection must still yield a real <h1>, title and
-  // canonical rather than a spinner or an error line.
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-md text-center">
+        <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <LoadingState message={language === "en" ? "Loading scorecard…" : "स्कोरकार्ड लोड हो रहा है…"} />;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <PageMeta
-        title="Department performance scorecard — Samadhan"
-        description="Live public scorecard of how each municipal department is performing on citizen complaints: resolution rates, average time to fix, and SLA breaches. No login required."
-        path="/transparency"
-      />
       <div className="flex items-center gap-3 mb-2">
         <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
           <ShieldCheck className="w-5 h-5" />
@@ -89,30 +92,6 @@ export default function TransparencyPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="my-10 text-center">
-          <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">{error}</p>
-        </div>
-      )}
-
-      {!error && !data && (
-        <div className="my-6 space-y-6" aria-busy="true">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-[104px] rounded-2xl bg-muted/30 animate-pulse" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-[268px] rounded-2xl bg-muted/30 animate-pulse" />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {data && (
-        <>
       {/* City-wide summary */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 my-6">
         {[
@@ -191,8 +170,6 @@ export default function TransparencyPage() {
       <p className="text-[10px] text-muted-foreground mt-6 text-center">
         {language === "en" ? "Generated" : "जनरेट"} {new Date(data.generatedAt).toLocaleString()}
       </p>
-        </>
-      )}
     </div>
   );
 }

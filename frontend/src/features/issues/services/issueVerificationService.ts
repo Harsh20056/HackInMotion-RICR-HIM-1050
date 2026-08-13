@@ -53,38 +53,27 @@ class IssueVerificationService {
     const missing = issueIds.filter((id) => !this.cache.has(id) && !this.inFlight.has(id));
     if (missing.length === 0) return;
 
-    // One bulk request for the whole page. Asking per issue meant 20 requests
-    // plus 20 CORS preflights before the dashboard settled, which dominated
-    // load time on a high-latency connection even though each payload is tiny.
-    const load = async (ids: string[]) => {
+    // The API exposes per-issue state; fetch the missing ones concurrently
+    // and de-duplicate so a re-render can't storm the backend.
+    const load = async (id: string) => {
       try {
-        const res = await apiRequest<{ states: Record<string, ApiVerificationState> }>(
-          `/issues/verifications?ids=${ids.join(",")}`
-        );
-        for (const id of ids) {
-          const state = res.states?.[id];
-          this.cache.set(id, state ? fromApi(state) : EMPTY);
-        }
+        const state = await apiRequest<ApiVerificationState>(`/issues/${id}/verification`);
+        this.cache.set(id, fromApi(state));
       } catch (err) {
-        logger.error(`Failed to load verification state for ${ids.length} issues:`, err);
-        for (const id of ids) this.cache.set(id, EMPTY);
+        logger.error(`Failed to load verification state for ${id}:`, err);
+        this.cache.set(id, EMPTY);
       } finally {
-        for (const id of ids) this.inFlight.delete(id);
+        this.inFlight.delete(id);
       }
     };
 
-    // The endpoint caps each request, so chunk to match rather than 400.
-    const BATCH = 100;
-    const batches: string[][] = [];
-    for (let i = 0; i < missing.length; i += BATCH) batches.push(missing.slice(i, i + BATCH));
+    const promises = missing.map((id) => {
+      const p = load(id);
+      this.inFlight.set(id, p);
+      return p;
+    });
 
-    await Promise.all(
-      batches.map((ids) => {
-        const p = load(ids);
-        for (const id of ids) this.inFlight.set(id, p);
-        return p;
-      })
-    );
+    await Promise.all(promises);
     this.notifyChanged();
   }
 
