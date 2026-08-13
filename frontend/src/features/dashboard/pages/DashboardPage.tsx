@@ -56,6 +56,7 @@ import { useAnalytics } from "../hooks/useAnalytics";
 import { formatResolutionTime } from "../services/dashboardService";
 import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
 import { ResolutionReviewPanel } from "@/features/issues/components/ResolutionReviewPanel";
+import { CoordinationPanel } from "@/features/admin/components/CoordinationPanel";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "Water Supply": <Droplets className="w-4 h-4" />,
@@ -595,6 +596,9 @@ export default function DashboardPage() {
                           }}
                         />
                       )}
+
+                    {/* Multi-department coordination: work orders, blockers, referrals */}
+                    <CoordinationPanel issueId={selectedIssue.id} />
 
                     {/* AI Intelligence Panel — only for authenticated users */}
                     {user && <AIInsightPanel issue={selectedIssue} />}

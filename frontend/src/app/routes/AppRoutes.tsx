@@ -17,6 +17,7 @@ const Auth = lazy(() => import("@/features/auth/pages/AuthPage"));
 const Profile = lazy(() => import("@/features/profile/pages/ProfilePage"));
 const Admin = lazy(() => import("@/features/admin/pages/AdminPage"));
 const CivicMap = lazy(() => import("@/features/civic-map/pages/CivicMapPage"));
+const Transparency = lazy(() => import("@/features/transparency/pages/TransparencyPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function PageLoader() {
@@ -39,6 +40,8 @@ export function AppRoutes() {
           <Route path={ROUTES.SCHEMES} element={<Schemes />} />
           <Route path={ROUTES.FORM_ANALYZER} element={<FormAnalyzer />} />
           <Route path={ROUTES.CIVIC_MAP} element={<CivicMap />} />
+          {/* Public accountability scorecard — deliberately unauthenticated. */}
+          <Route path={ROUTES.TRANSPARENCY} element={<Transparency />} />
           
           {/* Protected Citizen Routes */}
           <Route

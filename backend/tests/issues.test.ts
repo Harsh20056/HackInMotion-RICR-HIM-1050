@@ -113,7 +113,10 @@ describe("work order status transitions", () => {
       .set("Authorization", `Bearer ${adminToken}`)
       .send({ status: "done" });
 
-    expect(res.status).toBe(400);
+    // 422, not 400: the request is well-formed, the state change is what's
+    // rejected. Matches the issue lifecycle endpoint's contract.
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("ILLEGAL_TRANSITION");
   });
 
   it("accepts a valid transition and propagates status to the parent issue for a primary work order", async () => {
