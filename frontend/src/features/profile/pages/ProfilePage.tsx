@@ -127,8 +127,8 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold text-foreground mb-2">
               {language === "en" ? "My Profile" : "मेरी प्रोफ़ाइल"}
             </h1>
-            <p className="text-muted-foreground">
-              {user?.email}
+            <p className="text-muted-foreground font-medium">
+              {profile?.fullName || (user?.user_metadata?.full_name as string) || user?.email}
             </p>
           </div>
           <Button variant="outline" onClick={handleSignOut} className="gap-2">

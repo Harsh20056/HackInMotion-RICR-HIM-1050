@@ -129,21 +129,13 @@ export function AnalyticsPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Panel Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-          <BarChart3 className="w-4.5 h-4.5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-foreground">
-            {language === "en" ? "Civic Analytics" : "नागरिक विश्लेषण"}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {language === "en"
-              ? `${overview.totals.issues} issues · ${overview.totals.geoTagged} geo-tagged · ${formatResolutionTime(overview.resolutionTime.avgHours, "en")} avg. resolution`
-              : `${overview.totals.issues} समस्याएं · ${overview.totals.geoTagged} जियो-टैग · ${formatResolutionTime(overview.resolutionTime.avgHours, "hi")} औसत समाधान`}
-          </p>
-        </div>
+      {/* Panel Summary Subtitle */}
+      <div className="-mt-2">
+        <p className="text-xs text-muted-foreground">
+          {language === "en"
+            ? `${overview.totals.issues} issues · ${overview.totals.geoTagged} geo-tagged · ${formatResolutionTime(overview.resolutionTime.avgHours, "en")} avg. resolution`
+            : `${overview.totals.issues} समस्याएं · ${overview.totals.geoTagged} जियो-टैग · ${formatResolutionTime(overview.resolutionTime.avgHours, "hi")} औसत समाधान`}
+        </p>
       </div>
 
       {/* Category + status distribution */}
