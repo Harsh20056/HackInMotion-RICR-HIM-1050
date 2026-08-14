@@ -12,6 +12,7 @@ export const ROUTES = {
   ADMIN: "/admin",
   CIVIC_MAP: "/map",
   TRANSPARENCY: "/transparency",
+  ISSUE_DETAIL: "/issues/:id",
 } as const;
 
 export type RoutePath = typeof ROUTES[keyof typeof ROUTES];

@@ -16,4 +16,5 @@ export interface Issue {
   longitude?: number | null;
   createdAt: Date;
   updatedAt?: Date;
+  priority?: number | null;
 }

@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
 import { Button } from "@/shared/components/ui/button";
@@ -36,8 +36,28 @@ import {
 
 export default function Landing() {
   const { language } = useLanguage();
+  const location = useLocation();
 
   const isHi = language === "hi";
+
+  useEffect(() => {
+    if (location.state && (location.state as any).scrollToSection) {
+      const sectionId = (location.state as any).scrollToSection;
+      window.history.replaceState({}, document.title);
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const headerOffset = 80;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+          });
+        }
+      }, 100);
+    }
+  }, [location]);
 
   const stats = [
     {
@@ -178,88 +198,76 @@ export default function Landing() {
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-primary/20">
       {/* ── TOP HERO SECTION ── */}
-      <section className="relative pt-4 pb-8 sm:pt-6 sm:pb-10 overflow-hidden border-b border-border/40">
-        {/* Subtle Background Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+      <section className="relative pt-6 pb-6 sm:pt-8 sm:pb-8 lg:pt-14 lg:pb-12 overflow-hidden border-b border-border/40">
+        {/* Abstract Indian Flag Background & Grid Pattern */}
+        <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden flex items-center justify-center">
+          <div className="w-[125%] sm:w-[115%] md:w-[105%] max-w-6xl aspect-[500/300] opacity-[0.14] dark:opacity-[0.06] transform -rotate-[10deg] scale-110 -translate-x-[4%] -translate-y-[8%]">
+            <IndianFlagBrush />
+          </div>
+
+          {/* Subtle Grid Pattern Overlay */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 opacity-[0.025]"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             }}
           />
         </div>
 
-        {/* Subtle Ambient Glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-primary/10 blur-[130px] rounded-full pointer-events-none" />
-
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Left Content Column */}
-            <div className="lg:col-span-7 text-left space-y-4">
-              {/* Mission Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>
-                  {isHi
-                    ? "स्मार्ट सिटी मिशन • भोपाल नगर निगम के तत्वावधान में"
-                    : "Under the aegis of Bhopal Municipal Corporation & Smart Cities Mission"}
-                </span>
-              </div>
-
+            <div className="lg:col-span-7 text-left flex flex-col items-start justify-center">
               {/* Main Headline */}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight leading-[1.15]">
+              <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-black text-foreground tracking-tight leading-[1.08] mb-6">
                 {isHi ? (
                   <>
                     एक शहर। <br />
                     एक मंच। <br />
-                    <span className="text-primary">एक योजना।</span>
+                    <span className="text-[#0B3B60] dark:text-sky-400">एक योजना।</span>
                   </>
                 ) : (
                   <>
                     One City. <br />
                     One Platform. <br />
-                    <span className="text-primary">One Plan.</span>
+                    <span className="text-[#0B3B60] dark:text-sky-400 font-extrabold">One Plan.</span>
                   </>
                 )}
               </h1>
 
               {/* Subtext */}
-              <p className="text-sm sm:text-base text-muted-foreground max-w-xl leading-relaxed font-normal">
+              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed font-medium mb-3">
                 {isHi
-                  ? "रीयल-टाइम एआई आधारित नागरिक समस्या निवारण, जीआईएस लोकेशन इंटेलिजेंस और पारदर्शी नगरपालिका समन्वय द्वारा अपने शहर को बेहतर बनाएं।"
-                  : "Eliminate civic delays, report neighborhood issues instantly, and track real-time resolution with AI-powered municipal coordination."}
+                  ? "रीयल-टाइम समन्वय के माध्यम से दोहरे उत्खनन और अंतर-विभागीय संघर्ष को समाप्त करें।"
+                  : "Eliminate duplicate excavation and inter-departmental conflict via real-time coordination."}
               </p>
 
-              {/* Authority Note */}
-              <p className="text-xs font-semibold text-foreground/80 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-primary" />
+              <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 max-w-xl leading-relaxed font-semibold mb-8">
                 {isHi
-                  ? "भोपाल स्मार्ट सिटी मिशन और 85 वार्डों के लिए एकीकृत नागरिक सेवा पोर्टल"
-                  : "Unified Citizen & Inter-Departmental Grievance Redressal Portal"}
+                  ? "भोपाल नगर निगम और स्मार्ट सिटी मिशन के तत्वावधान में।"
+                  : "Under the aegis of Bhopal Municipal Corporation & Smart Cities Mission."}
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Link to={ROUTES.REPORT_ISSUE}>
-                  <Button className="bg-[#0B3B60] hover:bg-[#082a45] text-white font-bold px-5 py-5 rounded-2xl shadow-lg shadow-[#0B3B60]/20 gap-2 text-sm group transition-all">
-                    <FileText className="w-4 h-4" />
-                    <span>{isHi ? "समस्या दर्ज करें" : "Report an Issue"}</span>
+              <div className="flex flex-wrap items-center gap-4 mb-10">
+                <Link to={ROUTES.SIGN_IN}>
+                  <Button className="bg-[#0B3B60] hover:bg-[#082a45] text-white font-bold px-6 py-6 rounded-2xl shadow-lg shadow-[#0B3B60]/20 gap-2 text-sm group transition-all">
+                    <span>{isHi ? "पोर्टल पर लॉग इन करें" : "Login to Portal"}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Link to={ROUTES.CIVIC_MAP}>
+                <Link to={ROUTES.DASHBOARD}>
                   <Button
                     variant="outline"
-                    className="font-bold px-5 py-5 rounded-2xl border-border/80 hover:bg-muted/60 text-foreground gap-2 text-sm transition-all"
+                    className="font-bold px-6 py-6 rounded-2xl border-border/80 hover:bg-muted/60 text-foreground gap-2 text-sm transition-all bg-[#0B3B60]/5 dark:bg-[#38bdf8]/5 border-[#0B3B60]/20 dark:border-[#38bdf8]/20"
                   >
-                    <Map className="w-4 h-4 text-primary" />
-                    <span>{isHi ? "नागरिक मानचित्र देखें" : "View Civic Map"}</span>
+                    <span>{isHi ? "नागरिक पोर्टल देखें" : "View Citizen Portal"}</span>
                   </Button>
                 </Link>
               </div>
 
               {/* Stats Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5 border-t border-border/60">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full pt-6 border-t border-border/60">
                 {stats.map((stat, idx) => (
                   <div key={idx} className="space-y-0.5">
                     <p className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
@@ -363,7 +371,7 @@ export default function Landing() {
       </section>
 
       {/* ── SECTION 2: EVERYTHING YOUR CITY NEEDS ── */}
-      <section className="py-10 sm:py-12 bg-muted/20 border-b border-border/40">
+      <section id="solution-section" className="pt-6 pb-10 sm:pt-8 sm:pb-12 bg-muted/20 border-b border-border/40">
         <div className="container mx-auto px-4 sm:px-6 text-center max-w-5xl space-y-8">
           <div className="space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
@@ -396,7 +404,7 @@ export default function Landing() {
       </section>
 
       {/* ── SECTION 3: HOW REDRESSAL WORKS (4 STEP CARDS) ── */}
-      <section className="py-10 sm:py-12 border-b border-border/40">
+      <section id="how-it-works-section" className="py-10 sm:py-12 border-b border-border/40">
         <div className="container mx-auto px-4 sm:px-6 text-center max-w-5xl space-y-8">
           <div className="space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
@@ -436,7 +444,7 @@ export default function Landing() {
       </section>
 
       {/* ── SECTION 4: INTEGRATED BHOPAL DEPARTMENTS ── */}
-      <section className="py-10 sm:py-12 bg-muted/20 border-b border-border/40">
+      <section id="departments-section" className="py-10 sm:py-12 bg-muted/20 border-b border-border/40">
         <div className="container mx-auto px-4 sm:px-6 text-center max-w-5xl space-y-8">
           <div className="space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
@@ -475,7 +483,7 @@ export default function Landing() {
       </section>
 
       {/* ── SECTION 5: PUBLIC TRANSPARENCY ── */}
-      <section className="py-10 sm:py-12 border-b border-border/40">
+      <section id="citizen-portal-section" className="py-10 sm:py-12 border-b border-border/40">
         <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Left Info Column */}
@@ -618,5 +626,164 @@ export default function Landing() {
         </div>
       </section>
     </div>
+  );
+}
+
+// ── Clean Vector Indian Flag SVG ──────────────────────────────
+function CleanIndianFlag() {
+  return (
+    <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-sm">
+      <defs>
+        {/* Gradients for smooth, clean vector 3D look */}
+        <linearGradient id="flag-saffron-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FF9933" />
+          <stop offset="100%" stopColor="#E67E22" />
+        </linearGradient>
+        <linearGradient id="flag-green-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#138808" />
+          <stop offset="100%" stopColor="#0F6F06" />
+        </linearGradient>
+        <linearGradient id="flag-white-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F5F5F5" />
+        </linearGradient>
+      </defs>
+
+      {/* Flag Stripes (rendered with precise wave curves) */}
+      <g>
+        {/* Saffron Stripe */}
+        <path d="M 40,60 C 130,45 220,75 310,60 C 390,48 450,58 470,60 L 470,105 C 450,103 390,93 310,105 C 220,120 130,90 40,105 Z" fill="url(#flag-saffron-grad)" />
+        
+        {/* White Stripe */}
+        <path d="M 40,105 C 130,90 220,120 310,105 C 390,93 450,103 470,105 L 470,150 C 450,148 390,138 310,150 C 220,165 130,135 40,150 Z" fill="url(#flag-white-grad)" />
+        
+        {/* Green Stripe */}
+        <path d="M 40,150 C 130,135 220,165 310,150 C 390,138 450,148 470,150 L 470,195 C 450,193 390,183 310,195 C 220,210 130,180 40,195 Z" fill="url(#flag-green-grad)" />
+      </g>
+
+      {/* Ashoka Chakra */}
+      <g transform="translate(255, 127)">
+        <circle cx="0" cy="0" r="21" stroke="#000080" strokeWidth="2.5" fill="none" />
+        <circle cx="0" cy="0" r="3.5" fill="#000080" />
+        {/* 24 Spokes */}
+        {[...Array(24)].map((_, i) => {
+          const angle = (i * 360) / 24;
+          const rad = (angle * Math.PI) / 180;
+          const x2 = 21 * Math.cos(rad);
+          const y2 = 21 * Math.sin(rad);
+          return (
+            <line
+              key={i}
+              x1={0}
+              y1={0}
+              x2={x2}
+              y2={y2}
+              stroke="#000080"
+              strokeWidth="1.2"
+            />
+          );
+        })}
+        {/* Tiny dots on the outer edge */}
+        {[...Array(24)].map((_, i) => {
+          const angle = ((i + 0.5) * 360) / 24;
+          const rad = (angle * Math.PI) / 180;
+          const cx = 19.5 * Math.cos(rad);
+          const cy = 19.5 * Math.sin(rad);
+          return (
+            <circle
+              key={`dot-${i}`}
+              cx={cx}
+              cy={cy}
+              r="0.7"
+              fill="#000080"
+            />
+          );
+        })}
+      </g>
+    </svg>
+  );
+}
+
+// ── Stylized Brush Painted Indian Flag SVG ──────────────────────
+function IndianFlagBrush() {
+  return (
+    <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-md">
+      <defs>
+        {/* The filter to create the rough, organic hand-painted brush edges */}
+        <filter id="brush-edges" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        
+        {/* Gradient for subtle flag texture */}
+        <linearGradient id="brush-saffron" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#FF9933" />
+          <stop offset="100%" stopColor="#FF771F" />
+        </linearGradient>
+        <linearGradient id="brush-green" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#138808" />
+          <stop offset="100%" stopColor="#0B6B04" />
+        </linearGradient>
+      </defs>
+
+      {/* Flag Stripes (rendered with the displacement filter) */}
+      <g filter="url(#brush-edges)">
+        {/* Saffron Stripe (slightly wavy path) */}
+        <path d="M 40,55 C 120,40 240,65 360,45 C 430,35 470,50 480,55 L 475,100 C 460,95 420,85 360,95 C 240,115 120,85 35,100 Z" fill="url(#brush-saffron)" opacity="0.95" />
+        
+        {/* White Stripe (slightly overlapping the saffron and green) */}
+        <path d="M 33,103 C 115,88 235,112 355,95 C 425,85 465,97 478,103 L 473,150 C 458,145 418,135 355,145 C 235,162 115,135 30,150 Z" fill="#FFFFFF" opacity="0.98" />
+        
+        {/* Green Stripe */}
+        <path d="M 28,153 C 110,138 230,162 350,145 C 420,135 460,147 473,153 L 468,198 C 453,193 413,183 350,193 C 230,210 110,183 25,198 Z" fill="url(#brush-green)" opacity="0.95" />
+
+        {/* Small paint splatters for realistic brush effect */}
+        <circle cx="25" cy="50" r="3" fill="#FF9933" opacity="0.7" />
+        <circle cx="485" cy="70" r="4" fill="#FF9933" opacity="0.6" />
+        <circle cx="490" cy="165" r="3" fill="#138808" opacity="0.6" />
+        <circle cx="15" cy="180" r="5" fill="#138808" opacity="0.7" />
+        <circle cx="18" cy="120" r="2" fill="#777777" opacity="0.4" />
+      </g>
+
+      {/* Ashoka Chakra (not filtered, needs to remain sharp and clean) */}
+      <g transform="translate(250, 125)">
+        <circle cx="0" cy="0" r="23" stroke="#000080" strokeWidth="2.5" fill="none" />
+        <circle cx="0" cy="0" r="4" fill="#000080" />
+        {/* 24 Spokes */}
+        {[...Array(24)].map((_, i) => {
+          const angle = (i * 360) / 24;
+          const rad = (angle * Math.PI) / 180;
+          const x2 = 23 * Math.cos(rad);
+          const y2 = 23 * Math.sin(rad);
+          return (
+            <line
+              key={i}
+              x1={0}
+              y1={0}
+              x2={x2}
+              y2={y2}
+              stroke="#000080"
+              strokeWidth="1.2"
+            />
+          );
+        })}
+        {/* Tiny decorative circles between spokes at the outer edge */}
+        {[...Array(24)].map((_, i) => {
+          const angle = ((i + 0.5) * 360) / 24;
+          const rad = (angle * Math.PI) / 180;
+          const cx = 21.5 * Math.cos(rad);
+          const cy = 21.5 * Math.sin(rad);
+          return (
+            <circle
+              key={`dot-${i}`}
+              cx={cx}
+              cy={cy}
+              r="0.8"
+              fill="#000080"
+            />
+          );
+        })}
+      </g>
+    </svg>
   );
 }

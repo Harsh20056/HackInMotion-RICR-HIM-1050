@@ -341,7 +341,7 @@ export default function ProfilePage() {
                           <div 
                             key={issue.id}
                             className="p-5 bg-muted/20 border border-border/60 rounded-2xl hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer shadow-sm text-left"
-                            onClick={() => navigate(`${ROUTES.DASHBOARD}?issueId=${issue.id}`)}
+                            onClick={() => navigate(ROUTES.ISSUE_DETAIL.replace(":id", issue.id))}
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1 text-left">
@@ -400,7 +400,7 @@ export default function ProfilePage() {
                           <div 
                             key={issue.id}
                             className="p-5 bg-muted/20 border border-border/60 rounded-2xl hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer shadow-sm text-left"
-                            onClick={() => navigate(`${ROUTES.DASHBOARD}?issueId=${issue.id}`)}
+                            onClick={() => navigate(ROUTES.ISSUE_DETAIL.replace(":id", issue.id))}
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1 text-left">

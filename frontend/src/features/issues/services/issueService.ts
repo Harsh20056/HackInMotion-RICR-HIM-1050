@@ -8,15 +8,7 @@ import { STATUSES } from "@/shared/constants/statuses";
 export const issueService = {
   mapResponseToDomain(raw: IssueResponse): Issue {
     // Standardize status strings to domain enum
-    let status = IssueStatus.REPORTED;
-    const rawStatusNormalized = raw.status?.replace("-", "_").toLowerCase();
-    if (rawStatusNormalized === STATUSES.IN_PROGRESS) {
-      status = IssueStatus.IN_PROGRESS;
-    } else if (rawStatusNormalized === STATUSES.RESOLVED) {
-      status = IssueStatus.RESOLVED;
-    } else if (rawStatusNormalized === STATUSES.REJECTED) {
-      status = IssueStatus.REJECTED;
-    }
+    const status = (raw.status?.replace("-", "_").toLowerCase() || IssueStatus.REPORTED) as IssueStatus;
 
     return {
       id: raw.id,
@@ -33,6 +25,7 @@ export const issueService = {
       longitude: raw.longitude,
       createdAt: new Date(raw.created_at),
       updatedAt: raw.updated_at ? new Date(raw.updated_at) : undefined,
+      priority: raw.priority,
     };
   },
 

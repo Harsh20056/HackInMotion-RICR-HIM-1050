@@ -48,8 +48,8 @@ export interface TrendPoint {
 }
 
 export const analyticsApi = {
-  overview: () => apiRequest<AnalyticsOverview>("/analytics/overview", { auth: false }),
-  departments: () => apiRequest<{ items: DepartmentPerformanceRow[] }>("/analytics/departments", { auth: false }),
-  hotspots: () => apiRequest<{ precision: number; items: Hotspot[] }>("/analytics/hotspots", { auth: false }),
-  trends: (months = 6) => apiRequest<{ items: TrendPoint[] }>(`/analytics/trends?months=${months}`, { auth: false }),
+  overview: () => apiRequest<AnalyticsOverview>("/analytics/overview", { auth: true }),
+  departments: () => apiRequest<{ items: DepartmentPerformanceRow[] }>("/analytics/departments", { auth: true }),
+  hotspots: () => apiRequest<{ precision: number; items: Hotspot[] }>("/analytics/hotspots", { auth: true }),
+  trends: (months = 6) => apiRequest<{ items: TrendPoint[] }>(`/analytics/trends?months=${months}`, { auth: true }),
 };

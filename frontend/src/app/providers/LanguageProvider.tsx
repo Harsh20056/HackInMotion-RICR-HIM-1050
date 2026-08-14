@@ -20,6 +20,7 @@ export const translations: Translations = {
   "nav.documents": { en: "Documents", hi: "दस्तावेज़" },
   "nav.signin": { en: "Sign In", hi: "साइन इन" },
   "nav.signup": { en: "Sign Up", hi: "साइन अप" },
+  "nav.queue": { en: "Queue", hi: "कतार" },
   
   // Hero Section
   "hero.badge": { en: "AI-Powered Civic Governance Platform", hi: "AI-संचालित नागरिक शासन मंच" },

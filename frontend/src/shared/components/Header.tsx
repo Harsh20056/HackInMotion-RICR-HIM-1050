@@ -1,10 +1,13 @@
 import React, { useState, useEffect, forwardRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { useAuth } from "@/features/auth";
 import { ROUTES } from "@/shared/config/routes";
 import { isFeatureEnabled, FeatureFlagName } from "@/shared/config/featureFlags";
+import { adminService } from "@/features/admin/services/adminService";
+import { UserRole } from "@/shared/types/domain/UserRole";
+import { logger } from "@/shared/services/logger";
 import { 
   Menu, 
   X, 
@@ -45,11 +48,43 @@ const navItems: NavItem[] = [
   { labelKey: "nav.map", href: ROUTES.CIVIC_MAP, icon: Map, flag: "CIVIC_MAP" },
 ];
 
+interface LandingNavItem {
+  labelKey: string;
+  sectionId: string;
+  labelEn: string;
+  labelHi: string;
+}
+
+const landingNavItems: LandingNavItem[] = [
+  { labelKey: "nav.solution", sectionId: "solution-section", labelEn: "Solution", labelHi: "समाधान" },
+  { labelKey: "nav.howItWorks", sectionId: "how-it-works-section", labelEn: "How It Works", labelHi: "यह कैसे काम करता है" },
+  { labelKey: "nav.forDepartments", sectionId: "departments-section", labelEn: "For Departments", labelHi: "विभागों के लिए" },
+  { labelKey: "nav.citizenPortal", sectionId: "citizen-portal-section", labelEn: "Citizen Portal", labelHi: "नागरिक पोर्टल" },
+];
+
 export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const { user, loading, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleScrollToSection = (sectionId: string) => {
+    if (location.pathname !== ROUTES.HOME && location.pathname !== "/") {
+      navigate("/", { state: { scrollToSection: sectionId } });
+    } else {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      }
+    }
+  };
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   useEffect(() => {
@@ -71,9 +106,24 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
     await signOut();
   };
 
-  const visibleNavItems = navItems.filter(
-    (item) => !item.flag || isFeatureEnabled(item.flag)
-  );
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (user?.id) {
+      adminService.getUserRole(user.id).then(res => {
+        setIsAdmin(res.role === UserRole.DEPARTMENT_ADMIN || res.role === UserRole.SUPER_ADMIN);
+      }).catch(err => {
+        logger.info("Failed to retrieve user role for header navigation:", err);
+        setIsAdmin(false);
+      });
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
+
+  const visibleNavItems = user ? [
+    ...navItems.filter((item) => !item.flag || isFeatureEnabled(item.flag)),
+    ...(isAdmin ? [{ labelKey: "nav.queue", href: ROUTES.ADMIN, icon: Shield }] : [])
+  ] : [];
 
   return (
     <header ref={ref} className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border" {...props}>
@@ -92,20 +142,32 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {visibleNavItems.map((item) => (
-              <Link
-                key={item.labelKey}
-                to={item.href}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  isActive(item.href)
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                {t(item.labelKey)}
-              </Link>
-            ))}
+            {user ? (
+              visibleNavItems.map((item) => (
+                <Link
+                  key={item.labelKey}
+                  to={item.href}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    isActive(item.href)
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {t(item.labelKey)}
+                </Link>
+              ))
+            ) : (
+              landingNavItems.map((item) => (
+                <button
+                  key={item.labelKey}
+                  onClick={() => handleScrollToSection(item.sectionId)}
+                  className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer bg-transparent border-0"
+                >
+                  {language === "en" ? item.labelEn : item.labelHi}
+                </button>
+              ))
+            )}
           </nav>
 
           {/* Right Actions */}
@@ -217,21 +279,36 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
         {isMenuOpen && (
           <nav className="lg:hidden py-4 border-t border-border animate-slide-up">
             <div className="flex flex-col gap-1">
-              {visibleNavItems.map((item) => (
-                <Link
-                  key={item.labelKey}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                    isActive(item.href)
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {t(item.labelKey)}
-                </Link>
-              ))}
+              {user ? (
+                visibleNavItems.map((item) => (
+                  <Link
+                    key={item.labelKey}
+                    to={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                      isActive(item.href)
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    {t(item.labelKey)}
+                  </Link>
+                ))
+              ) : (
+                landingNavItems.map((item) => (
+                  <button
+                    key={item.labelKey}
+                    onClick={() => {
+                      handleScrollToSection(item.sectionId);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors w-full text-left cursor-pointer bg-transparent border-0"
+                  >
+                    {language === "en" ? item.labelEn : item.labelHi}
+                  </button>
+                ))
+              )}
               
               {/* Auth Links */}
               <div className="mt-2 pt-2 border-t border-border space-y-1">

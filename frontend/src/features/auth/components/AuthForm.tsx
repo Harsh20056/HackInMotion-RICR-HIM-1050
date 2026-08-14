@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -20,7 +20,8 @@ import {
   ArrowLeft,
   Globe,
   MapPin,
-  Building
+  Building,
+  Key
 } from "lucide-react";
 import { logger } from "@/shared/services/logger";
 
@@ -59,6 +60,8 @@ export function AuthForm() {
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
   
+  const demoCredentialsRef = useRef<HTMLDivElement>(null);
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -67,6 +70,10 @@ export function AuthForm() {
   const [state, setState] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleScrollToDemo = () => {
+    demoCredentialsRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleSelectDemo = (demo: DemoCredential) => {
     setEmail(demo.email);
@@ -418,7 +425,7 @@ export function AuthForm() {
 
       {/* ── DEMO ACCESS CREDENTIALS CARD - SEEN AFTER SCROLL ── */}
       {!isLoading && (
-        <div className="w-full bg-[#f8fafc] dark:bg-muted/10 border-t border-border/60 p-6 text-center space-y-3 shadow-inner">
+        <div ref={demoCredentialsRef} className="w-full bg-[#f8fafc] dark:bg-muted/10 border-t border-border/60 p-6 text-center space-y-3 shadow-inner">
           <div className="max-w-4xl mx-auto">
             <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">
               {language === "en" ? "DEMO ACCESS CREDENTIALS" : "डेमो लॉगिन क्रेडेंशियल्स"}
@@ -443,6 +450,17 @@ export function AuthForm() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Floating Demo Credentials scroll-down button */}
+      {!isLoading && (
+        <Button
+          onClick={handleScrollToDemo}
+          className="fixed bottom-6 right-6 z-50 shadow-lg gap-2 bg-[#b45309] hover:bg-[#92400e] text-white rounded-full px-5 py-2.5 text-xs font-bold cursor-pointer border border-[#d97706]/20 transition-all hover:scale-105"
+        >
+          <Key className="w-3.5 h-3.5" />
+          {language === "en" ? "Demo Credentials" : "डेमो क्रेडेंशियल्स"}
+        </Button>
       )}
     </div>
   );

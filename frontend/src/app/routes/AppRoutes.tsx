@@ -17,6 +17,7 @@ const Auth = lazy(() => import("@/features/auth/pages/AuthPage"));
 const Profile = lazy(() => import("@/features/profile/pages/ProfilePage"));
 const Admin = lazy(() => import("@/features/admin/pages/AdminPage"));
 const CivicMap = lazy(() => import("@/features/civic-map/pages/CivicMapPage"));
+const IssueDetail = lazy(() => import("@/features/issues/pages/IssueDetailPage"));
 const Transparency = lazy(() => import("@/features/transparency/pages/TransparencyPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -75,6 +76,16 @@ export function AppRoutes() {
               <AdminGuard>
                 <Admin />
               </AdminGuard>
+            }
+          />
+
+          {/* Protected Issue Detail Route */}
+          <Route
+            path={ROUTES.ISSUE_DETAIL}
+            element={
+              <AuthGuard>
+                <IssueDetail />
+              </AuthGuard>
             }
           />
 

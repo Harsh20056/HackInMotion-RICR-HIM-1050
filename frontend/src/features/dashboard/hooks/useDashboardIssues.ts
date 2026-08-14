@@ -7,6 +7,26 @@ import { Issue } from "@/shared/types/domain/Issue";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
 import { APIError } from "@/shared/errors/errors";
+import { adminService } from "@/features/admin/services/adminService";
+import { UserRole } from "@/shared/types/domain/UserRole";
+
+function getCategoryCode(category: string): string {
+  if (!category) return "";
+  const normalized = category.toLowerCase().trim();
+  if (normalized.includes("water")) return "water";
+  if (normalized.includes("sanitation") || normalized.includes("garbage") || normalized.includes("trash")) return "sanitation";
+  if (normalized.includes("electricity") || normalized.includes("electric") || normalized.includes("power")) return "electricity";
+  if (normalized.includes("road")) return "roads";
+  if (normalized.includes("park") || normalized.includes("garden")) return "parks";
+  if (normalized.includes("building")) return "buildings";
+  return normalized;
+}
+
+function doesCategoryBelongToDepartment(categoryCode: string, deptCode: string): boolean {
+  const code = getCategoryCode(categoryCode);
+  if (deptCode === "water_supply") return code === "water";
+  return code === deptCode;
+}
 
 // Helper for Haversine distance calculation in kilometers
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -79,10 +99,47 @@ export function useDashboardIssues(
   const fetchIssues = async () => {
     try {
       setLoading(true);
-      // Fetch up to 100 issues if coordinates are provided to filter, otherwise fetch 20
-      const limit = userCoords ? 100 : 20;
+      
+      let limit = userCoords ? 100 : 20;
+      let isDeptAdminUser = false;
+      let userDeptCode: string | null = null;
+      let userCity: string | null = null;
+
+      if (user?.id) {
+        try {
+          const roleInfo = await adminService.getUserRole(user.id);
+          if (roleInfo.role === UserRole.DEPARTMENT_ADMIN) {
+            isDeptAdminUser = true;
+            userCity = roleInfo.city;
+            limit = 500; // fetch all so we can filter correctly on frontend
+            const depts = await adminService.listDepartments();
+            const found = depts.find(d => d.id === roleInfo.department);
+            if (found) {
+              userDeptCode = found.code;
+            }
+          }
+        } catch (err) {
+          logger.info("Could not fetch user role in fetchIssues:", err);
+        }
+      }
+
       const raw = await issueRepository.fetchAllIssues(limit);
-      const mapped = raw.map((item) => issueService.mapResponseToDomain(item));
+      let mapped = raw.map((item) => issueService.mapResponseToDomain(item));
+
+      if (isDeptAdminUser && userDeptCode) {
+        mapped = mapped.filter((issue) => {
+          if (userCity && (!issue.location || !issue.location.toLowerCase().includes(userCity.toLowerCase()))) {
+            return false;
+          }
+          const categoryObj: any = issue.category;
+          const issueCategoryCode = categoryObj ? (typeof categoryObj === 'object' ? categoryObj.code : categoryObj) : '';
+          if (userDeptCode && !doesCategoryBelongToDepartment(issueCategoryCode, userDeptCode)) {
+            return false;
+          }
+          return true;
+        });
+      }
+
       setAllIssues(mapped);
 
       // Load real community-verification counts for what's on screen. Until

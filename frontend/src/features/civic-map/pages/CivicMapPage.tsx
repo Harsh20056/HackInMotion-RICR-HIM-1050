@@ -10,6 +10,27 @@ import { useLanguage } from "@/app/providers/LanguageProvider";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useMapFiltersFromUrl } from "../hooks/useMapFiltersFromUrl";
+import { useAuth } from "@/features/auth";
+import { adminService } from "@/features/admin/services/adminService";
+import { UserRole } from "@/shared/types/domain/UserRole";
+
+function getCategoryCode(category: string): string {
+  if (!category) return "";
+  const normalized = category.toLowerCase().trim();
+  if (normalized.includes("water")) return "water";
+  if (normalized.includes("sanitation") || normalized.includes("garbage") || normalized.includes("trash")) return "sanitation";
+  if (normalized.includes("electricity") || normalized.includes("electric") || normalized.includes("power")) return "electricity";
+  if (normalized.includes("road")) return "roads";
+  if (normalized.includes("park") || normalized.includes("garden")) return "parks";
+  if (normalized.includes("building")) return "buildings";
+  return normalized;
+}
+
+function doesCategoryBelongToDepartment(categoryCode: string, deptCode: string): boolean {
+  const code = getCategoryCode(categoryCode);
+  if (deptCode === "water_supply") return code === "water";
+  return code === deptCode;
+}
 import {
   MapPin,
   Filter,
@@ -355,7 +376,7 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
         <span style="color: #666; display: inline-flex; align-items: center; gap: 3px;">
           👍 ${issue.supportsCount} ${supportCountLabel}
         </span>
-        <a href="/dashboard?issueId=${issue.id}" style="color: #3b82f6; text-decoration: none; font-weight: 600; font-family: inherit;" target="_blank">
+        <a href="/issues/${issue.id}" style="color: #3b82f6; text-decoration: none; font-weight: 600; font-family: inherit;" target="_blank">
           ${viewDetailsLabel} ↗
         </a>
       </div>
@@ -369,6 +390,7 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
 export default function CivicMapPage() {
   const { language } = useLanguage();
   const urlFilters = useMapFiltersFromUrl();
+  const { user } = useAuth();
 
   // Map state and layer refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -453,10 +475,58 @@ export default function CivicMapPage() {
     async function load() {
       setLoading(true);
       try {
-        const mapped = await issueService.fetchAllIssuesForMap();
+        let mapped = await issueService.fetchAllIssuesForMap();
+
+        let userCity: string | null = null;
+        let userDeptCode: string | null = null;
+        let isDeptAdmin = false;
+
+        if (user?.id) {
+          try {
+            const roleInfo = await adminService.getUserRole(user.id);
+            if (roleInfo.role === UserRole.DEPARTMENT_ADMIN) {
+              isDeptAdmin = true;
+              userCity = roleInfo.city;
+              const depts = await adminService.listDepartments();
+              const found = depts.find(d => d.id === roleInfo.department);
+              if (found) {
+                userDeptCode = found.code;
+              }
+            }
+          } catch (err) {
+            console.error("Could not fetch user role in CivicMapPage load:", err);
+          }
+        }
+
+        if (isDeptAdmin && userDeptCode) {
+          mapped = mapped.filter((issue) => {
+            if (userCity && (!issue.location || !issue.location.toLowerCase().includes(userCity.toLowerCase()))) {
+              return false;
+            }
+            const categoryObj: any = issue.category;
+            const issueCategoryCode = categoryObj ? (typeof categoryObj === 'object' ? categoryObj.code : categoryObj) : '';
+            if (userDeptCode && !doesCategoryBelongToDepartment(issueCategoryCode, userDeptCode)) {
+              return false;
+            }
+            return true;
+          });
+        }
+
         if (!cancelled) {
           setAllIssues(mapped);
           setIssues(mapped.filter((i) => i.latitude !== null && i.longitude !== null));
+
+          // If they have a scoped city, center the map on their city!
+          if (mapInstance && userCity) {
+            const cityCenters: Record<string, [number, number]> = {
+              bhopal: [23.2599, 77.4126],
+              indore: [22.7196, 75.8577],
+            };
+            const coords = cityCenters[userCity.toLowerCase()];
+            if (coords) {
+              mapInstance.setView(coords, 12);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to load map issues:", err);
@@ -466,7 +536,7 @@ export default function CivicMapPage() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [user, mapInstance]);
 
   // -- Silently get user location (once) -------------------------------------
   useEffect(() => {
@@ -539,7 +609,7 @@ export default function CivicMapPage() {
 
   // -- Process URL deep link params once map AND markers are fully ready -------
   useEffect(() => {
-    if (!mapInstance || !markersInitialized || urlParamsProcessed) return;
+    if (!mapInstance || !markersInitialized || urlParamsProcessed || allIssues.length === 0) return;
 
     let targetZoomPos: [number, number] | null = null;
     let targetZoomLevel = 12;
@@ -601,7 +671,9 @@ export default function CivicMapPage() {
       mapInstance.invalidateSize();
       mapInstance.flyTo(targetZoomPos, targetZoomLevel, { animate: true, duration: 1.5 });
       if (autoOpenIssueId) {
-        setAutoOpenId(autoOpenIssueId);
+        setTimeout(() => {
+          setAutoOpenId(autoOpenIssueId);
+        }, 1500);
       }
     }
 

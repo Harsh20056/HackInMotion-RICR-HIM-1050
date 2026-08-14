@@ -73,7 +73,7 @@ function parseBoldText(text: string) {
 export function AnalyticsPanel() {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const { overview, departments = [], hotspots = [], trends = [], loading, error } = useAnalytics();
+  const { overview, departments = [], hotspots = [], trends = [], byPriority = [], loading, error } = useAnalytics();
 
   if (loading) {
     return (
@@ -110,11 +110,19 @@ export function AnalyticsPanel() {
 
   const summary = dashboardService.buildWeeklySummary(overview, departments, hotspots);
 
-  const categoryData = overview.byCategory.map((c) => ({
-    name: c.nameEn,
-    count: c.count,
-    color: CATEGORY_COLORS[c.nameEn] ?? "#6366f1",
-  }));
+  const isDeptAdmin = departments.length === 1;
+
+  const chartData = isDeptAdmin && byPriority && byPriority.length > 0
+    ? byPriority.map(p => ({
+        name: language === "en" ? p.nameEn : p.nameHi,
+        count: p.count,
+        color: p.color,
+      }))
+    : overview.byCategory.map((c) => ({
+        name: c.nameEn,
+        count: c.count,
+        color: CATEGORY_COLORS[c.nameEn] ?? "#6366f1",
+      }));
 
   const trendData = trends.map((t) => ({ month: t.month, reported: t.reported, resolved: t.resolved }));
 
@@ -125,26 +133,35 @@ export function AnalyticsPanel() {
     <div className="space-y-6 pt-2">
       {/* Charts 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Issues by Category */}
+        {/* Issues by Category / Priority */}
         <div className="bg-card/60 border border-border/80 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <PieIcon className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold text-foreground">
-              {language === "en" ? "[Chart: Issues by Category & Status]" : "[चार्ट: श्रेणी व स्थिति]"}
+              {isDeptAdmin 
+                ? (language === "en" ? "Issues by Priority" : "प्राथमिकता के आधार पर मुद्दे")
+                : (language === "en" ? "[Chart: Issues by Category & Status]" : "[चार्ट: श्रेणी व स्थिति]")
+              }
             </h3>
-            <span className="text-[10px] text-muted-foreground ml-auto">
-              {language === "en" ? "click → filter map" : "क्लिक → मानचित्र फ़िल्टर"}
-            </span>
+            {!isDeptAdmin && (
+              <span className="text-[10px] text-muted-foreground ml-auto">
+                {language === "en" ? "click → filter map" : "क्लिक → मानचित्र फ़िल्टर"}
+              </span>
+            )}
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 16 }}>
+            <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#33415522" horizontal={false} />
               <XAxis type="number" tick={TICK} allowDecimals={false} />
               <YAxis type="category" dataKey="name" tick={TICK} width={110} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: "#64748b18" }} />
-              <Bar dataKey="count" radius={[0, 6, 6, 0]} onClick={(d: any) => handleCategoryClick(d.name)}>
-                {categoryData.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.color} className="cursor-pointer" />
+              <Bar 
+                dataKey="count" 
+                radius={[0, 6, 6, 0]} 
+                onClick={!isDeptAdmin ? (d: any) => handleCategoryClick(d.name) : undefined}
+              >
+                {chartData.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.color} className={!isDeptAdmin ? "cursor-pointer" : ""} />
                 ))}
               </Bar>
             </BarChart>

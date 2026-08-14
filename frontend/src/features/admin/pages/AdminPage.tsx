@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { useAuth } from "@/features/auth";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
@@ -65,6 +66,7 @@ const NEXT_ADMIN_STATUSES: Record<string, string[]> = {
 };
 
 export default function AdminPage() {
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
 
@@ -384,7 +386,8 @@ export default function AdminPage() {
             return (
               <div
                 key={item.workOrderId}
-                className="bg-card border border-border rounded-2xl p-4 hover:border-primary/20 transition-colors"
+                onClick={() => navigate(ROUTES.ISSUE_DETAIL.replace(":id", issue.id))}
+                className="bg-card border border-border rounded-2xl p-4 hover:border-primary/20 hover:bg-muted/35 cursor-pointer transition-colors"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -430,29 +433,6 @@ export default function AdminPage() {
                         </strong>
                         {issue.resolutionNote}
                       </p>
-                    )}
-                  </div>
-
-                  {/* Inline lifecycle actions */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isBusy && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-                    {nextStatuses.length === 0 ? (
-                      <span className="text-[11px] text-muted-foreground italic">
-                        {language === "en" ? "No further action" : "कोई कार्रवाई नहीं"}
-                      </span>
-                    ) : (
-                      nextStatuses.map((status) => (
-                        <Button
-                          key={status}
-                          size="sm"
-                          variant={status === "rejected" ? "outline" : "default"}
-                          disabled={isBusy}
-                          onClick={() => handleTransition(item, status)}
-                        >
-                          {status === "reopened" && <RotateCcw className="w-3 h-3 mr-1" />}
-                          {STATUS_LABEL[status]?.[language] ?? status}
-                        </Button>
-                      ))
                     )}
                   </div>
                 </div>

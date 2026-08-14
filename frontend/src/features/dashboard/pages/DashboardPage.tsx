@@ -59,6 +59,8 @@ import { formatResolutionTime } from "../services/dashboardService";
 import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
 import { ResolutionReviewPanel } from "@/features/issues/components/ResolutionReviewPanel";
 import { CoordinationPanel } from "@/features/admin/components/CoordinationPanel";
+import { adminService } from "@/features/admin/services/adminService";
+import { UserRole } from "@/shared/types/domain/UserRole";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "Water Supply": <Droplets className="w-4 h-4" />,
@@ -90,6 +92,113 @@ const statusConfig: Record<string, { class: string; icon: React.ReactNode }> = {
   },
 };
 
+function DeptStatusBreakdownCard({ issues, language }: { issues: Issue[], language: "en" | "hi" }) {
+  const counts = {
+    reported: issues.filter(i => i.status === "reported").length,
+    acknowledged: issues.filter(i => i.status === "acknowledged").length,
+    in_progress: issues.filter(i => i.status === "in_progress").length,
+    resolved: issues.filter(i => i.status === "resolved").length,
+    closed: issues.filter(i => i.status === "closed").length,
+  };
+  const total = issues.length || 1;
+
+  const STATUS_CONFIG: Record<string, { labelEn: string, labelHi: string, color: string }> = {
+    reported: { labelEn: "Reported", labelHi: "रिपोर्ट की गई", color: "bg-yellow-500" },
+    acknowledged: { labelEn: "Acknowledged", labelHi: "स्वीकृत", color: "bg-purple-500" },
+    in_progress: { labelEn: "In Progress", labelHi: "प्रगति में", color: "bg-blue-500" },
+    resolved: { labelEn: "Resolved", labelHi: "हल की गई", color: "bg-green-500" },
+    closed: { labelEn: "Closed", labelHi: "बंद की गई", color: "bg-slate-500" },
+  };
+
+  return (
+    <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="flex items-center gap-2">
+        <Clock className="w-5 h-5 text-primary" />
+        <h3 className="text-sm font-bold text-foreground">
+          {language === "en" ? "Lifecycle Status Distribution" : "जीवनचक्र स्थिति वितरण"}
+        </h3>
+      </div>
+
+      <div className="space-y-3.5">
+        {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+          const count = counts[status as keyof typeof counts] || 0;
+          const pct = Math.round((count / total) * 100);
+          return (
+            <div key={status} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">
+                  {language === "en" ? config.labelEn : config.labelHi}
+                </span>
+                <span className="font-semibold text-foreground">
+                  {count} <span className="text-[10px] text-muted-foreground">({pct}%)</span>
+                </span>
+              </div>
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${config.color} transition-all duration-500`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DeptAreaBreakdownCard({ issues, language }: { issues: Issue[], language: "en" | "hi" }) {
+  const areaCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    issues.forEach(issue => {
+      if (!issue.location) return;
+      const parts = issue.location.split(",");
+      const area = parts[0]?.trim();
+      if (area && area !== "Bhopal" && area !== "Indore" && area.length > 2) {
+        counts[area] = (counts[area] || 0) + 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([area, count]) => ({ area, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [issues]);
+
+  return (
+    <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-primary" />
+        <h3 className="text-sm font-bold text-foreground">
+          {language === "en" ? "Top Affected Wards / Localities" : "शीर्ष प्रभावित क्षेत्र / वार्ड"}
+        </h3>
+      </div>
+
+      {areaCounts.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-8">
+          {language === "en" ? "No location data available." : "कोई स्थान डेटा उपलब्ध नहीं।"}
+        </p>
+      ) : (
+        <div className="divide-y divide-border/40">
+          {areaCounts.map((entry, idx) => (
+            <div key={entry.area} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 text-xs">
+              <div className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px]">
+                  {idx + 1}
+                </span>
+                <span className="font-semibold text-foreground">{entry.area}</span>
+              </div>
+              <span className="bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full font-bold text-[11px]">
+                {entry.count} {language === "en" ? "reports" : "रिपोर्ट"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 import { getTimeAgo as getTimeAgoUtil } from "@/shared/utils/time";
 
 export default function DashboardPage() {
@@ -119,6 +228,15 @@ export default function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedCity, setSelectedCity] = useState<string>("ALL");
+  const [isDeptAdmin, setIsDeptAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      adminService.getUserRole(user.id).then((roleInfo) => {
+        setIsDeptAdmin(roleInfo.role === UserRole.DEPARTMENT_ADMIN);
+      }).catch((err) => logger.info("Could not fetch user role in dashboard:", err));
+    }
+  }, [user]);
 
   // Fetch logged-in user's profile to extract their filled city and set default filter
   useEffect(() => {
@@ -338,7 +456,7 @@ export default function DashboardPage() {
   };
 
   const handleViewDetails = (issueId: string) => {
-    setSearchParams({ issueId });
+    navigate(ROUTES.ISSUE_DETAIL.replace(":id", issueId));
   };
 
   const handleViewOnMap = (issueId: string) => {
@@ -478,8 +596,17 @@ export default function DashboardPage() {
         className="scroll-mt-24 focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-2xl p-1"
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <DepartmentPerformanceCard />
-          <IssueHotspotsCard />
+          {isDeptAdmin ? (
+            <>
+              <DeptStatusBreakdownCard issues={issues} language={language} />
+              <DeptAreaBreakdownCard issues={issues} language={language} />
+            </>
+          ) : (
+            <>
+              <DepartmentPerformanceCard />
+              <IssueHotspotsCard />
+            </>
+          )}
         </div>
       </section>
 
@@ -506,44 +633,48 @@ export default function DashboardPage() {
           {/* Interactive Filters: City, Category, Status */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* City Filter */}
-            <div className="flex items-center gap-1.5 bg-muted/30 border border-border/80 rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground">
-              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-              <select
-                value={selectedCity}
-                onChange={(e) => {
-                  setSelectedCity(e.target.value);
-                  setVisibleCount(12);
-                }}
-                className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
-              >
-                <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Cities" : "सभी शहर"}</option>
-                {availableCities.map((city) => (
-                  <option key={city} value={city} className="bg-card text-foreground">
-                    📍 {city}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!isDeptAdmin && (
+              <div className="flex items-center gap-1.5 bg-muted/30 border border-border/80 rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground">
+                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                <select
+                  value={selectedCity}
+                  onChange={(e) => {
+                    setSelectedCity(e.target.value);
+                    setVisibleCount(12);
+                  }}
+                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Cities" : "सभी शहर"}</option>
+                  {availableCities.map((city) => (
+                    <option key={city} value={city} className="bg-card text-foreground">
+                      📍 {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Category Filter */}
-            <div className="flex items-center gap-1.5 bg-muted/30 border border-border/80 rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground">
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setVisibleCount(12);
-                }}
-                className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
-              >
-                <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Categories" : "सभी श्रेणियां"}</option>
-                <option value="Water Supply" className="bg-card text-foreground">{language === "en" ? "Water Supply" : "जल आपूर्ति"}</option>
-                <option value="Sanitation" className="bg-card text-foreground">{language === "en" ? "Sanitation" : "स्वच्छता"}</option>
-                <option value="Electricity" className="bg-card text-foreground">{language === "en" ? "Electricity" : "बिजली"}</option>
-                <option value="Roads" className="bg-card text-foreground">{language === "en" ? "Roads" : "सड़कें"}</option>
-                <option value="Parks & Gardens" className="bg-card text-foreground">{language === "en" ? "Parks & Gardens" : "पार्क और बगीचे"}</option>
-                <option value="Buildings" className="bg-card text-foreground">{language === "en" ? "Buildings" : "भवन"}</option>
-              </select>
-            </div>
+            {!isDeptAdmin && (
+              <div className="flex items-center gap-1.5 bg-muted/30 border border-border/80 rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setVisibleCount(12);
+                  }}
+                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Categories" : "सभी श्रेणियां"}</option>
+                  <option value="Water Supply" className="bg-card text-foreground">{language === "en" ? "Water Supply" : "जल आपूर्ति"}</option>
+                  <option value="Sanitation" className="bg-card text-foreground">{language === "en" ? "Sanitation" : "स्वच्छता"}</option>
+                  <option value="Electricity" className="bg-card text-foreground">{language === "en" ? "Electricity" : "बिजली"}</option>
+                  <option value="Roads" className="bg-card text-foreground">{language === "en" ? "Roads" : "सड़कें"}</option>
+                  <option value="Parks & Gardens" className="bg-card text-foreground">{language === "en" ? "Parks & Gardens" : "पार्क और बगीचे"}</option>
+                  <option value="Buildings" className="bg-card text-foreground">{language === "en" ? "Buildings" : "भवन"}</option>
+                </select>
+              </div>
+            )}
 
             {/* Status Filter */}
             <div className="flex items-center gap-1.5 bg-muted/30 border border-border/80 rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground">

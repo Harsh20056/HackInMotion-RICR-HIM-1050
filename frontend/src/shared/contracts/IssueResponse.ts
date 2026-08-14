@@ -13,4 +13,5 @@ export interface IssueResponse {
   master_issue_id?: string | null;
   created_at: string;
   updated_at: string;
+  priority?: number | null;
 }

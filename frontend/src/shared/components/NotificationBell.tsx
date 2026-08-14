@@ -104,7 +104,7 @@ export function NotificationBell() {
     }
     const issueId = item.payload?.issueId;
     if (typeof issueId === "string" && issueId) {
-      navigate(`${ROUTES.DASHBOARD}?issueId=${issueId}`);
+      navigate(ROUTES.ISSUE_DETAIL.replace(":id", issueId));
     }
   };
 

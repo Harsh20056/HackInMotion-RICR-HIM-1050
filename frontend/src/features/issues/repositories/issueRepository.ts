@@ -28,6 +28,7 @@ interface ApiIssue {
   closedAt: string | null;
   media?: { id: string; kind: string; url: string }[];
   workOrders?: { id: string; departmentId: string; role: string; status: string }[];
+  priority?: number | null;
 }
 
 // Reverse lookup: the frontend still stores/sends category as a translated
@@ -59,6 +60,7 @@ function toIssueResponse(issue: ApiIssue): IssueResponse {
     master_issue_id: null,
     created_at: issue.createdAt,
     updated_at: issue.resolvedAt ?? issue.acknowledgedAt ?? issue.createdAt,
+    priority: issue.priority ?? 3,
   };
 }
 
@@ -66,22 +68,22 @@ const REALTIME_TABLE = "reported_issues"; // kept for the local pub-sub channel 
 
 export const issueRepository = {
   async fetchAllIssues(limitCount = 20): Promise<IssueResponse[]> {
-    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?page=1&pageSize=${limitCount}`, { auth: false });
+    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?page=1&pageSize=${limitCount}`, { auth: true });
     return data.items.map(toIssueResponse);
   },
 
   async fetchAllIssuesForMap(): Promise<IssueResponse[]> {
-    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?page=1&pageSize=500`, { auth: false });
+    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?page=1&pageSize=500`, { auth: true });
     return data.items.map(toIssueResponse);
   },
 
   async fetchIssueById(issueId: string): Promise<IssueResponse> {
-    const issue = await apiRequest<ApiIssue>(`/issues/${issueId}`, { auth: false });
+    const issue = await apiRequest<ApiIssue>(`/issues/${issueId}`, { auth: true });
     return toIssueResponse(issue);
   },
 
   async fetchUserIssues(userId: string): Promise<IssueResponse[]> {
-    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?reportedBy=${userId}&pageSize=100`, { auth: false });
+    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?reportedBy=${userId}&pageSize=100`, { auth: true });
     return data.items.map(toIssueResponse);
   },
 
