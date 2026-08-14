@@ -10,6 +10,7 @@ import { useLanguage } from "@/app/providers/LanguageProvider";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useMapFiltersFromUrl } from "../hooks/useMapFiltersFromUrl";
+import { imageUrl } from "@/shared/lib/imageUrl";
 import { useAuth } from "@/features/auth";
 import { adminService } from "@/features/admin/services/adminService";
 import { UserRole } from "@/shared/types/domain/UserRole";
@@ -307,7 +308,7 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
 
   const thumbnailHtml = issue.imageUrls && issue.imageUrls.length > 0 
     ? `<div style="width: 100%; height: 95px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; background: #eee;">
-         <img src="${issue.imageUrls[0]}" style="width: 100%; height: 100%; object-fit: cover;" />
+         <img src="${imageUrl(issue.imageUrls[0], "mapPopup")}" width="200" height="120" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" />
        </div>`
     : "";
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -53,14 +53,70 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { AnalyticsPanel, DepartmentPerformanceCard, IssueHotspotsCard } from "../components/AnalyticsPanel";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { formatResolutionTime } from "../services/dashboardService";
-import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
-import { ResolutionReviewPanel } from "@/features/issues/components/ResolutionReviewPanel";
-import { CoordinationPanel } from "@/features/admin/components/CoordinationPanel";
 import { adminService } from "@/features/admin/services/adminService";
 import { UserRole } from "@/shared/types/domain/UserRole";
+import { DepartmentPerformanceCard, IssueHotspotsCard } from "../components/PerformanceCards";
+import { imageProps } from "@/shared/lib/imageUrl";
+
+// Charts and the issue-detail panels are deliberately split out of this
+// route's chunk. AnalyticsPanel pulls in recharts (~46 KB gz on its own) and
+// sits behind a collapse toggle; the three panels below only mount once a
+// citizen opens an issue. Importing them statically put all of it on the
+// critical path of every dashboard load.
+const AnalyticsPanel = lazy(() =>
+  import("../components/AnalyticsPanel").then((m) => ({ default: m.AnalyticsPanel }))
+);
+const AIInsightPanel = lazy(() =>
+  import("@/features/issues/components/AIInsightPanel").then((m) => ({ default: m.AIInsightPanel }))
+);
+const ResolutionReviewPanel = lazy(() =>
+  import("@/features/issues/components/ResolutionReviewPanel").then((m) => ({ default: m.ResolutionReviewPanel }))
+);
+const CoordinationPanel = lazy(() =>
+  import("@/features/admin/components/CoordinationPanel").then((m) => ({ default: m.CoordinationPanel }))
+);
+
+/** Neutral placeholder while a split chunk arrives — same footprint, no layout shift. */
+function PanelFallback({ className = "h-40" }: { className?: string }) {
+  return <div className={`${className} rounded-2xl bg-muted/30 animate-pulse`} aria-hidden="true" />;
+}
+
+/**
+ * True once the element has come within `rootMargin` of the viewport, and
+ * stays true. Used to hold a heavy lazy chunk back until the reader is
+ * actually heading towards it — the analytics section is expanded by default
+ * but sits well below the fold, so mounting it eagerly downloaded recharts
+ * on every dashboard load.
+ */
+function useApproachingViewport<T extends HTMLElement>(rootMargin = "300px") {
+  const ref = useRef<T | null>(null);
+  const [reached, setReached] = useState(false);
+
+  useEffect(() => {
+    if (reached) return;
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setReached(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setReached(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [reached, rootMargin]);
+
+  return [ref, reached] as const;
+}
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "Water Supply": <Droplets className="w-4 h-4" />,
@@ -213,6 +269,7 @@ export default function DashboardPage() {
   const [selectedIssueProfile, setSelectedIssueProfile] = useState<{ fullName: string } | null>(null);
   const [loadingSelected, setLoadingSelected] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(true);
+  const [analyticsRef, analyticsNear] = useApproachingViewport<HTMLDivElement>();
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [verificationVersion, setVerificationVersion] = useState(0);
   const [visibleCount, setVisibleCount] = useState(12);
@@ -582,8 +639,14 @@ export default function DashboardPage() {
             )}
           </button>
           {showAnalytics && (
-            <div className="px-5 pb-5 border-t border-border/40">
-              <AnalyticsPanel />
+            <div ref={analyticsRef} className="px-5 pb-5 border-t border-border/40">
+              {analyticsNear ? (
+                <Suspense fallback={<PanelFallback className="h-72" />}>
+                  <AnalyticsPanel />
+                </Suspense>
+              ) : (
+                <PanelFallback className="h-72" />
+              )}
             </div>
           )}
         </div>
@@ -868,8 +931,8 @@ export default function DashboardPage() {
                   {/* Header Image or Colored Banner */}
                   {selectedIssue.imageUrls && selectedIssue.imageUrls.length > 0 ? (
                     <div className="relative w-full h-56 bg-muted overflow-hidden">
-                      <img 
-                        src={selectedIssue.imageUrls[0]} 
+                      <img
+                        {...imageProps(selectedIssue.imageUrls[0], "detail", { eager: true })}
                         alt={selectedIssue.title}
                         className="w-full h-full object-cover animate-fade-in"
                       />
@@ -1055,22 +1118,30 @@ export default function DashboardPage() {
                     {/* Resolution outcome — only the reporter decides whether it holds */}
                     {user?.id === selectedIssue.userId &&
                       selectedIssue.status === IssueStatus.RESOLVED && (
-                        <ResolutionReviewPanel
-                          issueId={selectedIssue.id}
-                          onReviewed={() => {
-                            searchParams.delete("issueId");
-                            setSearchParams(searchParams);
-                            refetch();
-                            refetchAnalytics();
-                          }}
-                        />
+                        <Suspense fallback={<PanelFallback className="h-24" />}>
+                          <ResolutionReviewPanel
+                            issueId={selectedIssue.id}
+                            onReviewed={() => {
+                              searchParams.delete("issueId");
+                              setSearchParams(searchParams);
+                              refetch();
+                              refetchAnalytics();
+                            }}
+                          />
+                        </Suspense>
                       )}
 
                     {/* Multi-department coordination: work orders, blockers, referrals */}
-                    <CoordinationPanel issueId={selectedIssue.id} />
+                    <Suspense fallback={<PanelFallback className="h-24" />}>
+                      <CoordinationPanel issueId={selectedIssue.id} />
+                    </Suspense>
 
                     {/* AI Intelligence Panel — only for authenticated users */}
-                    {user && <AIInsightPanel issue={selectedIssue} />}
+                    {user && (
+                      <Suspense fallback={<PanelFallback className="h-24" />}>
+                        <AIInsightPanel issue={selectedIssue} />
+                      </Suspense>
+                    )}
 
                     {/* Footer / Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-border mt-5">
@@ -1222,9 +1293,8 @@ function IssueCard({
       {issue.imageUrls && issue.imageUrls.length > 0 ? (
         <div className="h-36 w-full bg-muted overflow-hidden relative shrink-0">
           <img
-            src={issue.imageUrls[0]}
+            {...imageProps(issue.imageUrls[0], "thumbnail")}
             alt={issue.title}
-            loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               (e.currentTarget.parentElement as HTMLElement).style.display = "none";

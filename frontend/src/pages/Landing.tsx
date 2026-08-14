@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
 import { Button } from "@/shared/components/ui/button";
+import { PageMeta } from "@/shared/components/PageMeta";
 import {
   MapPin,
   FileText,
@@ -33,6 +34,38 @@ import {
   Droplets,
   Lightbulb
 } from "lucide-react";
+
+/**
+ * Structured data for the landing page. Hoisted to module scope so the object
+ * identity is stable — PageMeta keys its effect on it.
+ */
+const LANDING_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "GovernmentService",
+  name: "Samadhan",
+  alternateName: "समाधान",
+  description:
+    "Municipal civic issue reporting and resolution tracking. Citizens report problems with roads, water supply, electricity, sanitation, parks and buildings; reports are routed to the responsible department and tracked against a service-level deadline until resolved.",
+  serviceType: "Civic issue reporting and grievance redressal",
+  availableChannel: {
+    "@type": "ServiceChannel",
+    serviceUrl: "https://samadhan.gov.in/",
+    availableLanguage: [
+      { "@type": "Language", name: "English", alternateName: "en" },
+      { "@type": "Language", name: "Hindi", alternateName: "hi" },
+    ],
+  },
+  areaServed: {
+    "@type": "AdministrativeArea",
+    name: "Madhya Pradesh, India",
+  },
+  provider: {
+    "@type": "GovernmentOrganization",
+    name: "Samadhan Civic Platform",
+    url: "https://samadhan.gov.in/",
+  },
+  audience: { "@type": "Audience", audienceType: "Residents" },
+} as const;
 
 export default function Landing() {
   const { language } = useLanguage();
@@ -197,6 +230,12 @@ export default function Landing() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-primary/20">
+      <PageMeta
+        title="Samadhan — Report civic issues and track how they get fixed"
+        description="Report potholes, water supply failures, streetlight outages and sanitation problems to the right municipal department, then follow the work order until it is resolved."
+        path="/"
+        jsonLd={LANDING_JSON_LD}
+      />
       {/* ── TOP HERO SECTION ── */}
       <section className="relative pt-6 pb-6 sm:pt-8 sm:pb-8 lg:pt-14 lg:pb-12 overflow-hidden border-b border-border/40">
         {/* Abstract Indian Flag Background & Grid Pattern */}

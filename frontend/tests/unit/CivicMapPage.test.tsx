@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@testing-library/react";
 import CivicMapPage from "@/features/civic-map/pages/CivicMapPage";
 import { issueService } from "@/features/issues/services/issueService";
@@ -11,6 +12,13 @@ vi.mock("react-router-dom", () => ({
 // Mock the language provider hook
 vi.mock("@/app/providers/LanguageProvider", () => ({
   useLanguage: () => ({ language: "en" }),
+}));
+
+// The page reads the signed-in user to scope the map for department admins.
+// Rendering bare would throw "useAuth must be used within an AuthProvider";
+// a signed-out user is the right default for this public-view test.
+vi.mock("@/features/auth", () => ({
+  useAuth: () => ({ user: null, session: null, loading: false, signOut: vi.fn() }),
 }));
 
 // Mock leaflet completely to prevent JSDOM rendering issues
@@ -107,7 +115,10 @@ describe("CivicMapPage Component", () => {
       expect(screen.queryByText(/Loading civic data…/i)).not.toBeInTheDocument();
     });
 
-    // Check search input is rendered with the correct placeholder
+    // The search box now starts collapsed as a "Search" button and only
+    // renders its input once opened, so open it before asserting.
+    await userEvent.click(screen.getByTitle(/Search map/i));
+
     const searchInput = screen.getByPlaceholderText(/Search issues, cities, categories.../i);
     expect(searchInput).toBeInTheDocument();
   });

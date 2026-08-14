@@ -41,15 +41,27 @@ function doesCategoryBelongToDepartment(categoryCode: string, deptCode: string):
   return code === deptCode;
 }
 
-export function useAnalytics(months = 6) {
-  const { user } = useAuth();
-  const [data, setData] = useState<AnalyticsBundle>(EMPTY);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * One shared fetch per (months, user) pair, not one per component.
+ *
+ * The dashboard mounts this hook from several places at once. Each instance
+ * used to run its own analytics requests, so a single load fired every
+ * endpoint four times over. Concurrent callers now join the in-flight promise
+ * and later mounts read the cache. Keyed by user as well as months because
+ * the officer scoping below produces a different bundle per user.
+ */
+const cache = new Map<string, AnalyticsBundle>();
+const inFlight = new Map<string, Promise<AnalyticsBundle>>();
+const listeners = new Map<string, Set<() => void>>();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
+const keyFor = (months: number, userId?: string) => `${months}|${userId ?? "anon"}`;
+
+function notify(key: string) {
+  listeners.get(key)?.forEach((fn) => fn());
+}
+
+/** Their officer-scoped aggregation, lifted out of the hook so it can be shared. */
+async function fetchBundle(months: number, user: { id?: string } | null): Promise<AnalyticsBundle> {
       // 1. Fetch raw analytics data
       const [overview, departmentsData, hotspotsData, trendsData] = await Promise.all([
         analyticsApi.overview(),
@@ -176,25 +188,90 @@ export function useAnalytics(months = 6) {
         }
       }
 
-      setData({
-        overview: scopedOverview,
-        departments: scopedDepartments,
-        hotspots: scopedHotspots,
-        trends: scopedTrends,
-        byPriority: scopedPriority,
-      });
-      setError(null);
-    } catch (err: any) {
-      logger.error("Failed to load analytics:", err);
-      setError(err?.message || "Could not load analytics.");
-    } finally {
-      setLoading(false);
-    }
-  }, [months, user]);
+  return {
+    overview: scopedOverview,
+    departments: scopedDepartments,
+    hotspots: scopedHotspots,
+    trends: scopedTrends,
+    byPriority: scopedPriority,
+  };
+}
+
+function loadShared(key: string, months: number, user: { id?: string } | null, force = false): Promise<AnalyticsBundle> {
+  const existing = inFlight.get(key);
+  if (existing && !force) return existing;
+
+  const promise = fetchBundle(months, user)
+    .then((bundle) => {
+      cache.set(key, bundle);
+      inFlight.delete(key);
+      notify(key);
+      return bundle;
+    })
+    .catch((err) => {
+      inFlight.delete(key);
+      throw err;
+    });
+
+  inFlight.set(key, promise);
+  return promise;
+}
+
+/**
+ * Loads every analytics figure from the server. Nothing is aggregated or
+ * predicted client-side beyond the department scoping above, so whatever
+ * renders here is what the database actually contains.
+ */
+export function useAnalytics(months = 6) {
+  const { user } = useAuth();
+  const key = keyFor(months, user?.id);
+
+  const [data, setData] = useState<AnalyticsBundle>(() => cache.get(key) ?? EMPTY);
+  const [loading, setLoading] = useState(() => !cache.has(key));
+  const [error, setError] = useState<string | null>(null);
+
+  const run = useCallback(
+    (force: boolean) => {
+      setLoading(true);
+      return loadShared(key, months, user ?? null, force)
+        .then((bundle) => {
+          setData(bundle);
+          setError(null);
+        })
+        .catch((err: any) => {
+          logger.error("Failed to load analytics:", err);
+          setError(err?.message || "Could not load analytics.");
+        })
+        .finally(() => setLoading(false));
+    },
+    [key, months, user]
+  );
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
 
-  return { ...data, loading, error, refetch: load };
+    const onChange = () => {
+      if (active) setData(cache.get(key) ?? EMPTY);
+    };
+    const set = listeners.get(key) ?? new Set<() => void>();
+    set.add(onChange);
+    listeners.set(key, set);
+
+    const cached = cache.get(key);
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+    } else {
+      void run(false);
+    }
+
+    return () => {
+      active = false;
+      set.delete(onChange);
+    };
+  }, [key, run]);
+
+  const refetch = useCallback(() => run(true), [run]);
+
+  return { ...data, loading, error, refetch };
 }
