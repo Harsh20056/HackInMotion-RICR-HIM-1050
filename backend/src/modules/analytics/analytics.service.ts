@@ -78,7 +78,14 @@ export const analyticsService = {
         `
       ),
       prisma.$queryRaw<
-        { total: bigint; geotagged: bigint; this_week: bigint; reopened: bigint; supports: bigint; open: bigint }[]
+        {
+          total: bigint;
+          geotagged: bigint;
+          this_week: bigint;
+          reopened: bigint;
+          supports: bigint;
+          open: bigint;
+        }[]
       >(
         Prisma.sql`
           SELECT

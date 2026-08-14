@@ -9,7 +9,7 @@ export interface SchemeAttachment {
 
 class SchemeAttachmentRegistry {
   private STORAGE_KEY = "samadhan_scheme_attachments";
-  
+
   /**
    * Retrieves all active scheme attachments.
    */

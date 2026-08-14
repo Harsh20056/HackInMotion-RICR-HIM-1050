@@ -68,7 +68,9 @@ const REALTIME_TABLE = "reported_issues"; // kept for the local pub-sub channel 
 
 export const issueRepository = {
   async fetchAllIssues(limitCount = 20): Promise<IssueResponse[]> {
-    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?page=1&pageSize=${limitCount}`, { auth: true });
+    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?page=1&pageSize=${limitCount}`, {
+      auth: true,
+    });
     return data.items.map(toIssueResponse);
   },
 
@@ -83,7 +85,9 @@ export const issueRepository = {
   },
 
   async fetchUserIssues(userId: string): Promise<IssueResponse[]> {
-    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?reportedBy=${userId}&pageSize=100`, { auth: true });
+    const data = await apiRequest<{ items: ApiIssue[] }>(`/issues?reportedBy=${userId}&pageSize=100`, {
+      auth: true,
+    });
     return data.items.map(toIssueResponse);
   },
 
@@ -115,10 +119,10 @@ export const issueRepository = {
       force,
     };
 
-    const result = await apiRequest<{ issue?: ApiIssue; duplicateCandidate?: { id: string; title: string; distanceM?: number } }>(
-      "/issues",
-      { method: "POST", body }
-    );
+    const result = await apiRequest<{
+      issue?: ApiIssue;
+      duplicateCandidate?: { id: string; title: string; distanceM?: number };
+    }>("/issues", { method: "POST", body });
 
     if (result.duplicateCandidate) {
       throw new DuplicateIssueError(result.duplicateCandidate);
@@ -148,12 +152,16 @@ export const issueRepository = {
     if (!ALLOWED_MIMES.includes(file.type)) throw new ValidationError("Unsupported image MIME type");
 
     const isValidSignature = await validateFileSignature(file, ALLOWED_MIMES);
-    if (!isValidSignature) throw new ValidationError("File signature mismatch. Upload rejected for security reasons.");
+    if (!isValidSignature)
+      throw new ValidationError("File signature mismatch. Upload rejected for security reasons.");
 
-    const sig = await apiRequest<{ timestamp: number; folder: string; signature: string; apiKey: string; cloudName: string }>(
-      "/uploads/signature",
-      { method: "POST" }
-    );
+    const sig = await apiRequest<{
+      timestamp: number;
+      folder: string;
+      signature: string;
+      apiKey: string;
+      cloudName: string;
+    }>("/uploads/signature", { method: "POST" });
 
     const formData = new FormData();
     formData.append("file", file);
@@ -188,7 +196,12 @@ export const issueRepository = {
 
   async addSupport(issueId: string, userId: string): Promise<SupportResponse> {
     const _issue = await apiRequest<ApiIssue>(`/issues/${issueId}/support`, { method: "POST" });
-    return { id: `${issueId}-${userId}`, issue_id: issueId, user_id: userId, created_at: new Date().toISOString() };
+    return {
+      id: `${issueId}-${userId}`,
+      issue_id: issueId,
+      user_id: userId,
+      created_at: new Date().toISOString(),
+    };
   },
 
   async removeSupport(issueId: string, _userId: string): Promise<void> {

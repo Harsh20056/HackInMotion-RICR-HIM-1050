@@ -48,7 +48,9 @@ export const issuesRepository = {
     radiusM: number;
     windowHours: number;
   }): Promise<{ id: string; title: string; publicRef: string; distanceM: number } | null> {
-    const rows = await prisma.$queryRaw<{ id: string; title: string; public_ref: string; distance_m: number }[]>(
+    const rows = await prisma.$queryRaw<
+      { id: string; title: string; public_ref: string; distance_m: number }[]
+    >(
       Prisma.sql`
         SELECT id, title, public_ref,
                ST_Distance(location, ST_SetSRID(ST_MakePoint(${params.longitude}, ${params.latitude}), 4326)::geography) AS distance_m
@@ -133,7 +135,8 @@ export const issuesRepository = {
       );
     }
 
-    const whereClause = conditions.length > 0 ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}` : Prisma.sql``;
+    const whereClause =
+      conditions.length > 0 ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}` : Prisma.sql``;
     const offset = (filters.page - 1) * filters.pageSize;
 
     const rows = await prisma.$queryRaw<IssueRow[]>(Prisma.sql`

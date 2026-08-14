@@ -83,7 +83,10 @@ export function NotificationBell() {
 
   const markAllRead = async () => {
     try {
-      const res = await apiRequest<{ unreadCount: number }>("/notifications/read", { method: "POST", body: {} });
+      const res = await apiRequest<{ unreadCount: number }>("/notifications/read", {
+        method: "POST",
+        body: {},
+      });
       setUnread(res.unreadCount);
       setItems((prev) => prev.map((i) => ({ ...i, readAt: new Date().toISOString() })));
     } catch (err) {
@@ -94,7 +97,9 @@ export function NotificationBell() {
   const handleItemClick = async (item: FeedItem) => {
     setOpen(false);
     if (!item.readAt) {
-      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, readAt: new Date().toISOString() } : i)));
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, readAt: new Date().toISOString() } : i))
+      );
       setUnread((prev) => Math.max(0, prev - 1));
       try {
         await apiRequest("/notifications/read", { method: "POST", body: { ids: [item.id] } });

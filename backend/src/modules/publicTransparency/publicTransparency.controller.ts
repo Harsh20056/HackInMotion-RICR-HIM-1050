@@ -118,7 +118,8 @@ publicRouter.get("/transparency", async (_req, res, next) => {
           cityTotals.totalWorkOrders === 0
             ? 0
             : Math.round((cityTotals.resolved / cityTotals.totalWorkOrders) * 100),
-        slaCompliance: cityTotals.slaTracked === 0 ? null : Math.round(weightedCompliance / cityTotals.slaTracked),
+        slaCompliance:
+          cityTotals.slaTracked === 0 ? null : Math.round(weightedCompliance / cityTotals.slaTracked),
       },
       departments,
     });

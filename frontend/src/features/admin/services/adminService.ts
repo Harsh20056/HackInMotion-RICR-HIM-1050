@@ -79,7 +79,11 @@ export const adminService = {
   ): Promise<{ role: UserRole | null; department: string | null; city: string | null }> {
     try {
       const me = await apiRequest<ApiMeUser>("/auth/me");
-      return { role: API_ROLE_TO_USER_ROLE[me.role] ?? null, department: me.departmentId, city: me.city ?? null };
+      return {
+        role: API_ROLE_TO_USER_ROLE[me.role] ?? null,
+        department: me.departmentId,
+        city: me.city ?? null,
+      };
     } catch {
       return { role: null, department: null, city: null };
     }

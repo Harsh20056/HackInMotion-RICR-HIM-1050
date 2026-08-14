@@ -8,7 +8,7 @@ export const CATEGORIES = {
   METRO: "metro",
 } as const;
 
-export type CategoryType = typeof CATEGORIES[keyof typeof CATEGORIES];
+export type CategoryType = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 
 export const CATEGORY_LABELS = {
   [CATEGORIES.WATER]: { en: "Water Supply", hi: "जल आपूर्ति" },

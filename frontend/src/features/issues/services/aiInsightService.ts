@@ -38,45 +38,75 @@ const _cache = new Map<string, IssueInsight>();
 // ---------------------------------------------------------------------------
 
 const DEPARTMENT_MAP: Record<string, string> = {
-  "Water Supply":    "Jal Board / Water Corporation",
-  "जल आपूर्ति":     "Jal Board / Jal Nigam",
-  "Sanitation":      "Municipal Solid Waste Management",
-  "स्वच्छता":       "Nagar Nigam – Solid Waste Dept.",
-  "Electricity":     "State Electricity Board / DISCOM",
-  "बिजली":          "Rajya Vidyut Board / DISCOM",
-  "Roads":           "Public Works Department (PWD)",
-  "सड़कें":         "Lok Nirman Vibhag (PWD)",
+  "Water Supply": "Jal Board / Water Corporation",
+  "जल आपूर्ति": "Jal Board / Jal Nigam",
+  Sanitation: "Municipal Solid Waste Management",
+  स्वच्छता: "Nagar Nigam – Solid Waste Dept.",
+  Electricity: "State Electricity Board / DISCOM",
+  बिजली: "Rajya Vidyut Board / DISCOM",
+  Roads: "Public Works Department (PWD)",
+  सड़कें: "Lok Nirman Vibhag (PWD)",
   "Parks & Gardens": "Horticulture Department",
   "पार्क और बगीचे": "Udyaniki Vibhag",
-  "Buildings":       "Building & Construction Department",
-  "भवन":            "Bhavan Evam Nirman Vibhag",
+  Buildings: "Building & Construction Department",
+  भवन: "Bhavan Evam Nirman Vibhag",
 };
 
 const RESOLUTION_DAYS_MAP: Record<string, number> = {
-  "Water Supply":    5,  "जल आपूर्ति":     5,
-  "Sanitation":      3,  "स्वच्छता":       3,
-  "Electricity":     2,  "बिजली":          2,
-  "Roads":           21, "सड़कें":         21,
-  "Parks & Gardens": 10, "पार्क और बगीचे": 10,
-  "Buildings":       30, "भवन":            30,
+  "Water Supply": 5,
+  "जल आपूर्ति": 5,
+  Sanitation: 3,
+  स्वच्छता: 3,
+  Electricity: 2,
+  बिजली: 2,
+  Roads: 21,
+  सड़कें: 21,
+  "Parks & Gardens": 10,
+  "पार्क और बगीचे": 10,
+  Buildings: 30,
+  भवन: 30,
 };
 
 const BASE_SEVERITY_MAP: Record<string, IssueInsight["severity"]> = {
-  "Water Supply":    "high",   "जल आपूर्ति":     "high",
-  "Sanitation":      "medium", "स्वच्छता":       "medium",
-  "Electricity":     "high",   "बिजली":          "high",
-  "Roads":           "medium", "सड़कें":         "medium",
-  "Parks & Gardens": "low",    "पार्क और बगीचे": "low",
-  "Buildings":       "medium", "भवन":            "medium",
+  "Water Supply": "high",
+  "जल आपूर्ति": "high",
+  Sanitation: "medium",
+  स्वच्छता: "medium",
+  Electricity: "high",
+  बिजली: "high",
+  Roads: "medium",
+  सड़कें: "medium",
+  "Parks & Gardens": "low",
+  "पार्क और बगीचे": "low",
+  Buildings: "medium",
+  भवन: "medium",
 };
 
 const CRITICAL_KEYWORDS = [
-  "emergency", "fire", "explosion", "death", "injury", "collapse",
-  "आग", "मृत्यु", "ध्वस्त", "हादसा",
+  "emergency",
+  "fire",
+  "explosion",
+  "death",
+  "injury",
+  "collapse",
+  "आग",
+  "मृत्यु",
+  "ध्वस्त",
+  "हादसा",
 ];
 const HIGH_KEYWORDS = [
-  "flood", "burst", "leak", "dangerous", "broken", "accident", "sewage",
-  "खतरा", "टूट", "रिसाव", "जल-भराव", "दुर्घटना",
+  "flood",
+  "burst",
+  "leak",
+  "dangerous",
+  "broken",
+  "accident",
+  "sewage",
+  "खतरा",
+  "टूट",
+  "रिसाव",
+  "जल-भराव",
+  "दुर्घटना",
 ];
 
 function computeRuleBasedInsight(issue: Issue): IssueInsight {
@@ -84,8 +114,7 @@ function computeRuleBasedInsight(issue: Issue): IssueInsight {
   const searchText = `${issue.title} ${issue.description ?? ""}`.toLowerCase();
 
   // Determine severity
-  let severity: IssueInsight["severity"] =
-    BASE_SEVERITY_MAP[cat] ?? "medium";
+  let severity: IssueInsight["severity"] = BASE_SEVERITY_MAP[cat] ?? "medium";
 
   if (CRITICAL_KEYWORDS.some((k) => searchText.includes(k))) {
     severity = "critical";
@@ -101,19 +130,20 @@ function computeRuleBasedInsight(issue: Issue): IssueInsight {
   // Resolution time (faster for critical)
   const baseDays = RESOLUTION_DAYS_MAP[cat] ?? 14;
   const daysMultiplier =
-    severity === "critical" ? 0.5
-    : severity === "high"   ? 1
-    : severity === "medium" ? 1.5
-    : 2;
+    severity === "critical" ? 0.5 : severity === "high" ? 1 : severity === "medium" ? 1.5 : 2;
   const estimatedResolutionDays = Math.max(1, Math.round(baseDays * daysMultiplier));
 
   // Priority
   const priority: IssueInsight["priority"] =
-    severity === "critical"       ? "urgent"
-    : severity === "high"         ? "high"
-    : issue.supportsCount > 10    ? "high"
-    : severity === "medium"       ? "medium"
-    : "low";
+    severity === "critical"
+      ? "urgent"
+      : severity === "high"
+        ? "high"
+        : issue.supportsCount > 10
+          ? "high"
+          : severity === "medium"
+            ? "medium"
+            : "low";
 
   const department = DEPARTMENT_MAP[cat] ?? "Municipal Corporation";
   const locationNote = issue.location ? ` in ${issue.location}` : "";

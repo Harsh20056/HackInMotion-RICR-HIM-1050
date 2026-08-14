@@ -18,11 +18,15 @@ export interface RefreshTokenClaims {
 }
 
 export function signAccessToken(claims: AccessTokenClaims): string {
-  return jwt.sign(claims, env.JWT_ACCESS_SECRET, { expiresIn: env.JWT_ACCESS_TTL as jwt.SignOptions["expiresIn"] });
+  return jwt.sign(claims, env.JWT_ACCESS_SECRET, {
+    expiresIn: env.JWT_ACCESS_TTL as jwt.SignOptions["expiresIn"],
+  });
 }
 
 export function signRefreshToken(claims: RefreshTokenClaims): string {
-  return jwt.sign(claims, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_TTL as jwt.SignOptions["expiresIn"] });
+  return jwt.sign(claims, env.JWT_REFRESH_SECRET, {
+    expiresIn: env.JWT_REFRESH_TTL as jwt.SignOptions["expiresIn"],
+  });
 }
 
 export function verifyAccessToken(token: string): AccessTokenClaims {

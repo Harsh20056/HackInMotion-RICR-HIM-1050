@@ -4,8 +4,8 @@ export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  module: 'documents' | 'issues' | 'schemes' | 'general';
+  type: "info" | "warning" | "error" | "success";
+  module: "documents" | "issues" | "schemes" | "general";
   createdAt: Date;
   read: boolean;
 }
@@ -40,7 +40,7 @@ class NotificationRegistry {
   /**
    * Clears all notifications belonging to a specific module.
    */
-  clearModuleNotifications(module: 'documents' | 'issues' | 'schemes' | 'general'): void {
+  clearModuleNotifications(module: "documents" | "issues" | "schemes" | "general"): void {
     const originalLength = this.notifications.length;
     this.notifications = this.notifications.filter((n) => n.module !== module);
     if (this.notifications.length !== originalLength) {

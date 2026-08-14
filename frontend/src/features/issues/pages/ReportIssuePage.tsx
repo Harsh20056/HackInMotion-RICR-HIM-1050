@@ -18,7 +18,7 @@ import {
   Building2,
   Send,
   Loader2,
-  Train
+  Train,
 } from "lucide-react";
 
 const categories = [
@@ -34,7 +34,7 @@ const categories = [
 export default function ReportIssuePage() {
   const { language } = useLanguage();
   const { user } = useAuth();
-  
+
   const {
     title,
     setTitle,
@@ -82,14 +82,14 @@ export default function ReportIssuePage() {
             {language === "en" ? "Report an Issue" : "समस्या दर्ज करें"}
           </h1>
           <p className="text-muted-foreground">
-            {language === "en" 
-              ? "Help improve your community by reporting civic issues." 
+            {language === "en"
+              ? "Help improve your community by reporting civic issues."
               : "नागरिक समस्याओं की रिपोर्ट करके अपने समुदाय को बेहतर बनाने में मदद करें।"}
           </p>
         </div>
 
-        <form 
-          onSubmit={handleSubmit} 
+        <form
+          onSubmit={handleSubmit}
           className="bg-card border-2 border-border/90 rounded-3xl p-6 sm:p-10 shadow-xl space-y-8"
         >
           {/* Category Selection */}
@@ -109,25 +109,21 @@ export default function ReportIssuePage() {
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <cat.icon className={`w-6 h-6 mb-2 ${
-                    selectedCategory === cat.id ? "text-primary" : "text-muted-foreground"
-                  }`} />
-                  <p className="font-medium text-sm">
-                    {language === "en" ? cat.labelEn : cat.labelHi}
-                  </p>
+                  <cat.icon
+                    className={`w-6 h-6 mb-2 ${
+                      selectedCategory === cat.id ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  />
+                  <p className="font-medium text-sm">{language === "en" ? cat.labelEn : cat.labelHi}</p>
                 </button>
               ))}
             </div>
-            {errors.category && (
-              <p className="text-sm text-destructive mt-2">{errors.category}</p>
-            )}
+            {errors.category && <p className="text-sm text-destructive mt-2">{errors.category}</p>}
           </div>
 
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">
-              {language === "en" ? "Issue Title" : "समस्या का शीर्षक"} *
-            </Label>
+            <Label htmlFor="title">{language === "en" ? "Issue Title" : "समस्या का शीर्षक"} *</Label>
             <Input
               id="title"
               placeholder={language === "en" ? "Brief description of the issue" : "समस्या का संक्षिप्त विवरण"}
@@ -135,9 +131,7 @@ export default function ReportIssuePage() {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
             />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title}</p>
-            )}
+            {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
           </div>
 
           {/* Description */}
@@ -147,15 +141,17 @@ export default function ReportIssuePage() {
             </Label>
             <Textarea
               id="description"
-              placeholder={language === "en" ? "Provide more details about the issue..." : "समस्या के बारे में अधिक जानकारी दें..."}
+              placeholder={
+                language === "en"
+                  ? "Provide more details about the issue..."
+                  : "समस्या के बारे में अधिक जानकारी दें..."
+              }
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               maxLength={2000}
             />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description}</p>
-            )}
+            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
           </div>
 
           {/* Location Picker Section */}
@@ -173,9 +169,7 @@ export default function ReportIssuePage() {
               setGeocodeStatus={setGeocodeStatus}
               language={language}
             />
-            {errors.location && (
-              <p className="text-sm text-destructive mt-1">{errors.location}</p>
-            )}
+            {errors.location && <p className="text-sm text-destructive mt-1">{errors.location}</p>}
           </div>
 
           {/* Photo Upload + Detection */}
@@ -186,20 +180,22 @@ export default function ReportIssuePage() {
             <label className="block border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
               <input type="file" accept="image/*,video/*" className="hidden" onChange={handleImageChange} />
               {imagePreview ? (
-                <img src={annotatedImage || imagePreview} alt="preview" className="max-h-64 mx-auto rounded-lg" />
+                <img
+                  src={annotatedImage || imagePreview}
+                  alt="preview"
+                  className="max-h-64 mx-auto rounded-lg"
+                />
               ) : (
                 <>
                   <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
                     <Camera className="w-6 h-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm text-muted-foreground mb-1">
-                    {language === "en" 
-                      ? "Upload image or video for AI detection" 
+                    {language === "en"
+                      ? "Upload image or video for AI detection"
                       : "AI पहचान के लिए छवि या वीडियो अपलोड करें"}
                   </p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    PNG • JPG • MP4 • MOV • WEBM
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">PNG • JPG • MP4 • MOV • WEBM</p>
                   <p className="text-[10px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
                     {language === "en"
                       ? "Videos are analyzed by extracting a representative frame. Videos are never stored."
@@ -222,11 +218,11 @@ export default function ReportIssuePage() {
           </div>
 
           {/* Voice Description */}
-          <div className={`rounded-xl p-4 border-2 transition-all ${
-            isRecording
-              ? "bg-destructive/5 border-destructive/40"
-              : "bg-muted/50 border-transparent"
-          }`}>
+          <div
+            className={`rounded-xl p-4 border-2 transition-all ${
+              isRecording ? "bg-destructive/5 border-destructive/40" : "bg-muted/50 border-transparent"
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
               <div>
                 <p className="font-medium text-sm">
@@ -234,8 +230,12 @@ export default function ReportIssuePage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isRecording
-                    ? (language === "en" ? "Listening... tap to stop" : "सुन रहे हैं... रोकने के लिए टैप करें")
-                    : (language === "en" ? "Tap to record your issue description" : "समस्या का विवरण रिकॉर्ड करने के लिए टैप करें")}
+                    ? language === "en"
+                      ? "Listening... tap to stop"
+                      : "सुन रहे हैं... रोकने के लिए टैप करें"
+                    : language === "en"
+                      ? "Tap to record your issue description"
+                      : "समस्या का विवरण रिकॉर्ड करने के लिए टैप करें"}
                 </p>
               </div>
               <Button
@@ -272,7 +272,13 @@ export default function ReportIssuePage() {
                 <Button type="button" onClick={confirmSameIssue} disabled={isSubmitting} className="flex-1">
                   {language === "en" ? "Yes, same issue" : "हाँ, वही समस्या है"}
                 </Button>
-                <Button type="button" variant="outline" onClick={confirmDifferentIssue} disabled={isSubmitting} className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={confirmDifferentIssue}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
                   {language === "en" ? "No, different issue" : "नहीं, अलग समस्या है"}
                 </Button>
               </div>

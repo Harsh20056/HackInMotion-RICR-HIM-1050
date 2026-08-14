@@ -19,12 +19,20 @@ function getCategoryCode(category: string): string {
   if (!category) return "";
   const normalized = category.toLowerCase().trim();
   if (normalized.includes("water")) return "water";
-  if (normalized.includes("sanitation") || normalized.includes("garbage") || normalized.includes("trash")) return "sanitation";
-  if (normalized.includes("electricity") || normalized.includes("electric") || normalized.includes("power")) return "electricity";
+  if (normalized.includes("sanitation") || normalized.includes("garbage") || normalized.includes("trash"))
+    return "sanitation";
+  if (normalized.includes("electricity") || normalized.includes("electric") || normalized.includes("power"))
+    return "electricity";
   if (normalized.includes("road")) return "roads";
   if (normalized.includes("park") || normalized.includes("garden")) return "parks";
   if (normalized.includes("building")) return "buildings";
-  if (normalized.includes("metro") || normalized.includes("station") || normalized.includes("train") || normalized.includes("transit")) return "metro";
+  if (
+    normalized.includes("metro") ||
+    normalized.includes("station") ||
+    normalized.includes("train") ||
+    normalized.includes("transit")
+  )
+    return "metro";
   return normalized;
 }
 
@@ -57,22 +65,19 @@ import {
 // ---------------------------------------------------------------------------
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
 // ---------------------------------------------------------------------------
 // Status colours
 // ---------------------------------------------------------------------------
 const STATUS_COLORS: Record<string, string> = {
-  [IssueStatus.REPORTED]:    "#f59e0b",
+  [IssueStatus.REPORTED]: "#f59e0b",
   [IssueStatus.IN_PROGRESS]: "#3b82f6",
-  [IssueStatus.RESOLVED]:    "#22c55e",
-  [IssueStatus.REJECTED]:    "#ef4444",
+  [IssueStatus.RESOLVED]: "#22c55e",
+  [IssueStatus.REJECTED]: "#ef4444",
 };
 
 function makeIcon(color: string): L.DivIcon {
@@ -94,85 +99,95 @@ function makeIcon(color: string): L.DivIcon {
 // Category meta & normalizer
 // ---------------------------------------------------------------------------
 const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; hi: string }> = {
-  "Water Supply":    { icon: <Droplets className="w-3.5 h-3.5" />, color: "#3b82f6", hi: "जल आपूर्ति" },
-  "जल आपूर्ति":     { icon: <Droplets className="w-3.5 h-3.5" />, color: "#3b82f6", hi: "जल आपूर्ति" },
-  "Sanitation":      { icon: <Trash2 className="w-3.5 h-3.5" />,   color: "#f59e0b", hi: "स्वच्छता" },
-  "स्वच्छता":       { icon: <Trash2 className="w-3.5 h-3.5" />,   color: "#f59e0b", hi: "स्वच्छता" },
-  "Electricity":     { icon: <Zap className="w-3.5 h-3.5" />,      color: "#eab308", hi: "बिजली" },
-  "बिजली":          { icon: <Zap className="w-3.5 h-3.5" />,      color: "#eab308", hi: "बिजली" },
-  "Roads":           { icon: <Construction className="w-3.5 h-3.5" />, color: "#6b7280", hi: "सड़कें" },
-  "सड़कें":         { icon: <Construction className="w-3.5 h-3.5" />, color: "#6b7280", hi: "सड़कें" },
-  "Parks & Gardens": { icon: <TreePine className="w-3.5 h-3.5" />,  color: "#22c55e", hi: "पार्क और बगीचे" },
-  "पार्क और बगीचे": { icon: <TreePine className="w-3.5 h-3.5" />,  color: "#22c55e", hi: "पार्क और बगीचे" },
-  "Buildings":       { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
-  "भवन":            { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
-  "Metro & Transit": { icon: <Train className="w-3.5 h-3.5" />,     color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
-  "मेट्रो और ट्रांजिट": { icon: <Train className="w-3.5 h-3.5" />,     color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
+  "Water Supply": { icon: <Droplets className="w-3.5 h-3.5" />, color: "#3b82f6", hi: "जल आपूर्ति" },
+  "जल आपूर्ति": { icon: <Droplets className="w-3.5 h-3.5" />, color: "#3b82f6", hi: "जल आपूर्ति" },
+  Sanitation: { icon: <Trash2 className="w-3.5 h-3.5" />, color: "#f59e0b", hi: "स्वच्छता" },
+  स्वच्छता: { icon: <Trash2 className="w-3.5 h-3.5" />, color: "#f59e0b", hi: "स्वच्छता" },
+  Electricity: { icon: <Zap className="w-3.5 h-3.5" />, color: "#eab308", hi: "बिजली" },
+  बिजली: { icon: <Zap className="w-3.5 h-3.5" />, color: "#eab308", hi: "बिजली" },
+  Roads: { icon: <Construction className="w-3.5 h-3.5" />, color: "#6b7280", hi: "सड़कें" },
+  सड़कें: { icon: <Construction className="w-3.5 h-3.5" />, color: "#6b7280", hi: "सड़कें" },
+  "Parks & Gardens": { icon: <TreePine className="w-3.5 h-3.5" />, color: "#22c55e", hi: "पार्क और बगीचे" },
+  "पार्क और बगीचे": { icon: <TreePine className="w-3.5 h-3.5" />, color: "#22c55e", hi: "पार्क और बगीचे" },
+  Buildings: { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
+  भवन: { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
+  "Metro & Transit": { icon: <Train className="w-3.5 h-3.5" />, color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
+  "मेट्रो और ट्रांजिट": {
+    icon: <Train className="w-3.5 h-3.5" />,
+    color: "#ec4899",
+    hi: "मेट्रो और ट्रांजिट",
+  },
 };
 
 const CATEGORY_DISPLAY_NAMES = [
-  "Water Supply", "Sanitation", "Electricity", "Roads", "Parks & Gardens", "Buildings", "Metro & Transit",
+  "Water Supply",
+  "Sanitation",
+  "Electricity",
+  "Roads",
+  "Parks & Gardens",
+  "Buildings",
+  "Metro & Transit",
 ];
 const STATUS_DISPLAY = [IssueStatus.REPORTED, IssueStatus.IN_PROGRESS, IssueStatus.RESOLVED];
 
 const STATUS_LABELS_MAP: Record<string, { en: string; hi: string }> = {
-  [IssueStatus.REPORTED]:    { en: "Reported",    hi: "रिपोर्ट" },
+  [IssueStatus.REPORTED]: { en: "Reported", hi: "रिपोर्ट" },
   [IssueStatus.IN_PROGRESS]: { en: "In Progress", hi: "प्रगति में" },
-  [IssueStatus.RESOLVED]:    { en: "Resolved",    hi: "हल" },
-  [IssueStatus.REJECTED]:    { en: "Rejected",    hi: "अस्वीकृत" },
+  [IssueStatus.RESOLVED]: { en: "Resolved", hi: "हल" },
+  [IssueStatus.REJECTED]: { en: "Rejected", hi: "अस्वीकृत" },
 };
 
 const CANONICAL_CATEGORIES: Record<string, string> = {
-  "water": "Water Supply",
-  "watersupply": "Water Supply",
+  water: "Water Supply",
+  watersupply: "Water Supply",
   "water supply": "Water Supply",
-  "sanitation": "Sanitation",
-  "garbage": "Sanitation",
-  "trash": "Sanitation",
-  "waste": "Sanitation",
-  "electricity": "Electricity",
-  "electric": "Electricity",
-  "power": "Electricity",
-  "road": "Roads",
-  "roads": "Roads",
-  "building": "Buildings",
-  "buildings": "Buildings",
-  "park": "Parks & Gardens",
-  "parks": "Parks & Gardens",
-  "garden": "Parks & Gardens",
-  "gardens": "Parks & Gardens",
+  sanitation: "Sanitation",
+  garbage: "Sanitation",
+  trash: "Sanitation",
+  waste: "Sanitation",
+  electricity: "Electricity",
+  electric: "Electricity",
+  power: "Electricity",
+  road: "Roads",
+  roads: "Roads",
+  building: "Buildings",
+  buildings: "Buildings",
+  park: "Parks & Gardens",
+  parks: "Parks & Gardens",
+  garden: "Parks & Gardens",
+  gardens: "Parks & Gardens",
   "parks & gardens": "Parks & Gardens",
   "parks and gardens": "Parks & Gardens",
-  "metro": "Metro & Transit",
-  "transit": "Metro & Transit",
-  "station": "Metro & Transit",
-  "train": "Metro & Transit",
+  metro: "Metro & Transit",
+  transit: "Metro & Transit",
+  station: "Metro & Transit",
+  train: "Metro & Transit",
   "metro & transit": "Metro & Transit",
   "जल आपूर्ति": "Water Supply",
-  "स्वच्छता": "Sanitation",
-  "बिजली": "Electricity",
-  "सड़कें": "Roads",
+  स्वच्छता: "Sanitation",
+  बिजली: "Electricity",
+  सड़कें: "Roads",
   "पार्क और बगीचे": "Parks & Gardens",
-  "भवन": "Buildings",
-  "मेट्रो और ट्रांजिट": "Metro & Transit"
+  भवन: "Buildings",
+  "मेट्रो और ट्रांजिट": "Metro & Transit",
 };
 
 function normalizeCategory(cat: string): string {
   if (!cat) return "";
   let normalized = cat.trim().toLowerCase();
-  
+
   if (CANONICAL_CATEGORIES[normalized]) {
     return CANONICAL_CATEGORIES[normalized];
   }
-  
+
   if (normalized.endsWith("s") && normalized.length > 2) {
     normalized = normalized.slice(0, -1);
   }
-  
+
   if (CANONICAL_CATEGORIES[normalized]) {
     return CANONICAL_CATEGORIES[normalized];
   }
-  
+
   return cat;
 }
 
@@ -191,39 +206,64 @@ const KNOWN_CITIES = [
   { key: "hyderabad", name: "Hyderabad" },
   { key: "chennai", name: "Chennai" },
   { key: "kolkata", name: "Kolkata" },
-  { key: "pune", name: "Pune" }
+  { key: "pune", name: "Pune" },
 ];
 
 const CITY_COORDS: Record<string, [number, number]> = {
   bhopal: [23.2599, 77.4126],
   khanna: [30.7022, 76.2163],
   indore: [22.7196, 75.8577],
-  mumbai: [19.0760, 72.8777],
-  delhi: [28.6139, 77.2090],
-  "new delhi": [28.6139, 77.2090],
+  mumbai: [19.076, 72.8777],
+  delhi: [28.6139, 77.209],
+  "new delhi": [28.6139, 77.209],
   bangalore: [12.9716, 77.5946],
   bengaluru: [12.9716, 77.5946],
-  hyderabad: [17.3850, 78.4867],
+  hyderabad: [17.385, 78.4867],
   chennai: [13.0827, 80.2707],
   kolkata: [22.5726, 88.3639],
   pune: [18.5204, 73.8567],
 };
 
 const STATE_COUNTRY_BLACKLIST = new Set([
-  "india", "usa", "united states",
-  "madhya pradesh", "mp", "m.p.", "punjab", "maharashtra", "delhi", "haryana",
-  "uttar pradesh", "up", "u.p.", "gujarat", "rajasthan", "karnataka", "tamil nadu",
-  "kerala", "andhra pradesh", "telangana", "west bengal", "bihar", "jharkhand",
-  "odisha", "chhattisgarh", "himachal pradesh", "uttarakhand", "goa", "assam"
+  "india",
+  "usa",
+  "united states",
+  "madhya pradesh",
+  "mp",
+  "m.p.",
+  "punjab",
+  "maharashtra",
+  "delhi",
+  "haryana",
+  "uttar pradesh",
+  "up",
+  "u.p.",
+  "gujarat",
+  "rajasthan",
+  "karnataka",
+  "tamil nadu",
+  "kerala",
+  "andhra pradesh",
+  "telangana",
+  "west bengal",
+  "bihar",
+  "jharkhand",
+  "odisha",
+  "chhattisgarh",
+  "himachal pradesh",
+  "uttarakhand",
+  "goa",
+  "assam",
 ]);
 
-const STREET_INDICATORS = /\b(st|street|rd|road|lane|ln|plot|ward|flat|sector|building|house|h\.no|no|floor|near|opp|behind|post office|post|office|park)\b/i;
+const STREET_INDICATORS =
+  /\b(st|street|rd|road|lane|ln|plot|ward|flat|sector|building|house|h\.no|no|floor|near|opp|behind|post office|post|office|park)\b/i;
 
 function extractCity(location: string): string {
   if (!location) return "Unknown";
-  
+
   const lowerLocation = location.toLowerCase();
-  
+
   // 1. Check for known cities in the text
   for (const city of KNOWN_CITIES) {
     const regex = new RegExp(`\\b${city.key}\\b`, "i");
@@ -233,21 +273,24 @@ function extractCity(location: string): string {
   }
 
   // 2. Comma-separated analysis
-  const parts = location.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = location
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (parts.length === 0) return "Unknown";
 
   for (const part of parts) {
     const partLower = part.toLowerCase();
-    
+
     // Skip blacklist items
     if (STATE_COUNTRY_BLACKLIST.has(partLower)) continue;
-    
+
     // Skip pincodes
     if (/^\d{6}$/.test(partLower)) continue;
-    
+
     // Skip specific street addresses
     if (/\d/.test(partLower) || STREET_INDICATORS.test(partLower)) continue;
-    
+
     // If it looks like a clean name of length >= 3, return it capitalized
     if (part.length >= 3) {
       return part.charAt(0).toUpperCase() + part.slice(1);
@@ -273,17 +316,19 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
   const statusColor = STATUS_COLORS[issue.status] ?? "#6b7280";
   const catColor = CATEGORY_META[issue.category as string]?.color ?? "#6b7280";
   const statusLabel = STATUS_LABELS_MAP[issue.status]?.[language] ?? issue.status;
-  const _dateStr = new Date(issue.createdAt).toLocaleDateString(
-    language === "hi" ? "hi-IN" : "en-IN",
-    { year: "numeric", month: "short", day: "numeric" }
-  );
+  const _dateStr = new Date(issue.createdAt).toLocaleDateString(language === "hi" ? "hi-IN" : "en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 
   // Synchronous rule-based getSyncInsight() for popup details to avoid Gemini network requests
   const insight = aiInsightService.getSyncInsight(issue);
 
   // Fetch community verification data using the unified getComputedState helper
-  const { confirmations, disagreements, confidence, isVerified } = 
-    issueVerificationService.getComputedState(issue.id);
+  const { confirmations, disagreements, confidence, isVerified } = issueVerificationService.getComputedState(
+    issue.id
+  );
 
   const verificationBadgeHtml = isVerified
     ? `<span style="
@@ -293,7 +338,7 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
         background: rgba(34, 197, 94, 0.1);
       ">✓ Verified</span>`
     : "";
-  
+
   const severityColors = {
     low: "#22c55e",
     medium: "#eab308",
@@ -313,11 +358,12 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
   const viewDetailsLabel = language === "en" ? "View Details" : "विवरण देखें";
   const supportCountLabel = language === "en" ? "supports" : "समर्थन";
 
-  const thumbnailHtml = issue.imageUrls && issue.imageUrls.length > 0 
-    ? `<div style="width: 100%; height: 95px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; background: #eee;">
+  const thumbnailHtml =
+    issue.imageUrls && issue.imageUrls.length > 0
+      ? `<div style="width: 100%; height: 95px; margin-bottom: 8px; border-radius: 8px; overflow: hidden; background: #eee;">
          <img src="${imageUrl(issue.imageUrls[0], "mapPopup")}" width="200" height="120" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" />
        </div>`
-    : "";
+      : "";
 
   return `
     <div style="font-family: inherit; min-width: 220px; max-width: 260px; padding: 2px;">
@@ -368,17 +414,25 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
         </div>
       </div>
 
-      ${issue.description ? `
+      ${
+        issue.description
+          ? `
         <p style="font-size: 11px; color: #666; margin: 0 0 6px; line-height: 1.45;
           overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
           ${issue.description}
         </p>
-      ` : ""}
-      ${issue.location ? `
+      `
+          : ""
+      }
+      ${
+        issue.location
+          ? `
         <p style="font-size: 10.5px; color: #888; margin: 0 0 6px; display: flex; align-items: center; gap: 4px;">
           📍 ${issue.location}
         </p>
-      ` : ""}
+      `
+          : ""
+      }
       
       <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px;">
         <span style="color: #666; display: inline-flex; align-items: center; gap: 3px;">
@@ -496,7 +550,7 @@ export default function CivicMapPage() {
               isDeptAdmin = true;
               userCity = roleInfo.city;
               const depts = await adminService.listDepartments();
-              const found = depts.find(d => d.id === roleInfo.department);
+              const found = depts.find((d) => d.id === roleInfo.department);
               if (found) {
                 userDeptCode = found.code;
               }
@@ -508,11 +562,18 @@ export default function CivicMapPage() {
 
         if (isDeptAdmin && userDeptCode) {
           mapped = mapped.filter((issue) => {
-            if (userCity && (!issue.location || !issue.location.toLowerCase().includes(userCity.toLowerCase()))) {
+            if (
+              userCity &&
+              (!issue.location || !issue.location.toLowerCase().includes(userCity.toLowerCase()))
+            ) {
               return false;
             }
             const categoryObj: any = issue.category;
-            const issueCategoryCode = categoryObj ? (typeof categoryObj === 'object' ? categoryObj.code : categoryObj) : '';
+            const issueCategoryCode = categoryObj
+              ? typeof categoryObj === "object"
+                ? categoryObj.code
+                : categoryObj
+              : "";
             if (userDeptCode && !doesCategoryBelongToDepartment(issueCategoryCode, userDeptCode)) {
               return false;
             }
@@ -543,20 +604,22 @@ export default function CivicMapPage() {
       }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, mapInstance]);
 
   // -- Silently get user location (once) -------------------------------------
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation || !mapInstance) return;
-    
+
     let active = true;
 
     // Inspect search parameters on load
     const searchParams = new URLSearchParams(window.location.search);
     const hasCityParam = searchParams.get("city") || urlFilters.city;
     const hasIssueIdParam = searchParams.get("issueId") || urlFilters.issueId;
-    
+
     // Abort geolocation fly-to/centering completely if a deep link is present
     if (hasCityParam || hasIssueIdParam) return;
 
@@ -566,13 +629,21 @@ export default function CivicMapPage() {
 
         // Double check deep link parameters in case they were set in the meantime
         const currentParams = new URLSearchParams(window.location.search);
-        if (currentParams.get("city") || currentParams.get("issueId") || urlFilters.city || urlFilters.issueId) return;
+        if (
+          currentParams.get("city") ||
+          currentParams.get("issueId") ||
+          urlFilters.city ||
+          urlFilters.issueId
+        )
+          return;
 
         const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setUserPos(coords);
         mapInstance.setView(coords, 12, { animate: true });
       },
-      () => { /* silently ignore */ },
+      () => {
+        /* silently ignore */
+      },
       { enableHighAccuracy: false, timeout: 5000 }
     );
 
@@ -595,7 +666,7 @@ export default function CivicMapPage() {
         html: `<div class="user-location-pulse"></div>`,
         iconSize: [20, 20],
         iconAnchor: [10, 10],
-      })
+      }),
     });
 
     userMarker.bindPopup(`
@@ -626,7 +697,7 @@ export default function CivicMapPage() {
     if (urlFilters.category) {
       setIsSearchOpen(true);
       const normalizedQueryCat = normalizeCategory(urlFilters.category);
-      const match = CATEGORY_DISPLAY_NAMES.find(c => normalizeCategory(c) === normalizedQueryCat);
+      const match = CATEGORY_DISPLAY_NAMES.find((c) => normalizeCategory(c) === normalizedQueryCat);
       if (match) {
         setCategoryFilters(new Set([match]));
       } else {
@@ -648,7 +719,8 @@ export default function CivicMapPage() {
         (i) => extractCity(i.location).toLowerCase() === normalizedTargetCity
       );
       const coordIssues = cityIssues.filter(
-        (i) => i.latitude !== null && i.latitude !== undefined && i.longitude !== null && i.longitude !== undefined
+        (i) =>
+          i.latitude !== null && i.latitude !== undefined && i.longitude !== null && i.longitude !== undefined
       );
 
       if (coordIssues.length > 0) {
@@ -658,7 +730,9 @@ export default function CivicMapPage() {
         const avgLng = sumLng / coordIssues.length;
         targetZoomPos = [avgLat, avgLng];
         targetZoomLevel = 11;
-        console.log(`Deep Link Centroid calculated for ${normalizedTargetCity} (${coordIssues.length} issues): [${avgLat}, ${avgLng}]`);
+        console.log(
+          `Deep Link Centroid calculated for ${normalizedTargetCity} (${coordIssues.length} issues): [${avgLat}, ${avgLng}]`
+        );
       } else if (CITY_COORDS[normalizedTargetCity]) {
         targetZoomPos = CITY_COORDS[normalizedTargetCity];
         targetZoomLevel = 11;
@@ -702,8 +776,7 @@ export default function CivicMapPage() {
       }
 
       // 2. Status Filter Matching
-      const statusMatch =
-        statusFilters.size === 0 || statusFilters.has(issue.status);
+      const statusMatch = statusFilters.size === 0 || statusFilters.has(issue.status);
 
       // 3. Search Query Matching (for realtime filter, when not choosing specific dropdown result)
       const query = searchQuery.toLowerCase();
@@ -720,13 +793,15 @@ export default function CivicMapPage() {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
-    return allIssues.filter((issue) => {
-      const titleMatch = issue.title.toLowerCase().includes(query);
-      const descMatch = issue.description.toLowerCase().includes(query);
-      const cityMatch = extractCity(issue.location).toLowerCase().includes(query);
-      const catMatch = (issue.category as string).toLowerCase().includes(query);
-      return titleMatch || descMatch || cityMatch || catMatch;
-    }).slice(0, 6);
+    return allIssues
+      .filter((issue) => {
+        const titleMatch = issue.title.toLowerCase().includes(query);
+        const descMatch = issue.description.toLowerCase().includes(query);
+        const cityMatch = extractCity(issue.location).toLowerCase().includes(query);
+        const catMatch = (issue.category as string).toLowerCase().includes(query);
+        return titleMatch || descMatch || cityMatch || catMatch;
+      })
+      .slice(0, 6);
   }, [allIssues, searchQuery]);
 
   const [placeResults, setPlaceResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
@@ -739,7 +814,7 @@ export default function CivicMapPage() {
     }
 
     const query = searchQuery.toLowerCase();
-    
+
     // 1. Quick Local Match on CITY_COORDS
     const localMatches: { name: string; lat: number; lng: number }[] = [];
     Object.keys(CITY_COORDS).forEach((cityKey) => {
@@ -759,8 +834,8 @@ export default function CivicMapPage() {
           {
             headers: {
               "Accept-Language": language === "en" ? "en" : "hi",
-              "User-Agent": "Samadhan-Civic-App"
-            }
+              "User-Agent": "Samadhan-Civic-App",
+            },
           }
         );
         if (res.ok) {
@@ -768,16 +843,16 @@ export default function CivicMapPage() {
           const fetchedPlaces = data.map((item: any) => ({
             name: item.display_name,
             lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon)
+            lng: parseFloat(item.lon),
           }));
-          
+
           const merged = [...localMatches];
           fetchedPlaces.forEach((fp: any) => {
-            if (!merged.some(m => Math.abs(m.lat - fp.lat) < 0.001 && Math.abs(m.lng - fp.lng) < 0.001)) {
+            if (!merged.some((m) => Math.abs(m.lat - fp.lat) < 0.001 && Math.abs(m.lng - fp.lng) < 0.001)) {
               merged.push(fp);
             }
           });
-          
+
           setPlaceResults(merged);
         }
       } catch (_err) {
@@ -792,17 +867,17 @@ export default function CivicMapPage() {
 
   const handleSelectPlaceResult = (place: { name: string; lat: number; lng: number }) => {
     if (!mapInstance) return;
-    
+
     mapInstance.invalidateSize();
     mapInstance.flyTo([place.lat, place.lng], 15, { animate: true, duration: 1.5 });
-    
+
     const tempCircle = L.circle([place.lat, place.lng], {
       color: "#3b82f6",
       fillColor: "#3b82f6",
       fillOpacity: 0.2,
-      radius: 150
+      radius: 150,
     }).addTo(mapInstance);
-    
+
     setTimeout(() => {
       tempCircle.remove();
     }, 3000);
@@ -831,12 +906,12 @@ export default function CivicMapPage() {
     if (targetPos) {
       mapInstance.invalidateSize();
       mapInstance.flyTo(targetPos, targetZoom, { animate: true, duration: 1.5 });
-      
+
       const marker = markersMapRef.current.get(issue.id);
       if (marker) {
         setTimeout(() => {
           marker.openPopup();
-          
+
           // Swap highlight animation
           const originalIcon = marker.options.icon;
           const highlightIcon = L.divIcon({
@@ -852,7 +927,7 @@ export default function CivicMapPage() {
             iconAnchor: [18, 36],
             popupAnchor: [0, -38],
           });
-          
+
           marker.setIcon(highlightIcon);
           setTimeout(() => {
             if (marker) {
@@ -862,7 +937,7 @@ export default function CivicMapPage() {
         }, 1500);
       }
     }
-    
+
     setShowSearchDropdown(false);
     setSearchQuery("");
   };
@@ -889,7 +964,7 @@ export default function CivicMapPage() {
       marker?.openPopup();
       setAutoOpenId(null);
     }
-    
+
     setMarkersInitialized(true);
   }, [filtered, language, autoOpenId]);
 
@@ -946,32 +1021,34 @@ export default function CivicMapPage() {
     const topOverallCat = Object.entries(overallCatCount).sort((a, b) => b[1] - a[1])[0];
 
     const statusCount = {
-      reported:   allIssues.filter((i) => i.status === IssueStatus.REPORTED).length,
+      reported: allIssues.filter((i) => i.status === IssueStatus.REPORTED).length,
       inProgress: allIssues.filter((i) => i.status === IssueStatus.IN_PROGRESS).length,
-      resolved:   allIssues.filter((i) => i.status === IssueStatus.RESOLVED).length,
+      resolved: allIssues.filter((i) => i.status === IssueStatus.RESOLVED).length,
     };
 
     // Calculate GPS Coverage
-    const gpsCoverage = allIssues.length > 0
-      ? Math.round((issues.length / allIssues.length) * 100)
-      : 0;
+    const gpsCoverage = allIssues.length > 0 ? Math.round((issues.length / allIssues.length) * 100) : 0;
 
     // Calculate Average Resolution Time
     const resolvedIssues = allIssues.filter(
       (i) => i.status === IssueStatus.RESOLVED && i.updatedAt && i.createdAt
     );
-    const avgResolutionHrs = resolvedIssues.length > 0
-      ? resolvedIssues.reduce((sum, i) => {
-          const diffMs = i.updatedAt!.getTime() - i.createdAt.getTime();
-          return sum + diffMs / (1000 * 60 * 60);
-        }, 0) / resolvedIssues.length
-      : 0;
+    const avgResolutionHrs =
+      resolvedIssues.length > 0
+        ? resolvedIssues.reduce((sum, i) => {
+            const diffMs = i.updatedAt!.getTime() - i.createdAt.getTime();
+            return sum + diffMs / (1000 * 60 * 60);
+          }, 0) / resolvedIssues.length
+        : 0;
 
-    const formattedAvgTime = avgResolutionHrs > 0
-      ? avgResolutionHrs < 24
-        ? `${Math.round(avgResolutionHrs)} hrs`
-        : `${Math.round(avgResolutionHrs / 24)} days`
-      : (language === "en" ? "No resolved issues yet" : "कोई हल मुद्दा नहीं");
+    const formattedAvgTime =
+      avgResolutionHrs > 0
+        ? avgResolutionHrs < 24
+          ? `${Math.round(avgResolutionHrs)} hrs`
+          : `${Math.round(avgResolutionHrs / 24)} days`
+        : language === "en"
+          ? "No resolved issues yet"
+          : "कोई हल मुद्दा नहीं";
 
     // Duplicate warnings / Merges count
     const duplicateCount = allIssues.filter((i) => i.masterIssueId !== null).length;
@@ -997,7 +1074,8 @@ export default function CivicMapPage() {
   const toggleCategory = (cat: string) => {
     setCategoryFilters((prev) => {
       const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
       return next;
     });
   };
@@ -1005,7 +1083,8 @@ export default function CivicMapPage() {
   const toggleStatus = (s: string) => {
     setStatusFilters((prev) => {
       const next = new Set(prev);
-      if (next.has(s)) next.delete(s); else next.add(s);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
       return next;
     });
   };
@@ -1081,7 +1160,10 @@ export default function CivicMapPage() {
                   <span className="text-xl font-extrabold text-primary">{analytics.gpsCoverage}%</span>
                 </div>
                 <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: `${analytics.gpsCoverage}%` }} />
+                  <div
+                    className="bg-primary h-full rounded-full"
+                    style={{ width: `${analytics.gpsCoverage}%` }}
+                  />
                 </div>
               </div>
 
@@ -1089,7 +1171,9 @@ export default function CivicMapPage() {
                 <p className="text-xs text-muted-foreground font-semibold">
                   {language === "en" ? "Avg Resolution" : "औसत समाधान"}
                 </p>
-                <p className="text-xs font-bold text-accent mt-1 leading-tight">{analytics.formattedAvgTime}</p>
+                <p className="text-xs font-bold text-accent mt-1 leading-tight">
+                  {analytics.formattedAvgTime}
+                </p>
                 <p className="text-[9px] text-muted-foreground mt-2 flex items-center gap-1">
                   <Timer className="w-2.5 h-2.5" />
                   {language === "en" ? "For resolved issues" : "हल की गई समस्याओं के लिए"}
@@ -1113,9 +1197,7 @@ export default function CivicMapPage() {
               </div>
               <div className="bg-green-500/10 rounded-xl p-2 text-center border border-green-500/15">
                 <p className="text-lg font-bold text-green-500">{analytics.statusCount.resolved}</p>
-                <p className="text-[9px] text-muted-foreground">
-                  {language === "en" ? "Resolved" : "हल"}
-                </p>
+                <p className="text-[9px] text-muted-foreground">{language === "en" ? "Resolved" : "हल"}</p>
               </div>
             </div>
 
@@ -1128,7 +1210,9 @@ export default function CivicMapPage() {
                     {language === "en" ? "Duplicate Issues Prevented" : "रोके गए डुप्लिकेट मुद्दे"}
                   </span>
                 </div>
-                <Badge variant="destructive" className="font-bold text-xs">{analytics.duplicateCount}</Badge>
+                <Badge variant="destructive" className="font-bold text-xs">
+                  {analytics.duplicateCount}
+                </Badge>
               </div>
             )}
 
@@ -1145,7 +1229,9 @@ export default function CivicMapPage() {
                     <div key={cat} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
-                          <span style={{ color: meta?.color }}>{meta?.icon ?? <AlertTriangle className="w-3 h-3" />}</span>
+                          <span style={{ color: meta?.color }}>
+                            {meta?.icon ?? <AlertTriangle className="w-3 h-3" />}
+                          </span>
                           {language === "hi" && meta?.hi ? meta.hi : cat}
                         </span>
                         <span className="font-semibold text-foreground">{count}</span>
@@ -1178,9 +1264,7 @@ export default function CivicMapPage() {
               </div>
             ) : analytics.topCities.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">
-                {language === "en"
-                  ? "No geo-tagged issues yet."
-                  : "अभी कोई जियो-टैग समस्या नहीं।"}
+                {language === "en" ? "No geo-tagged issues yet." : "अभी कोई जियो-टैग समस्या नहीं।"}
               </p>
             ) : (
               <div className="space-y-2">
@@ -1193,8 +1277,10 @@ export default function CivicMapPage() {
                         (i) => extractCity(i.location).toLowerCase() === entry.city.toLowerCase()
                       );
                       if (cityIssues.length > 0 && mapInstance) {
-                        const avgLat = cityIssues.reduce((sum, i) => sum + i.latitude!, 0) / cityIssues.length;
-                        const avgLng = cityIssues.reduce((sum, i) => sum + i.longitude!, 0) / cityIssues.length;
+                        const avgLat =
+                          cityIssues.reduce((sum, i) => sum + i.latitude!, 0) / cityIssues.length;
+                        const avgLng =
+                          cityIssues.reduce((sum, i) => sum + i.longitude!, 0) / cityIssues.length;
                         mapInstance.setView([avgLat, avgLng], 12, { animate: true });
                       }
                     }}
@@ -1237,7 +1323,6 @@ export default function CivicMapPage() {
       {/* Map + Overlay Controls                                               */}
       {/* ------------------------------------------------------------------ */}
       <div className="flex-1 relative flex flex-col">
-        
         {/* Floating Controls Overlay (Top Right) */}
         <div className="absolute top-4 right-4 z-[1010] pointer-events-none flex flex-col items-end gap-2 max-w-sm sm:max-w-md w-full px-2">
           {/* Top Control Bar: Search Trigger + Civic Map Badge */}
@@ -1256,9 +1341,7 @@ export default function CivicMapPage() {
                 title={language === "en" ? "Search map" : "मानचित्र खोजें"}
               >
                 <Search className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                <span className="font-bold">
-                  {language === "en" ? "Search" : "खोजें"}
-                </span>
+                <span className="font-bold">{language === "en" ? "Search" : "खोजें"}</span>
                 {activeFiltersCount > 0 && (
                   <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.2 rounded-full font-bold">
                     {activeFiltersCount}
@@ -1300,14 +1383,19 @@ export default function CivicMapPage() {
             </div>
           ) : (
             /* Expanded Top Right Search Card */
-            <div ref={searchContainerRef} className="pointer-events-auto bg-card/95 backdrop-blur-md border border-border rounded-2xl p-3 shadow-2xl flex flex-col gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+            <div
+              ref={searchContainerRef}
+              className="pointer-events-auto bg-card/95 backdrop-blur-md border border-border rounded-2xl p-3 shadow-2xl flex flex-col gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-200"
+            >
               {/* Search Input Box + Filters Toggle + Close Button */}
               <div className="relative flex items-center gap-2">
                 <div className="flex items-center gap-2 bg-muted/60 border border-border/80 rounded-xl px-3 py-2 flex-1">
                   <Search className="w-4 h-4 text-muted-foreground shrink-0" />
                   <input
                     type="text"
-                    placeholder={language === "en" ? "Search issues, cities, categories..." : "समस्याएं, शहर खोजें..."}
+                    placeholder={
+                      language === "en" ? "Search issues, cities, categories..." : "समस्याएं, शहर खोजें..."
+                    }
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -1318,7 +1406,13 @@ export default function CivicMapPage() {
                     className="bg-transparent border-none text-xs text-foreground focus:outline-none w-full"
                   />
                   {searchQuery && (
-                    <button onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }} className="text-muted-foreground hover:text-foreground">
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setShowSearchDropdown(false);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -1500,10 +1594,7 @@ export default function CivicMapPage() {
                           : "border-border bg-muted/50 text-muted-foreground hover:border-primary/50"
                       }`}
                     >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: STATUS_COLORS[s] }}
-                      />
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] }} />
                       {STATUS_LABELS_MAP[s]?.[language] ?? s}
                     </button>
                   );
@@ -1514,7 +1605,11 @@ export default function CivicMapPage() {
             {activeFiltersCount > 0 && (
               <button
                 className="text-xs text-destructive hover:underline"
-                onClick={() => { setCategoryFilters(new Set()); setStatusFilters(new Set()); setSearchQuery(""); }}
+                onClick={() => {
+                  setCategoryFilters(new Set());
+                  setStatusFilters(new Set());
+                  setSearchQuery("");
+                }}
               >
                 {language === "en" ? "Clear all filters" : "सभी फ़िल्टर हटाएं"}
               </button>

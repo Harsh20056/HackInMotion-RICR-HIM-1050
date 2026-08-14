@@ -23,7 +23,16 @@ export const listIssuesQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(500).default(20),
   categoryCode: z.string().optional(),
   status: z
-    .enum(["reported", "acknowledged", "in_progress", "resolved", "verified", "rejected", "reopened", "closed"])
+    .enum([
+      "reported",
+      "acknowledged",
+      "in_progress",
+      "resolved",
+      "verified",
+      "rejected",
+      "reopened",
+      "closed",
+    ])
     .optional(),
   departmentId: z.string().uuid().optional(),
   /**
@@ -39,7 +48,10 @@ export const listIssuesQuerySchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v.split(",").map(Number) : undefined))
-    .refine((v) => !v || (v.length === 4 && v.every((n) => Number.isFinite(n))), "bbox must be minLng,minLat,maxLng,maxLat"),
+    .refine(
+      (v) => !v || (v.length === 4 && v.every((n) => Number.isFinite(n))),
+      "bbox must be minLng,minLat,maxLng,maxLat"
+    ),
 });
 export type ListIssuesQuery = z.infer<typeof listIssuesQuerySchema>;
 
@@ -87,6 +99,11 @@ export const bulkVerificationQuerySchema = z.object({
   ids: z
     .string()
     .min(1)
-    .transform((raw) => raw.split(",").map((s) => s.trim()).filter(Boolean))
+    .transform((raw) =>
+      raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
     .pipe(z.array(z.string().uuid()).min(1).max(100)),
 });

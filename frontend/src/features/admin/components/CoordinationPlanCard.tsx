@@ -41,8 +41,12 @@ export function CoordinationPlanCard({ issueId, isStaff }: { issueId: string; is
       toast({
         title:
           action === "apply"
-            ? language === "en" ? "Plan applied" : "योजना लागू"
-            : language === "en" ? "Plan rejected" : "योजना अस्वीकृत",
+            ? language === "en"
+              ? "Plan applied"
+              : "योजना लागू"
+            : language === "en"
+              ? "Plan rejected"
+              : "योजना अस्वीकृत",
       });
       load();
     } catch (err) {
@@ -74,10 +78,16 @@ export function CoordinationPlanCard({ issueId, isStaff }: { issueId: string; is
           }`}
         >
           {plan.status === "applied"
-            ? language === "en" ? "Applied" : "लागू"
+            ? language === "en"
+              ? "Applied"
+              : "लागू"
             : plan.status === "rejected"
-              ? language === "en" ? "Rejected" : "अस्वीकृत"
-              : language === "en" ? "Suggested — needs review" : "सुझाव — समीक्षा आवश्यक"}
+              ? language === "en"
+                ? "Rejected"
+                : "अस्वीकृत"
+              : language === "en"
+                ? "Suggested — needs review"
+                : "सुझाव — समीक्षा आवश्यक"}
         </Badge>
         <span className="text-[10px] text-muted-foreground ml-auto">
           {Math.round(plan.confidence * 100)}% {language === "en" ? "confidence" : "विश्वास"}
@@ -121,7 +131,11 @@ export function CoordinationPlanCard({ issueId, isStaff }: { issueId: string; is
             disabled={acting === plan.id}
             onClick={() => act(plan.id, "apply")}
           >
-            {acting === plan.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            {acting === plan.id ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Check className="w-3 h-3" />
+            )}
             {language === "en" ? "Apply this plan" : "योजना लागू करें"}
           </Button>
           <Button

@@ -57,8 +57,7 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): nu
   const dLat = toRadians(bLat - aLat);
   const dLng = toRadians(bLng - aLng);
   const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(aLat)) * Math.cos(toRadians(bLat)) * Math.sin(dLng / 2) ** 2;
+    Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(aLat)) * Math.cos(toRadians(bLat)) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 

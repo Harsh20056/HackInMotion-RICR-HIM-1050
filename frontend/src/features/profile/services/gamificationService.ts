@@ -14,7 +14,7 @@ export const gamificationService = {
     const resolvedCount = issues.filter((i) => i.status === IssueStatus.RESOLVED).length;
 
     // Calculate XP
-    const xp = (reportedCount * 100) + (supportedCount * 25) + (verificationsCount * 50) + (resolvedCount * 150);
+    const xp = reportedCount * 100 + supportedCount * 25 + verificationsCount * 50 + resolvedCount * 150;
 
     // Level progression
     const xpPerLevel = 300;
@@ -24,7 +24,7 @@ export const gamificationService = {
     const xpProgressPercent = Math.round((currentLevelXp / nextLevelXp) * 100);
 
     // Impact Score
-    const impactScore = (reportedCount * 10) + (supportedCount * 2) + (verificationsCount * 5) + (resolvedCount * 15);
+    const impactScore = reportedCount * 10 + supportedCount * 2 + verificationsCount * 5 + resolvedCount * 15;
 
     // Rank
     let rank = "Novice Citizen";
@@ -153,11 +153,11 @@ export const gamificationService = {
 
     let streakCount = 1;
     let currentWeekStart = lastContribution.getTime();
-    
+
     for (let i = 1; i < sorted.length; i++) {
       const issueTime = sorted[i].createdAt.getTime();
       const timeDiff = currentWeekStart - issueTime;
-      
+
       if (timeDiff >= oneWeekMs && timeDiff < 2 * oneWeekMs) {
         streakCount++;
         currentWeekStart = issueTime;
@@ -168,7 +168,7 @@ export const gamificationService = {
 
     return {
       streakCount,
-      lastContributionDate: lastContribution.toLocaleDateString()
+      lastContributionDate: lastContribution.toLocaleDateString(),
     };
   },
 
@@ -194,7 +194,7 @@ export const gamificationService = {
 
     return combined.map((entry, idx) => ({
       ...entry,
-      rank: idx + 1
+      rank: idx + 1,
     }));
   },
 
@@ -202,5 +202,5 @@ export const gamificationService = {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("gamification_updated"));
     }
-  }
+  },
 };

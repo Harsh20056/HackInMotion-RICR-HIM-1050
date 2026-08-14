@@ -25,7 +25,7 @@ vi.mock("@/features/documents/services/documentService", () => ({
       totalFiles: 1,
       totalSizeMb: 1.5,
       documents: [
-        { id: "doc-1", name: "Aadhaar Card", status: "verified", file_path: "user-123/aadhaar.pdf" }
+        { id: "doc-1", name: "Aadhaar Card", status: "verified", file_path: "user-123/aadhaar.pdf" },
       ],
     }),
     uploadAndAnalyze: vi.fn(),
@@ -59,27 +59,21 @@ describe("useDocuments Hook", () => {
     const { result } = renderHook(() => useDocuments());
 
     const mockFile = new File(["dummy content"], "pan.jpg", { type: "image/jpeg" });
-    
-    vi.mocked(documentService.uploadAndAnalyze).mockImplementation(
-      async (userId, file, onProgress) => {
-        onProgress("uploading");
-        onProgress("reading");
-        onProgress("extracting");
-        onProgress("saving");
-        onProgress("complete");
-        return {} as any;
-      }
-    );
+
+    vi.mocked(documentService.uploadAndAnalyze).mockImplementation(async (userId, file, onProgress) => {
+      onProgress("uploading");
+      onProgress("reading");
+      onProgress("extracting");
+      onProgress("saving");
+      onProgress("complete");
+      return {} as any;
+    });
 
     await act(async () => {
       await result.current.uploadDocument(mockFile);
     });
 
-    expect(documentService.uploadAndAnalyze).toHaveBeenCalledWith(
-      "user-123",
-      mockFile,
-      expect.any(Function)
-    );
+    expect(documentService.uploadAndAnalyze).toHaveBeenCalledWith("user-123", mockFile, expect.any(Function));
   });
 
   it("performs deletion of selected document", async () => {
@@ -89,9 +83,6 @@ describe("useDocuments Hook", () => {
       await result.current.deleteDocument("doc-1", "user-123/aadhaar.pdf");
     });
 
-    expect(documentService.deleteDocument).toHaveBeenCalledWith(
-      "doc-1",
-      "user-123/aadhaar.pdf"
-    );
+    expect(documentService.deleteDocument).toHaveBeenCalledWith("doc-1", "user-123/aadhaar.pdf");
   });
 });

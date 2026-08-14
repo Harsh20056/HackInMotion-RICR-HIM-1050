@@ -86,7 +86,9 @@ export const workOrdersService = {
       include: {
         department: { select: { id: true, code: true, nameEn: true } },
         assignee: { select: { id: true, fullName: true } },
-        issue: { select: { id: true, publicRef: true, title: true, status: true, categoryId: true, city: true } },
+        issue: {
+          select: { id: true, publicRef: true, title: true, status: true, categoryId: true, city: true },
+        },
         slaPolicy: true,
       },
     });
@@ -355,7 +357,9 @@ export const workOrdersService = {
   ) {
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
-      include: { issue: { select: { id: true, publicRef: true, title: true, categoryId: true, city: true } } },
+      include: {
+        issue: { select: { id: true, publicRef: true, title: true, categoryId: true, city: true } },
+      },
     });
     if (!wo) throw new NotFoundError("Work order not found");
 

@@ -75,8 +75,7 @@ export const dashboardService = {
     const topCategory = overview.byCategory[0]?.nameEn ?? "—";
     const topCategoryCount = overview.byCategory[0]?.count ?? 0;
     const totalIssues = overview.totals.issues;
-    const resolutionRate =
-      totalIssues === 0 ? 0 : Math.round((overview.totals.resolved / totalIssues) * 100);
+    const resolutionRate = totalIssues === 0 ? 0 : Math.round((overview.totals.resolved / totalIssues) * 100);
     const avg = overview.resolutionTime.avgHours;
     const p90 = overview.resolutionTime.p90Hours;
     const bestDept = [...departments].sort((a, b) => b.resolutionRate - a.resolutionRate)[0];

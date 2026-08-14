@@ -93,7 +93,10 @@ export const adminRepository = {
 
   async getUserRole(_userId: string): Promise<{ role: UserRole | null; department: string | null }> {
     const me = await fetchMe();
-    return { role: me ? (API_ROLE_TO_USER_ROLE[me.role] ?? null) : null, department: me?.departmentId ?? null };
+    return {
+      role: me ? (API_ROLE_TO_USER_ROLE[me.role] ?? null) : null,
+      department: me?.departmentId ?? null,
+    };
   },
 
   async fetchAllIssuesAdmin(): Promise<IssueResponse[]> {
@@ -101,7 +104,9 @@ export const adminRepository = {
     if (!me) return [];
 
     if (me.role === "dept_admin" && me.departmentId) {
-      const data = await apiRequest<{ items: { issue: ApiIssue }[] }>(`/departments/${me.departmentId}/queue?pageSize=100`);
+      const data = await apiRequest<{ items: { issue: ApiIssue }[] }>(
+        `/departments/${me.departmentId}/queue?pageSize=100`
+      );
       return data.items.map((item) => toIssueResponse(item.issue as ApiIssue));
     }
 

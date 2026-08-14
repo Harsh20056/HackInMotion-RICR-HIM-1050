@@ -3,4 +3,4 @@ export const LANGUAGES = {
   HI: "hi",
 } as const;
 
-export type LanguageType = typeof LANGUAGES[keyof typeof LANGUAGES];
+export type LanguageType = (typeof LANGUAGES)[keyof typeof LANGUAGES];

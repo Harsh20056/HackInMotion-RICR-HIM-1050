@@ -18,7 +18,11 @@ export function ErrorState({
       <h3 className="font-semibold text-foreground text-lg mb-2">Error occurred</h3>
       <p className="text-muted-foreground text-sm max-w-sm mb-6">{message}</p>
       {onRetry && (
-        <Button onClick={onRetry} variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10">
+        <Button
+          onClick={onRetry}
+          variant="outline"
+          className="border-destructive/30 text-destructive hover:bg-destructive/10"
+        >
           {retryText}
         </Button>
       )}

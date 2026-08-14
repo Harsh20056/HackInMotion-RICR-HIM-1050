@@ -246,14 +246,20 @@ export const coordinationService = {
     }
     assertCityAccess(actor, wo.issue.city);
     if (input.toDepartmentId === wo.departmentId) {
-      throw new UnprocessableError("A work order cannot be referred to its own department.", "INVALID_TRANSFER");
+      throw new UnprocessableError(
+        "A work order cannot be referred to its own department.",
+        "INVALID_TRANSFER"
+      );
     }
 
     const pending = await prisma.workOrderTransfer.findFirst({
       where: { workOrderId, status: "requested" },
     });
     if (pending) {
-      throw new UnprocessableError("A referral for this work order is already awaiting a decision.", "TRANSFER_PENDING");
+      throw new UnprocessableError(
+        "A referral for this work order is already awaiting a decision.",
+        "TRANSFER_PENDING"
+      );
     }
 
     const transfer = await prisma.workOrderTransfer.create({

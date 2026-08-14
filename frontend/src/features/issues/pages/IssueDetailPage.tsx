@@ -16,11 +16,7 @@ import { CoordinationPanel } from "@/features/admin/components/CoordinationPanel
 import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
-import { 
-  ArrowLeft, Calendar, MapPin, User, Shield, 
-  Clock, Loader2,
-  RotateCcw, Map
-} from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, User, Shield, Clock, Loader2, RotateCcw, Map } from "lucide-react";
 import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { profileService } from "@/features/profile/services/profileService";
@@ -76,7 +72,10 @@ export default function IssueDetailPage() {
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [reporterProfile, setReporterProfile] = useState<{ fullName: string } | null>(null);
-  const [userRoleData, setUserRoleData] = useState<{ role: UserRole | null; department: string | null } | null>(null);
+  const [userRoleData, setUserRoleData] = useState<{
+    role: UserRole | null;
+    department: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [resolvingItem, setResolvingItem] = useState<QueueItem | null>(null);
@@ -87,7 +86,8 @@ export default function IssueDetailPage() {
   // 1. Fetch user role details to verify admin access
   useEffect(() => {
     if (user?.id) {
-      adminService.getUserRole(user.id)
+      adminService
+        .getUserRole(user.id)
         .then(setUserRoleData)
         .catch((err) => logger.info("Could not fetch user details:", err));
     }
@@ -162,7 +162,9 @@ export default function IssueDetailPage() {
   if (loading) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
-        <LoadingState message={language === "en" ? "Loading issue details..." : "समस्या विवरण लोड हो रहे हैं..."} />
+        <LoadingState
+          message={language === "en" ? "Loading issue details..." : "समस्या विवरण लोड हो रहे हैं..."}
+        />
       </div>
     );
   }
@@ -171,7 +173,8 @@ export default function IssueDetailPage() {
     return null;
   }
 
-  const isOfficer = userRoleData?.role === UserRole.DEPARTMENT_ADMIN || userRoleData?.role === UserRole.SUPER_ADMIN;
+  const isOfficer =
+    userRoleData?.role === UserRole.DEPARTMENT_ADMIN || userRoleData?.role === UserRole.SUPER_ADMIN;
   const nextStatuses = isOfficer ? (NEXT_ADMIN_STATUSES[issue.status] ?? []) : [];
 
   const handleTransition = async (status: string) => {
@@ -189,7 +192,10 @@ export default function IssueDetailPage() {
           publicRef: "REF-" + issue.id.slice(0, 8).toUpperCase(),
           title: issue.title,
           description: issue.description,
-          category: typeof issue.category === 'object' ? issue.category : { code: issue.category, nameEn: issue.category },
+          category:
+            typeof issue.category === "object"
+              ? issue.category
+              : { code: issue.category, nameEn: issue.category },
           status: issue.status,
           latitude: issue.latitude || 0,
           longitude: issue.longitude || 0,
@@ -205,7 +211,7 @@ export default function IssueDetailPage() {
           resolvedAt: null,
           verifiedAt: null,
           closedAt: null,
-        }
+        },
       };
       setResolvingItem(queueItem);
       return;
@@ -252,24 +258,45 @@ export default function IssueDetailPage() {
     }
   };
 
-  const categoryName = issue.category && typeof issue.category === "object"
-    ? (language === "en" ? (issue.category as any).nameEn : (issue.category as any).nameHi)
-    : (issue.category || "");
+  const categoryName =
+    issue.category && typeof issue.category === "object"
+      ? language === "en"
+        ? (issue.category as any).nameEn
+        : (issue.category as any).nameHi
+      : issue.category || "";
 
   const timelineSteps = [
     { key: "reported", labelEn: "Reported", labelHi: "दर्ज की गई", complete: true },
-    { key: "acknowledged", labelEn: "Acknowledged", labelHi: "स्वीकृत", complete: (issue.status as string) !== "reported" && (issue.status as string) !== "rejected" },
-    { key: "in_progress", labelEn: "In Progress", labelHi: "प्रगति में", complete: (issue.status as string) === "in_progress" || (issue.status as string) === "resolved" || (issue.status as string) === "closed" },
-    { key: "resolved", labelEn: "Resolved", labelHi: "सुलझाया गया", complete: (issue.status as string) === "resolved" || (issue.status as string) === "closed" },
+    {
+      key: "acknowledged",
+      labelEn: "Acknowledged",
+      labelHi: "स्वीकृत",
+      complete: (issue.status as string) !== "reported" && (issue.status as string) !== "rejected",
+    },
+    {
+      key: "in_progress",
+      labelEn: "In Progress",
+      labelHi: "प्रगति में",
+      complete:
+        (issue.status as string) === "in_progress" ||
+        (issue.status as string) === "resolved" ||
+        (issue.status as string) === "closed",
+    },
+    {
+      key: "resolved",
+      labelEn: "Resolved",
+      labelHi: "सुलझाया गया",
+      complete: (issue.status as string) === "resolved" || (issue.status as string) === "closed",
+    },
   ];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Back Button */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => navigate(-1)} 
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate(-1)}
         className="mb-6 gap-2 hover:bg-muted font-bold text-sm rounded-xl cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -277,13 +304,10 @@ export default function IssueDetailPage() {
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Left Columns - Issue details & Map */}
         <div className="lg:col-span-2 space-y-6">
-          
           {/* Main Card */}
           <div className="bg-card border border-border/80 shadow-md rounded-2xl overflow-hidden p-6">
-            
             {/* Header tags */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <Badge variant="secondary" className="text-xs">
@@ -295,18 +319,12 @@ export default function IssueDetailPage() {
             </div>
 
             {/* Issue Title */}
-            <h1 className="text-3xl font-extrabold text-foreground mb-4">
-              {issue.title}
-            </h1>
+            <h1 className="text-3xl font-extrabold text-foreground mb-4">{issue.title}</h1>
 
             {/* Issue Photo */}
             {issue.imageUrls && issue.imageUrls.length > 0 && (
               <div className="relative w-full h-80 bg-muted rounded-xl overflow-hidden mb-6 border border-border/40">
-                <img 
-                  src={issue.imageUrls[0]} 
-                  alt={issue.title} 
-                  className="w-full h-full object-cover"
-                />
+                <img src={issue.imageUrls[0]} alt={issue.title} className="w-full h-full object-cover" />
               </div>
             )}
 
@@ -336,11 +354,11 @@ export default function IssueDetailPage() {
                   </p>
                   <p className="text-sm font-bold text-foreground">
                     {new Date(issue.createdAt).toLocaleDateString(language === "en" ? "en-US" : "hi-IN", {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </p>
                 </div>
@@ -354,9 +372,7 @@ export default function IssueDetailPage() {
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                     {language === "en" ? "Location" : "स्थान"}
                   </p>
-                  <p className="text-sm font-bold text-foreground truncate">
-                    {issue.location}
-                  </p>
+                  <p className="text-sm font-bold text-foreground truncate">{issue.location}</p>
                 </div>
               </div>
             </div>
@@ -377,7 +393,12 @@ export default function IssueDetailPage() {
                 <p className="font-bold text-foreground mb-1">
                   {language === "en" ? "Resolution Details: " : "समाधान विवरण: "}
                 </p>
-                <p className="text-sm mb-2">{issue.description || (language === "en" ? "No resolution description available." : "कोई समाधान विवरण उपलब्ध नहीं।")}</p>
+                <p className="text-sm mb-2">
+                  {issue.description ||
+                    (language === "en"
+                      ? "No resolution description available."
+                      : "कोई समाधान विवरण उपलब्ध नहीं।")}
+                </p>
               </div>
             )}
           </div>
@@ -389,9 +410,9 @@ export default function IssueDetailPage() {
                 <Map className="w-5 h-5 text-primary" />
                 {language === "en" ? "Location Map" : "स्थान मानचित्र"}
               </h3>
-              <div 
-                ref={mapContainerRef} 
-                className="w-full h-80 rounded-xl border border-border/50 overflow-hidden z-10" 
+              <div
+                ref={mapContainerRef}
+                className="w-full h-80 rounded-xl border border-border/50 overflow-hidden z-10"
               />
               <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
                 <span>Latitude: {issue.latitude.toFixed(6)}</span>
@@ -406,7 +427,6 @@ export default function IssueDetailPage() {
 
         {/* Right Column - Status Operations / AI Intelligence */}
         <div className="space-y-6">
-
           {/* Officer Operations / Status transition card */}
           {isOfficer && (
             <div className="bg-card border border-border/85 shadow-lg rounded-2xl p-6">
@@ -428,7 +448,9 @@ export default function IssueDetailPage() {
 
               {nextStatuses.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic text-center py-2">
-                  {language === "en" ? "No further operations available." : "आगे की कोई कार्रवाई उपलब्ध नहीं।"}
+                  {language === "en"
+                    ? "No further operations available."
+                    : "आगे की कोई कार्रवाई उपलब्ध नहीं।"}
                 </p>
               ) : (
                 <div className="space-y-2.5">
@@ -464,21 +486,29 @@ export default function IssueDetailPage() {
             <div className="space-y-4">
               {timelineSteps.map((step, idx) => (
                 <div key={step.key} className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
-                    step.complete 
-                      ? "bg-green-500 text-white" 
-                      : "bg-muted text-muted-foreground border border-border"
-                  }`}>
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                      step.complete
+                        ? "bg-green-500 text-white"
+                        : "bg-muted text-muted-foreground border border-border"
+                    }`}
+                  >
                     {step.complete ? "✓" : idx + 1}
                   </div>
                   <div>
-                    <p className={`text-sm font-bold ${step.complete ? "text-foreground" : "text-muted-foreground"}`}>
+                    <p
+                      className={`text-sm font-bold ${step.complete ? "text-foreground" : "text-muted-foreground"}`}
+                    >
                       {language === "en" ? step.labelEn : step.labelHi}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      {step.complete 
-                        ? (language === "en" ? "Completed milestone" : "मील का पत्थर पूरा हुआ")
-                        : (language === "en" ? "Pending milestone" : "लंबित मील का पत्थर")}
+                      {step.complete
+                        ? language === "en"
+                          ? "Completed milestone"
+                          : "मील का पत्थर पूरा हुआ"
+                        : language === "en"
+                          ? "Pending milestone"
+                          : "लंबित मील का पत्थर"}
                     </p>
                   </div>
                 </div>
@@ -488,7 +518,6 @@ export default function IssueDetailPage() {
 
           {/* AI Intelligence Panel */}
           {user && <AIInsightPanel issue={issue} />}
-
         </div>
       </div>
 

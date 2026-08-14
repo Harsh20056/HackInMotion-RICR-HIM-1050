@@ -50,7 +50,9 @@ describe("auth flow", () => {
 
   it("issues a new access token via refresh", async () => {
     const login = await request(app).post("/auth/login").send({ email, password });
-    const refreshed = await request(app).post("/auth/refresh").send({ refreshToken: login.body.refreshToken });
+    const refreshed = await request(app)
+      .post("/auth/refresh")
+      .send({ refreshToken: login.body.refreshToken });
     expect(refreshed.status).toBe(200);
     expect(refreshed.body.accessToken).toBeTruthy();
   });
@@ -70,8 +72,12 @@ describe("RBAC", () => {
   });
 
   it("denies a dept_admin access to another department's queue", async () => {
-    const dept = await prisma.department.create({ data: { code: `rbac-dept-${Date.now()}`, nameEn: "X", nameHi: "X" } });
-    const otherDept = await prisma.department.create({ data: { code: `rbac-other-${Date.now()}`, nameEn: "Y", nameHi: "Y" } });
+    const dept = await prisma.department.create({
+      data: { code: `rbac-dept-${Date.now()}`, nameEn: "X", nameHi: "X" },
+    });
+    const otherDept = await prisma.department.create({
+      data: { code: `rbac-other-${Date.now()}`, nameEn: "Y", nameHi: "Y" },
+    });
     const { email, password } = await createTestUser("dept_admin", dept.id);
     const login = await request(app).post("/auth/login").send({ email, password });
 
@@ -83,7 +89,9 @@ describe("RBAC", () => {
   });
 
   it("allows a super_admin access to any department's queue", async () => {
-    const dept = await prisma.department.create({ data: { code: `rbac-super-${Date.now()}`, nameEn: "Z", nameHi: "Z" } });
+    const dept = await prisma.department.create({
+      data: { code: `rbac-super-${Date.now()}`, nameEn: "Z", nameHi: "Z" },
+    });
     const { email, password } = await createTestUser("super_admin");
     const login = await request(app).post("/auth/login").send({ email, password });
 

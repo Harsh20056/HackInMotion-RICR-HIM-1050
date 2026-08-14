@@ -7,18 +7,18 @@ import { ErrorState } from "@/shared/components/ErrorState";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { useToast } from "@/shared/hooks/use-toast";
 import { DocumentType } from "@/shared/types/domain/Document";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
 } from "@/shared/components/ui/dialog";
-import { 
-  FolderLock, 
-  Upload, 
-  Shield, 
+import {
+  FolderLock,
+  Upload,
+  Shield,
   Bell,
   FileText,
   Lock,
@@ -36,7 +36,7 @@ import {
   Calendar,
   User,
   Building,
-  FileCheck
+  FileCheck,
 } from "lucide-react";
 import { getErrorMessage } from "@/shared/lib/errorMessage";
 
@@ -44,16 +44,16 @@ export function DocumentLockerSection() {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const { 
-    lockerDetails, 
-    loading, 
-    error, 
-    uploadStep, 
-    uploadProgress, 
-    uploadDocument, 
-    deleteDocument, 
-    getDownloadUrl 
+
+  const {
+    lockerDetails,
+    loading,
+    error,
+    uploadStep,
+    uploadProgress,
+    uploadDocument,
+    deleteDocument,
+    getDownloadUrl,
   } = useDocuments();
 
   // Search & Preview States
@@ -101,9 +101,9 @@ export function DocumentLockerSection() {
     if (diffDays < 0) {
       return { label: language === "en" ? "Expired" : "समाप्त", type: "expired" as const };
     } else if (diffDays <= 30) {
-      return { 
-        label: language === "en" ? `Expires in ${diffDays} days` : `${diffDays} दिनों में समाप्त`, 
-        type: "soon" as const 
+      return {
+        label: language === "en" ? `Expires in ${diffDays} days` : `${diffDays} दिनों में समाप्त`,
+        type: "soon" as const,
       };
     }
     return null;
@@ -113,7 +113,7 @@ export function DocumentLockerSection() {
   const readinessInsight = useMemo(() => {
     if (!lockerDetails?.documents) return null;
     const docs = lockerDetails.documents;
-    
+
     // 1. Expired check
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -123,10 +123,11 @@ export function DocumentLockerSection() {
         const exp = new Date(expStr);
         if (!isNaN(exp.getTime()) && exp.getTime() < now.getTime()) {
           return {
-            text: language === "en" 
-              ? `Your ${doc.name} has expired. Please upload a renewed version soon.`
-              : `आपका ${doc.name} समाप्त हो चुका है। कृपया जल्द ही नया दस्तावेज़ अपलोड करें।`,
-            type: "error" as const
+            text:
+              language === "en"
+                ? `Your ${doc.name} has expired. Please upload a renewed version soon.`
+                : `आपका ${doc.name} समाप्त हो चुका है। कृपया जल्द ही नया दस्तावेज़ अपलोड करें।`,
+            type: "error" as const,
           };
         }
       }
@@ -141,10 +142,11 @@ export function DocumentLockerSection() {
           const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1024 * 60 * 60 * 24));
           if (diffDays >= 0 && diffDays <= 30) {
             return {
-              text: language === "en"
-                ? `Your ${doc.name} expires in ${diffDays} days. Consider renewing it soon.`
-                : `आपका ${doc.name} ${diffDays} दिनों में समाप्त हो रहा है। कृपया जल्द ही इसे नवीनीकृत करें।`,
-              type: "warning" as const
+              text:
+                language === "en"
+                  ? `Your ${doc.name} expires in ${diffDays} days. Consider renewing it soon.`
+                  : `आपका ${doc.name} ${diffDays} दिनों में समाप्त हो रहा है। कृपया जल्द ही इसे नवीनीकृत करें।`,
+              type: "warning" as const,
             };
           }
         }
@@ -159,29 +161,32 @@ export function DocumentLockerSection() {
     // 3. Missing primary check
     if (!hasAadhaar || !hasPan) {
       return {
-        text: language === "en"
-          ? "You're missing a primary identity document. Upload Aadhaar or PAN to get started."
-          : "आप एक प्राथमिक पहचान दस्तावेज़ खो रहे हैं। शुरू करने के लिए आधार या पैन अपलोड करें।",
-        type: "warning" as const
+        text:
+          language === "en"
+            ? "You're missing a primary identity document. Upload Aadhaar or PAN to get started."
+            : "आप एक प्राथमिक पहचान दस्तावेज़ खो रहे हैं। शुरू करने के लिए आधार या पैन अपलोड करें।",
+        type: "warning" as const,
       };
     }
 
     // 4. Missing income support certificate check
     if (!hasIncome) {
       return {
-        text: language === "en"
-          ? "Primary identity documents are complete. Upload an Income Certificate to unlock additional government scheme recommendations."
-          : "प्राथमिक पहचान दस्तावेज़ पूर्ण हैं। अतिरिक्त सरकारी योजनाओं के सुझावों को अनलॉक करने के लिए एक आय प्रमाण पत्र अपलोड करें।",
-        type: "info" as const
+        text:
+          language === "en"
+            ? "Primary identity documents are complete. Upload an Income Certificate to unlock additional government scheme recommendations."
+            : "प्राथमिक पहचान दस्तावेज़ पूर्ण हैं। अतिरिक्त सरकारी योजनाओं के सुझावों को अनलॉक करने के लिए एक आय प्रमाण पत्र अपलोड करें।",
+        type: "info" as const,
       };
     }
 
     // 5. Complete checks
     return {
-      text: language === "en"
-        ? "Your Aadhaar and PAN are available. You can now autofill most government forms."
-        : "आपका आधार और पैन उपलब्ध हैं। अब आप अधिकांश सरकारी फ़ॉर्मों को स्वचालित रूप से भर सकते हैं।",
-      type: "success" as const
+      text:
+        language === "en"
+          ? "Your Aadhaar and PAN are available. You can now autofill most government forms."
+          : "आपका आधार और पैन उपलब्ध हैं। अब आप अधिकांश सरकारी फ़ॉर्मों को स्वचालित रूप से भर सकते हैं।",
+      type: "success" as const,
     };
   }, [lockerDetails?.documents, language]);
 
@@ -191,7 +196,7 @@ export function DocumentLockerSection() {
       return { identity: 0, property: 0, verified: 0, warnings: 0 };
     }
     const docs = lockerDetails.documents;
-    
+
     let identity = 0;
     let property = 0;
     let verified = 0;
@@ -351,9 +356,12 @@ export function DocumentLockerSection() {
     <section id="documents" className="py-20 bg-background relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
       <div className="container mx-auto px-4 relative">
@@ -364,20 +372,20 @@ export function DocumentLockerSection() {
               <FolderLock className="w-4 h-4" />
               {t("documents.badge")}
             </div>
-            
+
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               {t("documents.title")}{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">{t("documents.locker")}</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">
+                {t("documents.locker")}
+              </span>
             </h2>
-            
-            <p className="text-lg text-muted-foreground mb-8">
-              {t("documents.subtitle")}
-            </p>
+
+            <p className="text-lg text-muted-foreground mb-8">{t("documents.subtitle")}</p>
 
             {/* Features */}
             <div className="grid sm:grid-cols-2 gap-4 mb-8">
               {features.map((feature, index) => (
-                <div 
+                <div
                   key={index}
                   className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border"
                 >
@@ -400,12 +408,12 @@ export function DocumentLockerSection() {
 
           {/* Right - Document Preview */}
           <div className="relative">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
               onChange={handleFileChange}
-              accept="application/pdf,image/jpeg,image/png,image/webp" 
+              accept="application/pdf,image/jpeg,image/png,image/webp"
             />
 
             <div className="bg-card rounded-3xl border border-border shadow-xl p-6 sm:p-8 relative min-h-[350px] flex flex-col justify-between overflow-hidden">
@@ -426,12 +434,12 @@ export function DocumentLockerSection() {
                     {uploadStep === "complete" && "Locker Updated!"}
                   </h4>
                   <p className="text-xs text-muted-foreground mb-4 max-w-[280px]">
-                    {(uploadStep === "reading" || uploadStep === "extracting") && 
+                    {(uploadStep === "reading" || uploadStep === "extracting") &&
                       "Gemini AI is parsing base64 stream and running OCR extraction."}
                     {uploadStep === "saving" && "Cataloging attributes inside secure ledger."}
                   </p>
                   <div className="w-48 bg-muted rounded-full h-2 overflow-hidden">
-                    <div 
+                    <div
                       className="bg-primary h-full transition-all duration-300 rounded-full"
                       style={{ width: `${uploadProgress}%` }}
                     />
@@ -445,7 +453,10 @@ export function DocumentLockerSection() {
               ) : error ? (
                 <ErrorState message={error} />
               ) : !lockerDetails ? (
-                <EmptyState title="No Locker Access" description="Your secure locker could not be initialized." />
+                <EmptyState
+                  title="No Locker Access"
+                  description="Your secure locker could not be initialized."
+                />
               ) : (
                 <>
                   <div className="space-y-6">
@@ -462,7 +473,12 @@ export function DocumentLockerSection() {
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadStep !== "idle"}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadStep !== "idle"}
+                      >
                         <Upload className="w-4 h-4" />
                         {t("documents.upload")}
                       </Button>
@@ -470,17 +486,28 @@ export function DocumentLockerSection() {
 
                     {/* AI Readiness Insight Banner */}
                     {lockerDetails.documents.length > 0 && readinessInsight && (
-                      <div className={`p-4 rounded-xl border flex gap-3 text-left animate-fade-in ${
-                        readinessInsight.type === "error" ? "bg-destructive/10 border-destructive/20 text-destructive-foreground" :
-                        readinessInsight.type === "warning" ? "bg-warning/10 border-warning/20 text-warning-foreground" :
-                        readinessInsight.type === "info" ? "bg-info/10 border-info/20 text-info-foreground" :
-                        "bg-accent/10 border-accent/20 text-accent-foreground"
-                      }`}>
+                      <div
+                        className={`p-4 rounded-xl border flex gap-3 text-left animate-fade-in ${
+                          readinessInsight.type === "error"
+                            ? "bg-destructive/10 border-destructive/20 text-destructive-foreground"
+                            : readinessInsight.type === "warning"
+                              ? "bg-warning/10 border-warning/20 text-warning-foreground"
+                              : readinessInsight.type === "info"
+                                ? "bg-info/10 border-info/20 text-info-foreground"
+                                : "bg-accent/10 border-accent/20 text-accent-foreground"
+                        }`}
+                      >
                         <div className="shrink-0 mt-0.5">
-                          {readinessInsight.type === "error" && <AlertTriangle className="w-5 h-5 text-destructive" />}
-                          {readinessInsight.type === "warning" && <AlertTriangle className="w-5 h-5 text-warning" />}
+                          {readinessInsight.type === "error" && (
+                            <AlertTriangle className="w-5 h-5 text-destructive" />
+                          )}
+                          {readinessInsight.type === "warning" && (
+                            <AlertTriangle className="w-5 h-5 text-warning" />
+                          )}
                           {readinessInsight.type === "info" && <Eye className="w-5 h-5 text-info" />}
-                          {readinessInsight.type === "success" && <CheckCircle2 className="w-5 h-5 text-accent animate-pulse" />}
+                          {readinessInsight.type === "success" && (
+                            <CheckCircle2 className="w-5 h-5 text-accent animate-pulse" />
+                          )}
                         </div>
                         <div>
                           <p className="text-xs uppercase tracking-wider font-extrabold flex items-center gap-1 mb-1">
@@ -500,14 +527,18 @@ export function DocumentLockerSection() {
                         <div className="p-3 bg-muted/40 rounded-xl border border-border/40 text-left flex items-center justify-between">
                           <div>
                             <span className="text-2xl font-bold text-foreground block">{stats.identity}</span>
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground">Identity Docs</span>
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                              Identity Docs
+                            </span>
                           </div>
                           <CreditCard className="w-4 h-4 text-muted-foreground/60 shrink-0" />
                         </div>
                         <div className="p-3 bg-muted/40 rounded-xl border border-border/40 text-left flex items-center justify-between">
                           <div>
                             <span className="text-2xl font-bold text-foreground block">{stats.property}</span>
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground">Property Docs</span>
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                              Property Docs
+                            </span>
                           </div>
                           <Home className="w-4 h-4 text-muted-foreground/60 shrink-0" />
                         </div>
@@ -521,11 +552,15 @@ export function DocumentLockerSection() {
                         <div className="p-3 bg-muted/40 rounded-xl border border-border/40 text-left flex items-center justify-between">
                           <div>
                             <span className="text-2xl font-bold text-foreground block">{stats.warnings}</span>
-                            <span className={`text-[10px] uppercase font-bold ${stats.warnings > 0 ? "text-warning" : "text-muted-foreground"}`}>
+                            <span
+                              className={`text-[10px] uppercase font-bold ${stats.warnings > 0 ? "text-warning" : "text-muted-foreground"}`}
+                            >
                               Expiry Alerts
                             </span>
                           </div>
-                          <AlertTriangle className={`w-4 h-4 shrink-0 ${stats.warnings > 0 ? "text-warning/80 animate-pulse" : "text-muted-foreground/60"}`} />
+                          <AlertTriangle
+                            className={`w-4 h-4 shrink-0 ${stats.warnings > 0 ? "text-warning/80 animate-pulse" : "text-muted-foreground/60"}`}
+                          />
                         </div>
                       </div>
                     )}
@@ -534,16 +569,20 @@ export function DocumentLockerSection() {
                     {lockerDetails.documents.length > 0 && (
                       <div className="relative">
                         <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3" />
-                        <input 
-                          type="text" 
-                          placeholder={language === "en" ? "Search documents, holder name, ID number, or extracted text..." : "दस्तावेज़, धारक का नाम, आईडी नंबर खोजें..."}
+                        <input
+                          type="text"
+                          placeholder={
+                            language === "en"
+                              ? "Search documents, holder name, ID number, or extracted text..."
+                              : "दस्तावेज़, धारक का नाम, आईडी नंबर खोजें..."
+                          }
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full bg-muted/50 border border-border hover:border-border-hover focus:border-primary rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none transition-colors"
                         />
                         {searchQuery && (
-                          <button 
-                            onClick={() => setSearchQuery("")} 
+                          <button
+                            onClick={() => setSearchQuery("")}
                             className="text-xs text-muted-foreground hover:text-foreground absolute right-3 top-2.5 px-2 py-0.5 rounded hover:bg-muted"
                           >
                             Clear
@@ -557,10 +596,12 @@ export function DocumentLockerSection() {
                       <div className="py-12 px-6 text-center text-muted-foreground flex flex-col items-center justify-center space-y-3 border border-dashed border-border rounded-2xl bg-muted/10">
                         <FolderLock className="w-12 h-12 text-primary/40 animate-pulse" />
                         <h5 className="font-bold text-foreground text-base">
-                          {language === "en" ? "No documents uploaded yet" : "अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया"}
+                          {language === "en"
+                            ? "No documents uploaded yet"
+                            : "अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया"}
                         </h5>
                         <p className="text-sm max-w-sm leading-normal">
-                          {language === "en" 
+                          {language === "en"
                             ? "Upload your Aadhaar, PAN, Driving Licence, Property Documents, or other government documents."
                             : "अपना आधार, पैन, ड्राइविंग लाइसेंस, संपत्ति के दस्तावेज़ या अन्य सरकारी दस्तावेज़ अपलोड करें।"}
                         </p>
@@ -574,7 +615,9 @@ export function DocumentLockerSection() {
                       <div className="py-12 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2 border border-dashed border-border rounded-xl">
                         <FileText className="w-10 h-10 text-muted-foreground/60 animate-pulse" />
                         <p className="font-semibold text-sm">
-                          {language === "en" ? "No matching documents found" : "कोई मेल खाते दस्तावेज़ नहीं मिले"}
+                          {language === "en"
+                            ? "No matching documents found"
+                            : "कोई मेल खाते दस्तावेज़ नहीं मिले"}
                         </p>
                         <p className="text-xs max-w-[280px]">
                           Try searching for a different keyword or metadata field.
@@ -585,7 +628,7 @@ export function DocumentLockerSection() {
                         {filteredDocs.map((doc, index) => {
                           const expiry = getExpiryDetails(doc.metadata?.expiry_date);
                           return (
-                            <div 
+                            <div
                               key={doc.id || index}
                               onClick={() => handleOpenPreview(doc)}
                               className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/40 hover:bg-muted/60 hover:border-border transition-all cursor-pointer group"
@@ -594,16 +637,21 @@ export function DocumentLockerSection() {
                                 <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors shrink-0 border border-border/30">
                                   {getDocumentIcon(doc.document_type)}
                                 </div>
-                                <span className="font-medium text-foreground truncate text-left">{doc.name}</span>
+                                <span className="font-medium text-foreground truncate text-left">
+                                  {doc.name}
+                                </span>
                               </div>
-                              
+
                               <div className="flex items-center gap-3 shrink-0">
                                 {/* Expiry Badges Calculated Dynamically */}
                                 {expiry ? (
-                                  <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                    expiry.type === "expired" ? "bg-destructive/10 text-destructive border border-destructive/20 animate-pulse" :
-                                    "bg-warning/10 text-warning border border-warning/20"
-                                  }`}>
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                      expiry.type === "expired"
+                                        ? "bg-destructive/10 text-destructive border border-destructive/20 animate-pulse"
+                                        : "bg-warning/10 text-warning border border-warning/20"
+                                    }`}
+                                  >
                                     <Bell className="w-3 h-3 shrink-0" />
                                     {expiry.label}
                                   </span>
@@ -617,21 +665,26 @@ export function DocumentLockerSection() {
                                     {t("documents.badge")}
                                   </span>
                                 )}
-                                
+
                                 <div className="flex items-center gap-1">
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
                                     className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground"
-                                    onClick={(e) => { e.stopPropagation(); handleOpenPreview(doc); }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenPreview(doc);
+                                    }}
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
                                     className="w-8 h-8 rounded-full text-muted-foreground hover:text-destructive"
-                                    onClick={(e) => doc.id && doc.file_path && handleDelete(doc.id, doc.file_path, e)}
+                                    onClick={(e) =>
+                                      doc.id && doc.file_path && handleDelete(doc.id, doc.file_path, e)
+                                    }
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
@@ -649,8 +702,7 @@ export function DocumentLockerSection() {
               {/* Quick Tip */}
               <div className="mt-6 p-4 bg-accent/10 rounded-xl border border-accent/20 text-left">
                 <p className="text-sm text-foreground">
-                  <span className="font-medium">💡 {t("documents.tip")}</span>{" "}
-                  {t("documents.tipText")}
+                  <span className="font-medium">💡 {t("documents.tip")}</span> {t("documents.tipText")}
                 </p>
               </div>
             </div>
@@ -679,14 +731,15 @@ export function DocumentLockerSection() {
                       {previewDoc.name}
                     </DialogTitle>
                     <DialogDescription className="text-xs text-muted-foreground truncate">
-                      {previewDoc.file_size_mb} MB • Uploaded {previewDoc.created_at ? new Date(previewDoc.created_at).toLocaleDateString() : ""}
+                      {previewDoc.file_size_mb} MB • Uploaded{" "}
+                      {previewDoc.created_at ? new Date(previewDoc.created_at).toLocaleDateString() : ""}
                     </DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
 
               {/* Hierarchical Preview Layout */}
-              
+
               {/* 1. Document Preview */}
               <div className="flex flex-col gap-2">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
@@ -698,14 +751,10 @@ export function DocumentLockerSection() {
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   ) : previewUrl ? (
                     previewDoc.name.toLowerCase().endsWith(".pdf") ? (
-                      <iframe 
-                        src={previewUrl} 
-                        title="PDF Preview"
-                        className="w-full h-full border-none"
-                      />
+                      <iframe src={previewUrl} title="PDF Preview" className="w-full h-full border-none" />
                     ) : (
-                      <img 
-                        src={previewUrl} 
+                      <img
+                        src={previewUrl}
                         alt="Document Preview"
                         className="w-full h-full object-contain animate-fade-in"
                       />
@@ -743,40 +792,60 @@ export function DocumentLockerSection() {
                   <div className="col-span-2 flex items-start gap-2 border-b border-border/30 pb-2">
                     <User className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">Holder Name</span>
-                      <span className="font-semibold text-foreground">{previewDoc.metadata?.full_name || "—"}</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">
+                        Holder Name
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {previewDoc.metadata?.full_name || "—"}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-2 border-b border-border/30 pb-2">
                     <CreditCard className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">ID Number</span>
-                      <span className="font-semibold text-foreground truncate max-w-[130px] block">{previewDoc.metadata?.document_number || "—"}</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">
+                        ID Number
+                      </span>
+                      <span className="font-semibold text-foreground truncate max-w-[130px] block">
+                        {previewDoc.metadata?.document_number || "—"}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2 border-b border-border/30 pb-2">
                     <Building className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">Authority</span>
-                      <span className="font-semibold text-foreground truncate max-w-[130px] block">{previewDoc.metadata?.issuing_authority || "—"}</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">
+                        Authority
+                      </span>
+                      <span className="font-semibold text-foreground truncate max-w-[130px] block">
+                        {previewDoc.metadata?.issuing_authority || "—"}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2">
                     <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">Issue Date</span>
-                      <span className="font-semibold text-foreground">{previewDoc.metadata?.dob_or_issuance || "—"}</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">
+                        Issue Date
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {previewDoc.metadata?.dob_or_issuance || "—"}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2">
                     <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">Expiry Date</span>
-                      <span className="font-semibold text-foreground">{previewDoc.metadata?.expiry_date || "—"}</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">
+                        Expiry Date
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {previewDoc.metadata?.expiry_date || "—"}
+                      </span>
                     </div>
                   </div>
 
@@ -784,8 +853,12 @@ export function DocumentLockerSection() {
                     <div className="col-span-2 border-t border-border/30 pt-2 flex items-start gap-2">
                       <Home className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                       <div>
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">Address</span>
-                        <span className="font-semibold text-foreground leading-snug">{previewDoc.metadata?.address}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase block mb-0.5">
+                          Address
+                        </span>
+                        <span className="font-semibold text-foreground leading-snug">
+                          {previewDoc.metadata?.address}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -807,11 +880,15 @@ export function DocumentLockerSection() {
 
               {/* 5. Download / Action links inside Footer */}
               <DialogFooter className="border-t border-border/50 pt-4 gap-2 sm:gap-0">
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
+                <Button
+                  variant="destructive"
+                  size="sm"
                   className="gap-1.5 mr-auto text-xs"
-                  onClick={(e) => previewDoc.id && previewDoc.file_path && handleDelete(previewDoc.id, previewDoc.file_path, e)}
+                  onClick={(e) =>
+                    previewDoc.id &&
+                    previewDoc.file_path &&
+                    handleDelete(previewDoc.id, previewDoc.file_path, e)
+                  }
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete

@@ -1,11 +1,29 @@
 import { Button } from "@/shared/components/ui/button";
 import { useLanguage } from "@/app/providers/LanguageProvider";
-import { 
-  FileText, Upload, Mic, Volume2,
-  CheckCircle2, Sparkles, Languages,
-  Bot, User, Send, Loader2, MicOff, AlertCircle,
-  Check, ExternalLink, RefreshCw, X,
-  FileQuestion, MapPin, DollarSign, Calendar, Info, Square
+import {
+  FileText,
+  Upload,
+  Mic,
+  Volume2,
+  CheckCircle2,
+  Sparkles,
+  Languages,
+  Bot,
+  User,
+  Send,
+  Loader2,
+  MicOff,
+  AlertCircle,
+  Check,
+  ExternalLink,
+  RefreshCw,
+  X,
+  FileQuestion,
+  MapPin,
+  DollarSign,
+  Calendar,
+  Info,
+  Square,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { aiService, FormAnalysisResult } from "../services/aiService";
@@ -38,7 +56,7 @@ const supportedFormsList = [
   { code: "PM-SVANidhi", name: "PM SVANidhi (Vendor Loan)" },
   { code: "NREGA-JOB-CARD", name: "NREGA Job Card Application" },
   { code: "SCHOLARSHIP-NSP", name: "National Scholarship Portal" },
-  { code: "INCOME-CERT", name: "Income Certificate (State)" }
+  { code: "INCOME-CERT", name: "Income Certificate (State)" },
 ];
 
 export function AnalyzerAndAssistant() {
@@ -49,9 +67,10 @@ export function AnalyzerAndAssistant() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
-      content: language === "hi" 
-        ? "नमस्ते! मैं आपके फॉर्म, सरकारी योजनाओं और अन्य नागरिक प्रश्नों में सहायता कर सकता हूँ।"
-        : "Hello! I can help with forms, government schemes & queries.",
+      content:
+        language === "hi"
+          ? "नमस्ते! मैं आपके फॉर्म, सरकारी योजनाओं और अन्य नागरिक प्रश्नों में सहायता कर सकता हूँ।"
+          : "Hello! I can help with forms, government schemes & queries.",
     },
   ]);
 
@@ -64,13 +83,11 @@ export function AnalyzerAndAssistant() {
 
   /* ---------------- SPEECH RECOGNITION ---------------- */
   const isSpeechSupported =
-    typeof window !== "undefined" &&
-    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+    typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
   useEffect(() => {
     if (!isSpeechSupported) return;
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.lang = language === "hi" ? "hi-IN" : "en-IN";
     recognitionRef.current.onresult = (event: any) => {
@@ -111,15 +128,9 @@ export function AnalyzerAndAssistant() {
         setMessages((prev) => {
           const lastMsg = prev[prev.length - 1];
           if (lastMsg && lastMsg.role === "assistant") {
-            return [
-              ...prev.slice(0, -1),
-              { role: "assistant" as const, content: assistantText },
-            ];
+            return [...prev.slice(0, -1), { role: "assistant" as const, content: assistantText }];
           } else {
-            return [
-              ...prev,
-              { role: "assistant" as const, content: assistantText },
-            ];
+            return [...prev, { role: "assistant" as const, content: assistantText }];
           }
         });
       },
@@ -135,18 +146,31 @@ export function AnalyzerAndAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-
   /* ---------------- FORM ANALYZER STATE ---------------- */
   const [file, setFile] = useState<File | null>(null);
   const [formQuery, setFormQuery] = useState("");
-  const [status, setStatus] = useState<"idle" | "converting" | "uploading" | "classifying" | "retrieving" | "generating" | "done" | "rejected" | "low_confidence" | "unsupported_form" | "error">("idle");
+  const [status, setStatus] = useState<
+    | "idle"
+    | "converting"
+    | "uploading"
+    | "classifying"
+    | "retrieving"
+    | "generating"
+    | "done"
+    | "rejected"
+    | "low_confidence"
+    | "unsupported_form"
+    | "error"
+  >("idle");
   const [progressText, setProgressText] = useState("");
   const [progressPercent, setProgressPercent] = useState(0);
   const [analysisResult, setAnalysisResult] = useState<FormAnalysisResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [activeTab, setActiveTab] = useState<"summary" | "eligibility" | "documents" | "steps" | "submission">("summary");
+  const [activeTab, setActiveTab] = useState<
+    "summary" | "eligibility" | "documents" | "steps" | "submission"
+  >("summary");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -162,19 +186,27 @@ export function AnalyzerAndAssistant() {
       }, 200);
     } else if (status === "classifying") {
       setProgressPercent(10);
-      setProgressText(language === "hi" ? "दस्तावेज़ का विश्लेषण किया जा रहा है..." : "Analyzing your document...");
+      setProgressText(
+        language === "hi" ? "दस्तावेज़ का विश्लेषण किया जा रहा है..." : "Analyzing your document..."
+      );
       interval = setInterval(() => {
         setProgressPercent((p) => Math.min(p + 2, 40));
       }, 300);
     } else if (status === "retrieving") {
       setProgressPercent(45);
-      setProgressText(language === "hi" ? "सही सरकारी गाइड खोजी जा रही है..." : "Finding the right government guide...");
+      setProgressText(
+        language === "hi" ? "सही सरकारी गाइड खोजी जा रही है..." : "Finding the right government guide..."
+      );
       interval = setInterval(() => {
         setProgressPercent((p) => Math.min(p + 3, 70));
       }, 200);
     } else if (status === "generating") {
       setProgressPercent(75);
-      setProgressText(language === "hi" ? "सरल भाषा में निर्देश तैयार किए जा रहे हैं..." : "Writing instructions in simple terms...");
+      setProgressText(
+        language === "hi"
+          ? "सरल भाषा में निर्देश तैयार किए जा रहे हैं..."
+          : "Writing instructions in simple terms..."
+      );
       interval = setInterval(() => {
         setProgressPercent((p) => Math.min(p + 1, 95));
       }, 400);
@@ -219,7 +251,10 @@ export function AnalyzerAndAssistant() {
     if (!allowedTypes.includes(selectedFile.type)) {
       toast({
         title: language === "hi" ? "अमान्य फ़ाइल प्रकार" : "Invalid file type",
-        description: language === "hi" ? "केवल PDF, JPEG, PNG, या WebP फ़ाइलें स्वीकार की जाती हैं।" : "Only PDF, JPEG, PNG, or WebP files are accepted.",
+        description:
+          language === "hi"
+            ? "केवल PDF, JPEG, PNG, या WebP फ़ाइलें स्वीकार की जाती हैं।"
+            : "Only PDF, JPEG, PNG, or WebP files are accepted.",
         variant: "destructive",
       });
       return;
@@ -228,7 +263,8 @@ export function AnalyzerAndAssistant() {
     if (selectedFile.size > 10 * 1024 * 1024) {
       toast({
         title: language === "hi" ? "फ़ाइल बहुत बड़ी है" : "File too large",
-        description: language === "hi" ? "फ़ाइल का आकार 10MB से कम होना चाहिए।" : "File size must be under 10MB.",
+        description:
+          language === "hi" ? "फ़ाइल का आकार 10MB से कम होना चाहिए।" : "File size must be under 10MB.",
         variant: "destructive",
       });
       return;
@@ -258,20 +294,20 @@ export function AnalyzerAndAssistant() {
       // If PDF, show converting status first (PDF.js rasterization happens inside analyzeFormDirect)
       if (file.type === "application/pdf") {
         setStatus("converting");
-        await new Promise(r => setTimeout(r, 100)); // let UI re-render
+        await new Promise((r) => setTimeout(r, 100)); // let UI re-render
       }
 
       setStatus("classifying");
-      
+
       // Simulate pipeline transitions
       setTimeout(() => setStatus("retrieving"), 2000);
       setTimeout(() => setStatus("generating"), 3500);
 
       const result = await aiService.analyzeFormDirect(file, formQuery);
-      
+
       setStatus("done");
       setAnalysisResult(result);
-      
+
       if (result.status === "rejected") {
         setStatus("rejected");
       } else if (result.status === "low_confidence") {
@@ -287,9 +323,11 @@ export function AnalyzerAndAssistant() {
 
       toast({
         title: language === "hi" ? "विश्लेषण पूरा हुआ" : "Analysis completed",
-        description: language === "hi" ? "आपके फॉर्म की जानकारी सफलतापूर्वक प्राप्त कर ली गई है।" : "Your form guidance is ready.",
+        description:
+          language === "hi"
+            ? "आपके फॉर्म की जानकारी सफलतापूर्वक प्राप्त कर ली गई है।"
+            : "Your form guidance is ready.",
       });
-
     } catch (err) {
       console.error(err);
       setStatus("error");
@@ -339,32 +377,35 @@ export function AnalyzerAndAssistant() {
         textToSpeak += `यह फॉर्म ${analysisResult.form_name} है। संक्षेप में: ${guidance.summary}. `;
         textToSpeak += `इस योजना से लाभ: ${guidance.scheme_benefit}. `;
         textToSpeak += `पात्रता नियम: ${guidance.eligibility.join(". ")}. `;
-        textToSpeak += `आवश्यक दस्तावेज: ${guidance.required_documents.map(d => d.name).join(", ")}. `;
-        textToSpeak += `फॉर्म भरने के मुख्य चरण: ${guidance.filling_steps.map(s => `चरण ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
+        textToSpeak += `आवश्यक दस्तावेज: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
+        textToSpeak += `फॉर्म भरने के मुख्य चरण: ${guidance.filling_steps.map((s) => `चरण ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
         textToSpeak += `जमा करने की जानकारी: ${guidance.submission.where} में जमा करें। फीस: ${guidance.submission.fee}.`;
       } else {
         textToSpeak += `This form is ${analysisResult.form_name}. ${guidance.summary}. `;
         textToSpeak += `Benefits: ${guidance.scheme_benefit}. `;
         textToSpeak += `Eligibility: ${guidance.eligibility.join(". ")}. `;
-        textToSpeak += `Documents needed: ${guidance.required_documents.map(d => d.name).join(", ")}. `;
-        textToSpeak += `Steps: ${guidance.filling_steps.map(s => `Step ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
+        textToSpeak += `Documents needed: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
+        textToSpeak += `Steps: ${guidance.filling_steps.map((s) => `Step ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
         textToSpeak += `Submit at ${guidance.submission.where}. Fee: ${guidance.submission.fee}.`;
       }
 
       // --- SPEAK path ---
-      // Do NOT call cancel() here if not speaking! Chrome has a bug where cancel() 
+      // Do NOT call cancel() here if not speaking! Chrome has a bug where cancel()
       // right before speak() causes speak() to be silently dropped.
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      
+
       // Voice selection
       const voices = window.speechSynthesis.getVoices();
       const targetLang = language === "hi" ? "hi-IN" : "en-US";
-      const voice = voices.find(v => v.lang === targetLang) || voices.find(v => v.lang.startsWith(targetLang.split('-')[0])) || voices[0];
-      
+      const voice =
+        voices.find((v) => v.lang === targetLang) ||
+        voices.find((v) => v.lang.startsWith(targetLang.split("-")[0])) ||
+        voices[0];
+
       if (voice) {
         utterance.voice = voice;
       }
-      
+
       // Optional configuration for pacing
       utterance.rate = 0.9;
       utterance.pitch = 1;
@@ -383,7 +424,11 @@ export function AnalyzerAndAssistant() {
         console.error("[TTS] Speech synthesis playback error:", e);
         setIsSpeaking(false);
         utteranceRef.current = null;
-        toast({ title: "Speech Error", description: "Could not play audio. Please check your system settings.", variant: "destructive" });
+        toast({
+          title: "Speech Error",
+          description: "Could not play audio. Please check your system settings.",
+          variant: "destructive",
+        });
       };
 
       // Store reference to prevent GC mid-speech in Chrome/Safari
@@ -391,11 +436,14 @@ export function AnalyzerAndAssistant() {
 
       console.log("[TTS] Calling speak() with target language:", targetLang);
       window.speechSynthesis.speak(utterance);
-      
     } catch (err) {
       console.error("[TTS] Exception in toggleSpeech:", err);
       setIsSpeaking(false);
-      toast({ title: "Speech Error", description: getErrorMessage(err, "An unexpected error occurred."), variant: "destructive" });
+      toast({
+        title: "Speech Error",
+        description: getErrorMessage(err, "An unexpected error occurred."),
+        variant: "destructive",
+      });
     }
   };
 
@@ -416,7 +464,6 @@ export function AnalyzerAndAssistant() {
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="container mx-auto px-4 relative space-y-24">
-        
         {/* ================= FORM ANALYZER PANEL ================= */}
         <div>
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -425,15 +472,15 @@ export function AnalyzerAndAssistant() {
               {t("analyzer.badge")}
             </div>
             <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-              {t("analyzer.title")} <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{t("analyzer.audioGuidance")}</span>
+              {t("analyzer.title")}{" "}
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                {t("analyzer.audioGuidance")}
+              </span>
             </h1>
-            <p className="text-xl text-muted-foreground">
-              {t("analyzer.subtitle")}
-            </p>
+            <p className="text-xl text-muted-foreground">{t("analyzer.subtitle")}</p>
           </div>
 
           <div className="grid lg:grid-cols-12 gap-12 items-start">
-            
             {/* LEFT COLUMN: GUIDELINES & SUPPORTED LIST */}
             <div className="lg:col-span-5 space-y-8">
               <div className="bg-card/40 backdrop-blur-md rounded-3xl p-8 border border-border/80 shadow-lg space-y-6">
@@ -444,15 +491,27 @@ export function AnalyzerAndAssistant() {
                 <ul className="space-y-4 text-muted-foreground">
                   <li className="flex gap-3 items-start">
                     <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                    <span>{language === "hi" ? "केवल आधिकारिक मुद्रित सरकारी फॉर्म ही स्वीकार किए जाते हैं।" : "Only official printed government form documents (PDF or clear image) are accepted."}</span>
+                    <span>
+                      {language === "hi"
+                        ? "केवल आधिकारिक मुद्रित सरकारी फॉर्म ही स्वीकार किए जाते हैं।"
+                        : "Only official printed government form documents (PDF or clear image) are accepted."}
+                    </span>
                   </li>
                   <li className="flex gap-3 items-start">
                     <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                    <span>{language === "hi" ? "यह गेटवे रसीद, आईडी कार्ड, बिल या निजी दस्तावेजों को तुरंत अस्वीकार कर देता है।" : "The gateway automatically rejects ID cards, utility bills, receipts, or personal documents."}</span>
+                    <span>
+                      {language === "hi"
+                        ? "यह गेटवे रसीद, आईडी कार्ड, बिल या निजी दस्तावेजों को तुरंत अस्वीकार कर देता है।"
+                        : "The gateway automatically rejects ID cards, utility bills, receipts, or personal documents."}
+                    </span>
                   </li>
                   <li className="flex gap-3 items-start">
                     <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                    <span>{language === "hi" ? "दस्तावेज़ सुरक्षित है - फ़ाइल कभी भी संग्रहीत नहीं की जाती है और केवल क्षणिक है।" : "Completely secure — uploaded files are processed transiently in memory and never stored."}</span>
+                    <span>
+                      {language === "hi"
+                        ? "दस्तावेज़ सुरक्षित है - फ़ाइल कभी भी संग्रहीत नहीं की जाती है और केवल क्षणिक है।"
+                        : "Completely secure — uploaded files are processed transiently in memory and never stored."}
+                    </span>
                   </li>
                 </ul>
 
@@ -461,11 +520,16 @@ export function AnalyzerAndAssistant() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-1.5">
                     <Languages className="w-4 h-4 text-secondary" />
-                    {language === "hi" ? "वर्तमान में समर्थित सरकारी फॉर्म:" : "Currently Supported Government Forms:"}
+                    {language === "hi"
+                      ? "वर्तमान में समर्थित सरकारी फॉर्म:"
+                      : "Currently Supported Government Forms:"}
                   </h4>
                   <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
                     {supportedFormsList.map((f, i) => (
-                      <div key={i} className="text-xs px-2.5 py-2 rounded-xl bg-muted/60 border border-border/40 text-muted-foreground flex flex-col justify-center">
+                      <div
+                        key={i}
+                        className="text-xs px-2.5 py-2 rounded-xl bg-muted/60 border border-border/40 text-muted-foreground flex flex-col justify-center"
+                      >
                         <span className="font-bold text-foreground/80">{f.code}</span>
                         <span className="truncate">{f.name}</span>
                       </div>
@@ -478,8 +542,13 @@ export function AnalyzerAndAssistant() {
             {/* RIGHT COLUMN: ACTION & RESULT INTERFACE */}
             <div className="lg:col-span-7 space-y-8">
               {/* UPLOAD ZONE CARD */}
-              {status === "idle" || status === "uploading" || status === "error" || status === "rejected" || status === "low_confidence" || status === "unsupported_form" ? (
-                <div 
+              {status === "idle" ||
+              status === "uploading" ||
+              status === "error" ||
+              status === "rejected" ||
+              status === "low_confidence" ||
+              status === "unsupported_form" ? (
+                <div
                   className={`bg-card rounded-3xl p-8 border shadow-xl transition-all duration-300 relative ${
                     dragActive ? "border-primary bg-primary/5 scale-[1.01]" : "border-border"
                   }`}
@@ -488,17 +557,17 @@ export function AnalyzerAndAssistant() {
                   onDragLeave={handleDrag}
                   onDrop={handleDrop}
                 >
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    className="hidden" 
+                    className="hidden"
                     accept="application/pdf,image/jpeg,image/png,image/webp"
                   />
 
                   {/* DROPZONE */}
                   {!file ? (
-                    <div 
+                    <div
                       onClick={() => fileInputRef.current?.click()}
                       className="border-dashed border-2 border-border rounded-2xl p-12 text-center cursor-pointer hover:border-primary/60 hover:bg-muted/40 transition-all duration-300"
                     >
@@ -506,9 +575,7 @@ export function AnalyzerAndAssistant() {
                         <Upload className="w-8 h-8" />
                       </div>
                       <h4 className="text-xl font-bold mb-1">{t("analyzer.dropHere")}</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {t("analyzer.uploadDesc")}
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">{t("analyzer.uploadDesc")}</p>
                       <Button type="button" variant="outline" className="rounded-full px-6">
                         {t("analyzer.browseFiles")}
                       </Button>
@@ -521,18 +588,16 @@ export function AnalyzerAndAssistant() {
                             <FileText className="w-6 h-6" />
                           </div>
                           <div className="text-left">
-                            <h4 className="font-bold truncate max-w-[200px] sm:max-w-[350px]">
-                              {file.name}
-                            </h4>
+                            <h4 className="font-bold truncate max-w-[200px] sm:max-w-[350px]">{file.name}</h4>
                             <p className="text-xs text-muted-foreground">
                               {(file.size / (1024 * 1024)).toFixed(2)} MB
                             </p>
                           </div>
                         </div>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={clearFile}
                           className="text-muted-foreground hover:text-foreground rounded-full"
                         >
@@ -544,18 +609,24 @@ export function AnalyzerAndAssistant() {
                       <div className="space-y-2 text-left">
                         <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                           <FileQuestion className="w-4 h-4 text-primary" />
-                          {language === "hi" ? "क्या आपका इस फॉर्म के बारे में कोई विशेष प्रश्न है?" : "Do you have a specific question about this form?"}
+                          {language === "hi"
+                            ? "क्या आपका इस फॉर्म के बारे में कोई विशेष प्रश्न है?"
+                            : "Do you have a specific question about this form?"}
                         </label>
                         <input
                           type="text"
                           value={formQuery}
                           onChange={(e) => setFormQuery(e.target.value)}
-                          placeholder={language === "hi" ? "उदा. क्या मैं इस आवास योजना के लिए पात्र हूँ?" : "e.g. What income certificate do I need for this?"}
+                          placeholder={
+                            language === "hi"
+                              ? "उदा. क्या मैं इस आवास योजना के लिए पात्र हूँ?"
+                              : "e.g. What income certificate do I need for this?"
+                          }
                           className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all"
                         />
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={runAnalysis}
                         disabled={status === "uploading"}
                         className="w-full py-6 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 gap-2"
@@ -575,10 +646,13 @@ export function AnalyzerAndAssistant() {
                           {language === "hi" ? "दस्तावेज़ अस्वीकार कर दिया गया" : "Document Rejected"}
                         </h4>
                         <p className="text-sm text-foreground/80 font-medium">
-                          {analysisResult.reason || "This document was not recognized as an Indian government form."}
+                          {analysisResult.reason ||
+                            "This document was not recognized as an Indian government form."}
                         </p>
                         <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "दिशा-निर्देश:" : "Guidance:"}</strong> {analysisResult.guidance?.summary || "Please upload a valid blank printed government application form."}
+                          <strong>{language === "hi" ? "दिशा-निर्देश:" : "Guidance:"}</strong>{" "}
+                          {analysisResult.guidance?.summary ||
+                            "Please upload a valid blank printed government application form."}
                         </p>
                       </div>
                     </div>
@@ -592,11 +666,10 @@ export function AnalyzerAndAssistant() {
                         <h4 className="font-bold text-amber-600 text-lg">
                           {language === "hi" ? "कम गुणवत्ता / अस्पष्ट फोटो" : "Low Image Quality"}
                         </h4>
-                        <p className="text-sm text-foreground/80 font-medium">
-                          {analysisResult.reason}
-                        </p>
+                        <p className="text-sm text-foreground/80 font-medium">{analysisResult.reason}</p>
                         <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance?.summary}
+                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong>{" "}
+                          {analysisResult.guidance?.summary}
                         </p>
                       </div>
                     </div>
@@ -610,11 +683,10 @@ export function AnalyzerAndAssistant() {
                         <h4 className="font-bold text-cyan-700 text-lg">
                           {language === "hi" ? "असमर्थित सरकारी फॉर्म" : "Unsupported Government Form"}
                         </h4>
-                        <p className="text-sm text-foreground/80 font-medium">
-                          {analysisResult.reason}
-                        </p>
+                        <p className="text-sm text-foreground/80 font-medium">{analysisResult.reason}</p>
                         <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance?.summary}
+                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong>{" "}
+                          {analysisResult.guidance?.summary}
                         </p>
                       </div>
                     </div>
@@ -628,13 +700,11 @@ export function AnalyzerAndAssistant() {
                         <h4 className="font-bold text-red-600 text-lg">
                           {language === "hi" ? "त्रुटि उत्पन्न हुई" : "Analysis Failed"}
                         </h4>
-                        <p className="text-sm text-foreground/80 font-medium">
-                          {errorMessage}
-                        </p>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm" 
+                        <p className="text-sm text-foreground/80 font-medium">{errorMessage}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={runAnalysis}
                           className="mt-2 text-xs rounded-full gap-1.5"
                         >
@@ -648,7 +718,10 @@ export function AnalyzerAndAssistant() {
               ) : null}
 
               {/* PROGRESS STATE CARD */}
-              {(status === "converting" || status === "classifying" || status === "retrieving" || status === "generating") && (
+              {(status === "converting" ||
+                status === "classifying" ||
+                status === "retrieving" ||
+                status === "generating") && (
                 <div className="bg-card rounded-3xl p-8 border border-border shadow-xl space-y-6 text-center">
                   <div className="relative w-24 h-24 mx-auto">
                     <Loader2 className="w-24 h-24 text-primary animate-spin absolute inset-0" />
@@ -659,27 +732,37 @@ export function AnalyzerAndAssistant() {
                   <div className="space-y-2">
                     <h4 className="text-xl font-bold animate-pulse">{progressText}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {language === "hi" ? "कृपया प्रतीक्षा करें। इसमें लगभग 10-15 सेकंड का समय लग सकता है।" : "Please wait. This process takes about 10-15 seconds."}
+                      {language === "hi"
+                        ? "कृपया प्रतीक्षा करें। इसमें लगभग 10-15 सेकंड का समय लग सकता है।"
+                        : "Please wait. This process takes about 10-15 seconds."}
                     </p>
                   </div>
                   {/* Progress Line */}
                   <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                    <div 
+                    <div
                       className="bg-primary h-full transition-all duration-300 rounded-full"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-xs font-semibold">
-                    <div className={`p-2 rounded-xl border transition-colors ${status === "converting" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                    <div
+                      className={`p-2 rounded-xl border transition-colors ${status === "converting" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                    >
                       0. PDF → Image
                     </div>
-                    <div className={`p-2 rounded-xl border transition-colors ${status === "classifying" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                    <div
+                      className={`p-2 rounded-xl border transition-colors ${status === "classifying" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                    >
                       1. Demarcating Form
                     </div>
-                    <div className={`p-2 rounded-xl border transition-colors ${status === "retrieving" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                    <div
+                      className={`p-2 rounded-xl border transition-colors ${status === "retrieving" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                    >
                       2. RAG Match
                     </div>
-                    <div className={`p-2 rounded-xl border transition-colors ${status === "generating" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                    <div
+                      className={`p-2 rounded-xl border transition-colors ${status === "generating" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                    >
                       3. Simplification
                     </div>
                   </div>
@@ -698,14 +781,13 @@ export function AnalyzerAndAssistant() {
                         </span>
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          Relevance Match: {(analysisResult.confidence ? analysisResult.confidence * 100 : 90).toFixed(0)}%
+                          Relevance Match:{" "}
+                          {(analysisResult.confidence ? analysisResult.confidence * 100 : 90).toFixed(0)}%
                         </span>
                       </div>
-                      <h3 className="text-2xl font-extrabold text-foreground">
-                        {analysisResult.form_name}
-                      </h3>
+                      <h3 className="text-2xl font-extrabold text-foreground">{analysisResult.form_name}</h3>
                     </div>
-                    
+
                     <div className="flex gap-2 relative z-50">
                       <Button
                         type="button"
@@ -725,10 +807,10 @@ export function AnalyzerAndAssistant() {
                           </>
                         )}
                       </Button>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={clearFile}
                         className="rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 relative z-50 pointer-events-auto"
                       >
@@ -759,7 +841,9 @@ export function AnalyzerAndAssistant() {
                     <button
                       onClick={() => setActiveTab("summary")}
                       className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "summary" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        activeTab === "summary"
+                          ? "border-primary text-primary bg-background"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "विवरण" : "Overview"}
@@ -767,7 +851,9 @@ export function AnalyzerAndAssistant() {
                     <button
                       onClick={() => setActiveTab("eligibility")}
                       className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "eligibility" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        activeTab === "eligibility"
+                          ? "border-primary text-primary bg-background"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "पात्रता" : "Eligibility"}
@@ -775,7 +861,9 @@ export function AnalyzerAndAssistant() {
                     <button
                       onClick={() => setActiveTab("documents")}
                       className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "documents" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        activeTab === "documents"
+                          ? "border-primary text-primary bg-background"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "दस्तावेज़" : "Required Docs"}
@@ -783,7 +871,9 @@ export function AnalyzerAndAssistant() {
                     <button
                       onClick={() => setActiveTab("steps")}
                       className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "steps" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        activeTab === "steps"
+                          ? "border-primary text-primary bg-background"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "भरने का तरीका" : "Filling Steps"}
@@ -791,7 +881,9 @@ export function AnalyzerAndAssistant() {
                     <button
                       onClick={() => setActiveTab("submission")}
                       className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "submission" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        activeTab === "submission"
+                          ? "border-primary text-primary bg-background"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "जमा कहाँ करें" : "Submission"}
@@ -829,7 +921,10 @@ export function AnalyzerAndAssistant() {
                         </h4>
                         <div className="grid gap-2">
                           {analysisResult.guidance.eligibility.map((crit, idx) => (
-                            <div key={idx} className="flex gap-3 items-start p-3 bg-muted/40 rounded-xl border border-border/40">
+                            <div
+                              key={idx}
+                              className="flex gap-3 items-start p-3 bg-muted/40 rounded-xl border border-border/40"
+                            >
                               <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
                                 <Check className="w-3.5 h-3.5" />
                               </div>
@@ -844,11 +939,16 @@ export function AnalyzerAndAssistant() {
                       <div className="space-y-3">
                         <h4 className="font-bold text-foreground mb-1 text-sm uppercase tracking-wide flex items-center gap-1.5">
                           <FileText className="w-4 h-4 text-primary" />
-                          {language === "hi" ? "आवश्यक सहायक दस्तावेज:" : "Documents Required for Application:"}
+                          {language === "hi"
+                            ? "आवश्यक सहायक दस्तावेज:"
+                            : "Documents Required for Application:"}
                         </h4>
                         <div className="grid gap-2">
                           {analysisResult.guidance.required_documents.map((doc, idx) => (
-                            <div key={idx} className="p-3.5 bg-muted/40 rounded-xl border border-border/40 flex items-start gap-3.5">
+                            <div
+                              key={idx}
+                              className="p-3.5 bg-muted/40 rounded-xl border border-border/40 flex items-start gap-3.5"
+                            >
                               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                 <FileText className="w-4.5 h-4.5" />
                               </div>
@@ -865,7 +965,9 @@ export function AnalyzerAndAssistant() {
                     {activeTab === "steps" && (
                       <div className="space-y-3">
                         <h4 className="font-bold text-foreground mb-1 text-sm uppercase tracking-wide">
-                          {language === "hi" ? "फॉर्म को भरने के चरण (फ़ील्ड-दर-फ़ील्ड):" : "Step-by-Step Instructions (Field-by-Field):"}
+                          {language === "hi"
+                            ? "फॉर्म को भरने के चरण (फ़ील्ड-दर-फ़ील्ड):"
+                            : "Step-by-Step Instructions (Field-by-Field):"}
                         </h4>
                         <div className="space-y-4">
                           {analysisResult.guidance.filling_steps.map((s, idx) => (
@@ -876,11 +978,10 @@ export function AnalyzerAndAssistant() {
                               </div>
                               <div className="p-3 bg-muted/30 border border-border/30 rounded-xl space-y-1.5">
                                 <h5 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                                  {language === "hi" ? "फ़ील्ड:" : "Field Name:"} <span className="text-primary">{s.field}</span>
+                                  {language === "hi" ? "फ़ील्ड:" : "Field Name:"}{" "}
+                                  <span className="text-primary">{s.field}</span>
                                 </h5>
-                                <p className="text-xs text-foreground/80 leading-relaxed">
-                                  {s.instruction}
-                                </p>
+                                <p className="text-xs text-foreground/80 leading-relaxed">{s.instruction}</p>
                                 {s.example && (
                                   <p className="text-[10px] text-muted-foreground bg-muted p-1.5 rounded-md border border-border/40 inline-block font-mono">
                                     <strong>{language === "hi" ? "उदाहरण:" : "Example:"}</strong> {s.example}
@@ -896,7 +997,9 @@ export function AnalyzerAndAssistant() {
                     {activeTab === "submission" && (
                       <div className="space-y-4">
                         <h4 className="font-bold text-foreground mb-1 text-sm uppercase tracking-wide">
-                          {language === "hi" ? "जमा करने एवं फीस की जानकारी:" : "Submission Guidelines & Cost:"}
+                          {language === "hi"
+                            ? "जमा करने एवं फीस की जानकारी:"
+                            : "Submission Guidelines & Cost:"}
                         </h4>
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div className="p-4 bg-muted/40 border border-border/40 rounded-xl space-y-1">
@@ -904,26 +1007,32 @@ export function AnalyzerAndAssistant() {
                               <MapPin className="w-3.5 h-3.5 text-primary" />
                               {language === "hi" ? "कार्यालय (भौतिक रूप से):" : "Where to Submit (Physical):"}
                             </h5>
-                            <p className="text-sm font-medium text-foreground">{analysisResult.guidance.submission.where}</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {analysisResult.guidance.submission.where}
+                            </p>
                           </div>
-                          
+
                           <div className="p-4 bg-muted/40 border border-border/40 rounded-xl space-y-1">
                             <h5 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                               <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
                               {language === "hi" ? "आवेदन शुल्क / खर्च:" : "Application Fee / Cost:"}
                             </h5>
-                            <p className="text-sm font-bold text-emerald-600">{analysisResult.guidance.submission.fee}</p>
+                            <p className="text-sm font-bold text-emerald-600">
+                              {analysisResult.guidance.submission.fee}
+                            </p>
                           </div>
 
                           {analysisResult.guidance.submission.online_portal && (
                             <div className="p-4 bg-muted/40 border border-border/40 rounded-xl space-y-1 sm:col-span-2">
                               <h5 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                                 <ExternalLink className="w-3.5 h-3.5 text-secondary" />
-                                {language === "hi" ? "आधिकारिक ऑनलाइन पोर्टल:" : "Official Online Submission Portal:"}
+                                {language === "hi"
+                                  ? "आधिकारिक ऑनलाइन पोर्टल:"
+                                  : "Official Online Submission Portal:"}
                               </h5>
-                              <a 
-                                href={analysisResult.guidance.submission.online_portal} 
-                                target="_blank" 
+                              <a
+                                href={analysisResult.guidance.submission.online_portal}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
                               >
@@ -937,26 +1046,33 @@ export function AnalyzerAndAssistant() {
                             <div className="p-4 bg-muted/40 border border-border/40 rounded-xl space-y-1 sm:col-span-2">
                               <h5 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                                {language === "hi" ? "अंतिम तिथि / सबमिशन डेडलाइन:" : "Submission Deadline Info:"}
+                                {language === "hi"
+                                  ? "अंतिम तिथि / सबमिशन डेडलाइन:"
+                                  : "Submission Deadline Info:"}
                               </h5>
-                              <p className="text-sm font-semibold text-amber-600">{analysisResult.guidance.submission.deadline}</p>
+                              <p className="text-sm font-semibold text-amber-600">
+                                {analysisResult.guidance.submission.deadline}
+                              </p>
                             </div>
                           )}
                         </div>
 
-                        {analysisResult.guidance.important_notes && analysisResult.guidance.important_notes.length > 0 && (
-                          <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-2">
-                            <h5 className="text-xs font-bold text-amber-600 uppercase flex items-center gap-1">
-                              <Info className="w-3.5 h-3.5" />
-                              {language === "hi" ? "महत्वपूर्ण बिंदु:" : "Important Notes to keep in mind:"}
-                            </h5>
-                            <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
-                              {analysisResult.guidance.important_notes.map((note, idx) => (
-                                <li key={idx} className="leading-relaxed">{note}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        {analysisResult.guidance.important_notes &&
+                          analysisResult.guidance.important_notes.length > 0 && (
+                            <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-2">
+                              <h5 className="text-xs font-bold text-amber-600 uppercase flex items-center gap-1">
+                                <Info className="w-3.5 h-3.5" />
+                                {language === "hi" ? "महत्वपूर्ण बिंदु:" : "Important Notes to keep in mind:"}
+                              </h5>
+                              <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
+                                {analysisResult.guidance.important_notes.map((note, idx) => (
+                                  <li key={idx} className="leading-relaxed">
+                                    {note}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                       </div>
                     )}
                   </div>
@@ -966,15 +1082,23 @@ export function AnalyzerAndAssistant() {
                     <div className="p-4 bg-muted/60 border-t border-border flex flex-col gap-3">
                       <h5 className="text-xs font-bold text-muted-foreground flex items-center gap-1">
                         <Info className="w-3.5 h-3.5 text-primary" />
-                        {language === "hi" ? "सत्यापित स्रोत और संदर्भ:" : "Verified Official Source Citations:"}
+                        {language === "hi"
+                          ? "सत्यापित स्रोत और संदर्भ:"
+                          : "Verified Official Source Citations:"}
                       </h5>
                       <div className="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
                         {analysisResult.guidance.sources.map((s, idx) => (
-                          <div key={idx} className="flex justify-between items-center bg-background p-2.5 rounded-lg border border-border/60 text-xs">
+                          <div
+                            key={idx}
+                            className="flex justify-between items-center bg-background p-2.5 rounded-lg border border-border/60 text-xs"
+                          >
                             <div className="space-y-0.5 text-left">
                               <p className="font-semibold text-foreground">{s.chunk_title}</p>
                               <p className="text-[10px] text-muted-foreground">
-                                Source: {s.form_name} · Version: {s.version || "v1.0"} · Last verified: {s.last_verified ? new Date(s.last_verified).toLocaleDateString() : "June 2026"}
+                                Source: {s.form_name} · Version: {s.version || "v1.0"} · Last verified:{" "}
+                                {s.last_verified
+                                  ? new Date(s.last_verified).toLocaleDateString()
+                                  : "June 2026"}
                               </p>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
@@ -1001,23 +1125,23 @@ export function AnalyzerAndAssistant() {
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
         {/* ================= AI CIVIC ASSISTANT ================= */}
         {/* Removed inline Civic Assistant to replace with a floating chat widget */}
-
       </div>
 
       {/* Floating Sparkle FAB Widget */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         {/* Floating Chat Panel */}
-        <div className={`mb-4 w-96 max-w-[calc(100vw-2rem)] h-[550px] bg-card rounded-3xl border border-border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
-          isChatOpen 
-            ? "opacity-100 scale-100 translate-y-0" 
-            : "opacity-0 scale-90 translate-y-10 pointer-events-none"
-        }`}>
+        <div
+          className={`mb-4 w-96 max-w-[calc(100vw-2rem)] h-[550px] bg-card rounded-3xl border border-border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+            isChatOpen
+              ? "opacity-100 scale-100 translate-y-0"
+              : "opacity-0 scale-90 translate-y-10 pointer-events-none"
+          }`}
+        >
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-indigo-600 p-4 text-white flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
@@ -1030,7 +1154,7 @@ export function AnalyzerAndAssistant() {
                 <p className="text-[10px] text-white/80 font-medium">Online • Responds in Hindi & English</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setIsChatOpen(false)}
               className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white focus:outline-none"
             >
@@ -1042,16 +1166,20 @@ export function AnalyzerAndAssistant() {
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-muted/5 min-h-0">
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : "text-left"}`}>
-                <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white shadow-sm ${
-                  m.role === "user" ? "bg-secondary" : "bg-primary"
-                }`}>
+                <div
+                  className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white shadow-sm ${
+                    m.role === "user" ? "bg-secondary" : "bg-primary"
+                  }`}
+                >
                   {m.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
-                <div className={`max-w-[75%] p-3 rounded-2xl text-xs font-medium leading-relaxed border shadow-sm ${
-                  m.role === "user" 
-                    ? "bg-secondary/10 border-secondary/20 text-foreground text-left rounded-tr-none" 
-                    : "bg-card border-border/80 text-foreground rounded-tl-none"
-                }`}>
+                <div
+                  className={`max-w-[75%] p-3 rounded-2xl text-xs font-medium leading-relaxed border shadow-sm ${
+                    m.role === "user"
+                      ? "bg-secondary/10 border-secondary/20 text-foreground text-left rounded-tr-none"
+                      : "bg-card border-border/80 text-foreground rounded-tl-none"
+                  }`}
+                >
                   {m.content}
                 </div>
               </div>
@@ -1088,7 +1216,7 @@ export function AnalyzerAndAssistant() {
           {/* Chat Input Controls */}
           <div className="p-3 border-t border-border flex gap-2 bg-card items-center">
             {isSpeechSupported && (
-              <Button 
+              <Button
                 onClick={toggleListening}
                 variant="outline"
                 size="icon"
@@ -1104,9 +1232,9 @@ export function AnalyzerAndAssistant() {
               placeholder="Ask anything about government schemes..."
               className="flex-1 min-w-0 px-3 py-2 rounded-full bg-muted border border-transparent focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/40 text-xs transition-all"
             />
-            <Button 
-              onClick={() => handleSend()} 
-              disabled={isChatLoading} 
+            <Button
+              onClick={() => handleSend()}
+              disabled={isChatLoading}
               size="icon"
               className="rounded-full shrink-0 w-9 h-9 bg-primary hover:bg-primary/95 text-white"
             >
@@ -1119,8 +1247,8 @@ export function AnalyzerAndAssistant() {
         <button
           onClick={() => setIsChatOpen(!isChatOpen)}
           className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none hover:shadow-primary/30 hover:shadow-xl ${
-            isChatOpen 
-              ? "bg-slate-700 hover:bg-slate-800 text-white" 
+            isChatOpen
+              ? "bg-slate-700 hover:bg-slate-800 text-white"
               : "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-650 text-white"
           }`}
         >

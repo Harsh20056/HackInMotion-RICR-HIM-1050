@@ -3,10 +3,10 @@ import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
-import { 
-  MapPin, 
-  ThumbsUp, 
-  Clock, 
+import {
+  MapPin,
+  ThumbsUp,
+  Clock,
   ArrowRight,
   Droplets,
   Trash2,
@@ -15,7 +15,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Timer,
-  Train
+  Train,
 } from "lucide-react";
 
 type IssueStatus = "reported" | "in-progress" | "resolved";
@@ -96,9 +96,9 @@ const issues: Issue[] = [
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "Water Supply": <Droplets className="w-4 h-4" />,
-  "Sanitation": <Trash2 className="w-4 h-4" />,
-  "Electricity": <Zap className="w-4 h-4" />,
-  "Roads": <Construction className="w-4 h-4" />,
+  Sanitation: <Trash2 className="w-4 h-4" />,
+  Electricity: <Zap className="w-4 h-4" />,
+  Roads: <Construction className="w-4 h-4" />,
   "Metro & Transit": <Train className="w-4 h-4" />,
 };
 
@@ -106,20 +106,20 @@ export function IssuesNearYou() {
   const { t, language } = useLanguage();
 
   const statusConfig: Record<IssueStatus, { labelKey: string; class: string; icon: React.ReactNode }> = {
-    reported: { 
-      labelKey: "issues.reported", 
+    reported: {
+      labelKey: "issues.reported",
       class: "status-reported",
-      icon: <AlertTriangle className="w-3 h-3" />
+      icon: <AlertTriangle className="w-3 h-3" />,
     },
-    "in-progress": { 
-      labelKey: "issues.inProgress", 
+    "in-progress": {
+      labelKey: "issues.inProgress",
       class: "status-in-progress",
-      icon: <Timer className="w-3 h-3" />
+      icon: <Timer className="w-3 h-3" />,
     },
-    resolved: { 
-      labelKey: "issues.resolved", 
+    resolved: {
+      labelKey: "issues.resolved",
       class: "status-resolved",
-      icon: <CheckCircle2 className="w-3 h-3" />
+      icon: <CheckCircle2 className="w-3 h-3" />,
     },
   };
 
@@ -133,12 +133,8 @@ export function IssuesNearYou() {
               <MapPin className="w-4 h-4" />
               {t("issues.badge")}
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-              {t("issues.title")}
-            </h2>
-            <p className="text-muted-foreground">
-              {t("issues.subtitle")}
-            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">{t("issues.title")}</h2>
+            <p className="text-muted-foreground">{t("issues.subtitle")}</p>
           </div>
           <Link to={ROUTES.REPORT_ISSUE}>
             <Button variant="outline" className="shrink-0">
@@ -150,21 +146,36 @@ export function IssuesNearYou() {
 
         {/* Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          <StatCard value="23" labelKey="issues.activeIssues" trend={language === "en" ? "+5 this week" : "+5 इस हफ्ते"} color="warning" />
-          <StatCard value="156" labelKey="issues.resolved" trend={language === "en" ? "This month" : "इस महीने"} color="accent" />
-          <StatCard value="18hrs" labelKey="issues.avgResponseTime" trend={language === "en" ? "↓ 2hrs faster" : "↓ 2 घंटे तेज"} color="info" />
-          <StatCard value="1.2K" labelKey="issues.communitySupports" trend={language === "en" ? "+200 today" : "+200 आज"} color="primary" />
+          <StatCard
+            value="23"
+            labelKey="issues.activeIssues"
+            trend={language === "en" ? "+5 this week" : "+5 इस हफ्ते"}
+            color="warning"
+          />
+          <StatCard
+            value="156"
+            labelKey="issues.resolved"
+            trend={language === "en" ? "This month" : "इस महीने"}
+            color="accent"
+          />
+          <StatCard
+            value="18hrs"
+            labelKey="issues.avgResponseTime"
+            trend={language === "en" ? "↓ 2hrs faster" : "↓ 2 घंटे तेज"}
+            color="info"
+          />
+          <StatCard
+            value="1.2K"
+            labelKey="issues.communitySupports"
+            trend={language === "en" ? "+200 today" : "+200 आज"}
+            color="primary"
+          />
         </div>
 
         {/* Issues Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {issues.map((issue, index) => (
-            <IssueCard 
-              key={issue.id} 
-              issue={issue} 
-              index={index} 
-              statusConfig={statusConfig}
-            />
+            <IssueCard key={issue.id} issue={issue} index={index} statusConfig={statusConfig} />
           ))}
         </div>
       </div>
@@ -172,15 +183,15 @@ export function IssuesNearYou() {
   );
 }
 
-function StatCard({ 
-  value, 
-  labelKey, 
-  trend, 
-  color 
-}: { 
-  value: string; 
-  labelKey: string; 
-  trend: string; 
+function StatCard({
+  value,
+  labelKey,
+  trend,
+  color,
+}: {
+  value: string;
+  labelKey: string;
+  trend: string;
   color: "primary" | "accent" | "warning" | "info";
 }) {
   const { t } = useLanguage();
@@ -200,12 +211,12 @@ function StatCard({
   );
 }
 
-function IssueCard({ 
-  issue, 
+function IssueCard({
+  issue,
   index,
-  statusConfig
-}: { 
-  issue: Issue; 
+  statusConfig,
+}: {
+  issue: Issue;
   index: number;
   statusConfig: Record<IssueStatus, { labelKey: string; class: string; icon: React.ReactNode }>;
 }) {
@@ -214,7 +225,7 @@ function IssueCard({
   const categoryIcon = categoryIcons[issue.category] || <AlertTriangle className="w-4 h-4" />;
 
   return (
-    <div 
+    <div
       className="group bg-card rounded-2xl border border-border shadow-card hover:shadow-lg hover:-translate-y-1 transition-all overflow-hidden animate-slide-up"
       style={{ animationDelay: `${index * 0.1}s` }}
     >

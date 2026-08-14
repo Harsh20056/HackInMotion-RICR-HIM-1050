@@ -90,7 +90,8 @@ export function ResolveIssueDialog({ item, onClose, onSubmit }: Props) {
 
           <div className="space-y-1.5">
             <Label htmlFor="resolution-note">
-              {language === "en" ? "Resolution note" : "समाधान टिप्पणी"} <span className="text-destructive">*</span>
+              {language === "en" ? "Resolution note" : "समाधान टिप्पणी"}{" "}
+              <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="resolution-note"

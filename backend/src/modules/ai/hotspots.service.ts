@@ -31,8 +31,18 @@ export interface RecurringHotspot {
 }
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export const hotspotsService = {
@@ -77,8 +87,7 @@ export const hotspotsService = {
 
     return {
       method: "historical-aggregation",
-      note:
-        "Statistical recurrence over past reports grouped by ~1km grid cell, category and calendar month. Not a machine-learning prediction.",
+      note: "Statistical recurrence over past reports grouped by ~1km grid cell, category and calendar month. Not a machine-learning prediction.",
       items: rows.map((r) => {
         const occurrences = Number(r.occurrences);
         const distinctYears = Number(r.distinct_years);

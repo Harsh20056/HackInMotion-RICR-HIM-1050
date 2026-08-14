@@ -15,4 +15,4 @@ export const ROUTES = {
   ISSUE_DETAIL: "/issues/:id",
 } as const;
 
-export type RoutePath = typeof ROUTES[keyof typeof ROUTES];
+export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

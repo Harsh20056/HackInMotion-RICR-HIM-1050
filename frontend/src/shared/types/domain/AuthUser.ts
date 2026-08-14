@@ -19,8 +19,4 @@ export interface AuthSession {
 }
 
 export type AuthChangeEvent =
-  | "SIGNED_IN"
-  | "SIGNED_OUT"
-  | "TOKEN_REFRESHED"
-  | "USER_UPDATED"
-  | "INITIAL_SESSION";
+  "SIGNED_IN" | "SIGNED_OUT" | "TOKEN_REFRESHED" | "USER_UPDATED" | "INITIAL_SESSION";

@@ -27,23 +27,33 @@ function analyticsCity(auth: AccessTokenClaims | undefined, requested?: string):
 
 const cityQuery = z.object({ city: z.string().max(120).optional() });
 
-analyticsRouter.get("/overview", optionalAuthenticate, validate(cityQuery, "query"), async (req, res, next) => {
-  try {
-    const { city } = req.validatedQuery as z.infer<typeof cityQuery>;
-    res.json(await analyticsService.overview(analyticsCity(req.auth, city)));
-  } catch (err) {
-    next(err);
+analyticsRouter.get(
+  "/overview",
+  optionalAuthenticate,
+  validate(cityQuery, "query"),
+  async (req, res, next) => {
+    try {
+      const { city } = req.validatedQuery as z.infer<typeof cityQuery>;
+      res.json(await analyticsService.overview(analyticsCity(req.auth, city)));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-analyticsRouter.get("/departments", optionalAuthenticate, validate(cityQuery, "query"), async (req, res, next) => {
-  try {
-    const { city } = req.validatedQuery as z.infer<typeof cityQuery>;
-    res.json(await analyticsService.departments(analyticsCity(req.auth, city)));
-  } catch (err) {
-    next(err);
+analyticsRouter.get(
+  "/departments",
+  optionalAuthenticate,
+  validate(cityQuery, "query"),
+  async (req, res, next) => {
+    try {
+      const { city } = req.validatedQuery as z.infer<typeof cityQuery>;
+      res.json(await analyticsService.departments(analyticsCity(req.auth, city)));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 const hotspotsQuery = z.object({
   precision: z.coerce.number().min(0.001).max(1).optional(),
@@ -51,25 +61,35 @@ const hotspotsQuery = z.object({
   city: z.string().max(120).optional(),
 });
 
-analyticsRouter.get("/hotspots", optionalAuthenticate, validate(hotspotsQuery, "query"), async (req, res, next) => {
-  try {
-    const q = req.validatedQuery as z.infer<typeof hotspotsQuery>;
-    res.json(await analyticsService.hotspots(q, analyticsCity(req.auth, q.city)));
-  } catch (err) {
-    next(err);
+analyticsRouter.get(
+  "/hotspots",
+  optionalAuthenticate,
+  validate(hotspotsQuery, "query"),
+  async (req, res, next) => {
+    try {
+      const q = req.validatedQuery as z.infer<typeof hotspotsQuery>;
+      res.json(await analyticsService.hotspots(q, analyticsCity(req.auth, q.city)));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 const trendsQuery = z.object({
   months: z.coerce.number().int().min(1).max(24).default(6),
   city: z.string().max(120).optional(),
 });
 
-analyticsRouter.get("/trends", optionalAuthenticate, validate(trendsQuery, "query"), async (req, res, next) => {
-  try {
-    const { months, city } = req.validatedQuery as z.infer<typeof trendsQuery>;
-    res.json(await analyticsService.trends(months, analyticsCity(req.auth, city)));
-  } catch (err) {
-    next(err);
+analyticsRouter.get(
+  "/trends",
+  optionalAuthenticate,
+  validate(trendsQuery, "query"),
+  async (req, res, next) => {
+    try {
+      const { months, city } = req.validatedQuery as z.infer<typeof trendsQuery>;
+      res.json(await analyticsService.trends(months, analyticsCity(req.auth, city)));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);

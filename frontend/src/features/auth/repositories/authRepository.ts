@@ -25,7 +25,16 @@ interface ApiUser {
 }
 
 function toAuthUser(u: ApiUser): AuthUser {
-  return { id: u.id, email: u.email, user_metadata: { full_name: u.fullName, phone: u.phone || undefined, role: u.role, departmentId: u.departmentId } };
+  return {
+    id: u.id,
+    email: u.email,
+    user_metadata: {
+      full_name: u.fullName,
+      phone: u.phone || undefined,
+      role: u.role,
+      departmentId: u.departmentId,
+    },
+  };
 }
 
 function emitAuthChange(event: AuthChangeEvent, session: AuthSession | null): void {
@@ -35,12 +44,21 @@ function emitAuthChange(event: AuthChangeEvent, session: AuthSession | null): vo
 export const authRepository = {
   async signUp(input: SignupInput): Promise<AuthSession> {
     try {
-      const data = await apiRequest<{ user: ApiUser; accessToken: string; refreshToken: string }>("/auth/register", {
-        method: "POST",
-        auth: false,
-        body: { email: input.email, password: input.password, fullName: input.fullName },
-      });
-      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone, input.city, input.state);
+      const data = await apiRequest<{ user: ApiUser; accessToken: string; refreshToken: string }>(
+        "/auth/register",
+        {
+          method: "POST",
+          auth: false,
+          body: { email: input.email, password: input.password, fullName: input.fullName },
+        }
+      );
+      profileRepository.seedProfileFromAuth(
+        data.user.id,
+        data.user.fullName,
+        data.user.phone,
+        input.city,
+        input.state
+      );
       return { user: toAuthUser(data.user), access_token: data.accessToken };
     } catch (error) {
       throw new AuthError(getErrorMessage(error), error);
@@ -49,13 +67,22 @@ export const authRepository = {
 
   async signIn(input: LoginInput): Promise<AuthSession> {
     try {
-      const data = await apiRequest<{ user: ApiUser; accessToken: string; refreshToken: string }>("/auth/login", {
-        method: "POST",
-        auth: false,
-        body: { email: input.email, password: input.password },
-      });
+      const data = await apiRequest<{ user: ApiUser; accessToken: string; refreshToken: string }>(
+        "/auth/login",
+        {
+          method: "POST",
+          auth: false,
+          body: { email: input.email, password: input.password },
+        }
+      );
       tokenStore.setTokens(data.accessToken, data.refreshToken);
-      profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone, DEFAULT_PROFILE_CITY, DEFAULT_PROFILE_STATE);
+      profileRepository.seedProfileFromAuth(
+        data.user.id,
+        data.user.fullName,
+        data.user.phone,
+        DEFAULT_PROFILE_CITY,
+        DEFAULT_PROFILE_STATE
+      );
       const session: AuthSession = { user: toAuthUser(data.user), access_token: data.accessToken };
       emitAuthChange("SIGNED_IN", session);
       return session;
@@ -75,7 +102,13 @@ export const authRepository = {
 
     try {
       const user = await apiRequest<ApiUser>("/auth/me");
-      profileRepository.seedProfileFromAuth(user.id, user.fullName, user.phone, DEFAULT_PROFILE_CITY, DEFAULT_PROFILE_STATE);
+      profileRepository.seedProfileFromAuth(
+        user.id,
+        user.fullName,
+        user.phone,
+        DEFAULT_PROFILE_CITY,
+        DEFAULT_PROFILE_STATE
+      );
       return { user: toAuthUser(user), access_token: tokenStore.getAccessToken()! };
     } catch {
       tokenStore.clear();

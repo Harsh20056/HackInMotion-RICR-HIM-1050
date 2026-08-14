@@ -22,12 +22,12 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     }
 
     setChecking(true);
-    adminService.getUserRole(user.id)
+    adminService
+      .getUserRole(user.id)
       .then((res) => {
-        const isAllowed = res.role ? hasPermission(
-          { role: res.role, department: res.department },
-          "view:admin_dashboard"
-        ) : false;
+        const isAllowed = res.role
+          ? hasPermission({ role: res.role, department: res.department }, "view:admin_dashboard")
+          : false;
         setAuthorized(isAllowed);
         setChecking(false);
       })

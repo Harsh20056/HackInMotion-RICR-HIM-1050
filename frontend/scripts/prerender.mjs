@@ -135,7 +135,9 @@ try {
       const outDir = route === "/" ? DIST : path.join(DIST, route.replace(/^\//, ""));
       await mkdir(outDir, { recursive: true });
       await writeFile(path.join(outDir, "index.html"), html, "utf8");
-      console.log(`prerendered ${route} -> ${path.relative(DIST, path.join(outDir, "index.html"))} (${Math.round(html.length / 1024)} KB)`);
+      console.log(
+        `prerendered ${route} -> ${path.relative(DIST, path.join(outDir, "index.html"))} (${Math.round(html.length / 1024)} KB)`
+      );
     } catch (err) {
       failed++;
       console.error(`FAILED to prerender ${route}: ${err.message}`);

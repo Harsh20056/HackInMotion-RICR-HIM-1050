@@ -170,13 +170,18 @@ const transferSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
 
-workOrdersRouter.get("/:id/transfers", authenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
-  try {
-    res.json({ items: await coordinationService.listTransfers(req.params.id as string, req.auth!) });
-  } catch (err) {
-    next(err);
+workOrdersRouter.get(
+  "/:id/transfers",
+  authenticate,
+  validate(uuidParam("id"), "params"),
+  async (req, res, next) => {
+    try {
+      res.json({ items: await coordinationService.listTransfers(req.params.id as string, req.auth!) });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 workOrdersRouter.post(
   "/:id/transfers",

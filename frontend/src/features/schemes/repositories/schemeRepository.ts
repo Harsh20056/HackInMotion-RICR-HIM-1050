@@ -1,14 +1,6 @@
 import { Scheme } from "@/shared/types/domain/Scheme";
 import React from "react";
-import { 
-  Home, 
-  Heart, 
-  GraduationCap,
-  Sprout,
-  Wrench,
-  Coins,
-  Banknote
-} from "lucide-react";
+import { Home, Heart, GraduationCap, Sprout, Wrench, Coins, Banknote } from "lucide-react";
 
 const mockSchemes: Scheme[] = [
   {
@@ -32,8 +24,10 @@ const mockSchemes: Scheme[] = [
     id: "2",
     titleEn: "Ayushman Bharat (PM-JAY)",
     titleHi: "आयुष्मान भारत (PM-JAY)",
-    descriptionEn: "Free health cover of up to ₹5 Lakh per family per year for secondary and tertiary hospitalization care.",
-    descriptionHi: "माध्यमिक और तृतीयक अस्पताल में भर्ती देखभाल के लिए प्रति परिवार प्रति वर्ष ₹5 लाख तक का मुफ्त स्वास्थ्य कवरेज।",
+    descriptionEn:
+      "Free health cover of up to ₹5 Lakh per family per year for secondary and tertiary hospitalization care.",
+    descriptionHi:
+      "माध्यमिक और तृतीयक अस्पताल में भर्ती देखभाल के लिए प्रति परिवार प्रति वर्ष ₹5 लाख तक का मुफ्त स्वास्थ्य कवरेज।",
     categoryEn: "Healthcare",
     categoryHi: "स्वास्थ्य",
     eligibilityEn: ["Income < ₹2.5L", "No government insurance", "Identified in low-income database"],
@@ -47,8 +41,10 @@ const mockSchemes: Scheme[] = [
     id: "3",
     titleEn: "PM Kisan Samman Nidhi (PM-KISAN)",
     titleHi: "पीएम किसान सम्मान निधि (PM-KISAN)",
-    descriptionEn: "Direct income support of ₹6,000 per year in three equal installments to small and marginal farmer families.",
-    descriptionHi: "छोटे और सीमांत किसान परिवारों को प्रति वर्ष ₹6,000 की प्रत्यक्ष आय सहायता तीन समान किश्तों में।",
+    descriptionEn:
+      "Direct income support of ₹6,000 per year in three equal installments to small and marginal farmer families.",
+    descriptionHi:
+      "छोटे और सीमांत किसान परिवारों को प्रति वर्ष ₹6,000 की प्रत्यक्ष आय सहायता तीन समान किश्तों में।",
     categoryEn: "Agriculture",
     categoryHi: "कृषि",
     eligibilityEn: ["Small/marginal farmer", "Owns cultivable land", "Occupation: Farmer"],
@@ -64,8 +60,10 @@ const mockSchemes: Scheme[] = [
     id: "4",
     titleEn: "PM Vishwakarma Scheme",
     titleHi: "पीएम विश्वकर्मा योजना",
-    descriptionEn: "End-to-end support to traditional artisans and craftspeople with skill training, toolkits, and collateral-free credit.",
-    descriptionHi: "पारंपरिक कारीगरों और शिल्पकारों को कौशल प्रशिक्षण, टूलकिट और संपार्श्विक-मुक्त ऋण के साथ एंड-टू-एंड सहायता।",
+    descriptionEn:
+      "End-to-end support to traditional artisans and craftspeople with skill training, toolkits, and collateral-free credit.",
+    descriptionHi:
+      "पारंपरिक कारीगरों और शिल्पकारों को कौशल प्रशिक्षण, टूलकिट और संपार्श्विक-मुक्त ऋण के साथ एंड-टू-एंड सहायता।",
     categoryEn: "Employment",
     categoryHi: "रोजगार",
     eligibilityEn: ["Occupation: Artisan / Craftsperson", "Age 18+"],
@@ -79,8 +77,10 @@ const mockSchemes: Scheme[] = [
     id: "5",
     titleEn: "National Scholarship Portal (NSP)",
     titleHi: "राष्ट्रीय छात्रवृत्ति पोर्टल (NSP)",
-    descriptionEn: "Financial aid and scholarship programs for meritorious students from pre-matric to post-doctoral level.",
-    descriptionHi: "प्री-मैट्रिक से पोस्ट-डॉक्टोरल स्तर तक के मेधावी छात्रों के लिए वित्तीय सहायता और छात्रवृत्ति कार्यक्रम।",
+    descriptionEn:
+      "Financial aid and scholarship programs for meritorious students from pre-matric to post-doctoral level.",
+    descriptionHi:
+      "प्री-मैट्रिक से पोस्ट-डॉक्टोरल स्तर तक के मेधावी छात्रों के लिए वित्तीय सहायता और छात्रवृत्ति कार्यक्रम।",
     categoryEn: "Education",
     categoryHi: "शिक्षा",
     eligibilityEn: ["Occupation: Student", "Annual family income < ₹2L"],
@@ -96,8 +96,10 @@ const mockSchemes: Scheme[] = [
     id: "6",
     titleEn: "Lakhpati Didi Scheme",
     titleHi: "लखपति दीदी योजना",
-    descriptionEn: "Skill development and financial training for women in Self-Help Groups (SHGs) to earn at least ₹1 Lakh per year.",
-    descriptionHi: "स्वयं सहायता समूहों (SHGs) की महिलाओं को प्रति वर्ष कम से कम ₹1 लाख कमाने के लिए कौशल विकास और वित्तीय प्रशिक्षण।",
+    descriptionEn:
+      "Skill development and financial training for women in Self-Help Groups (SHGs) to earn at least ₹1 Lakh per year.",
+    descriptionHi:
+      "स्वयं सहायता समूहों (SHGs) की महिलाओं को प्रति वर्ष कम से कम ₹1 लाख कमाने के लिए कौशल विकास और वित्तीय प्रशिक्षण।",
     categoryEn: "Women Welfare",
     categoryHi: "महिला कल्याण",
     eligibilityEn: ["Gender: Female", "Member of Self Help Group (SHG)"],
@@ -111,8 +113,10 @@ const mockSchemes: Scheme[] = [
     id: "7",
     titleEn: "PM Mudra Yojana (PMMY)",
     titleHi: "पीएम मुद्रा योजना (PMMY)",
-    descriptionEn: "Collateral-free loans up to ₹10 Lakhs to micro/small business enterprises for non-farm income-generating activities.",
-    descriptionHi: "गैर-कृषि आय-उत्पादक गतिविधियों के लिए सूक्ष्म/लघु उद्यमों को ₹10 लाख तक का संपार्श्विक-मुक्त ऋण।",
+    descriptionEn:
+      "Collateral-free loans up to ₹10 Lakhs to micro/small business enterprises for non-farm income-generating activities.",
+    descriptionHi:
+      "गैर-कृषि आय-उत्पादक गतिविधियों के लिए सूक्ष्म/लघु उद्यमों को ₹10 लाख तक का संपार्श्विक-मुक्त ऋण।",
     categoryEn: "Business & Loans",
     categoryHi: "व्यवसाय और ऋण",
     eligibilityEn: ["Self-employed or micro-business owner", "No default on past loans"],
@@ -121,7 +125,7 @@ const mockSchemes: Scheme[] = [
     trustScore: 99,
     icon: React.createElement(Banknote, { className: "w-5 h-5" }),
     requiredDocuments: ["aadhaar", "pan", "income"],
-  }
+  },
 ];
 
 export const schemeRepository = {

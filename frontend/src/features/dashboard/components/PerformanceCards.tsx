@@ -29,8 +29,12 @@ export function DepartmentPerformanceCard() {
           <thead>
             <tr className="text-muted-foreground border-b border-border text-left">
               <th className="py-2.5 font-semibold text-sm">{language === "en" ? "Department" : "विभाग"}</th>
-              <th className="py-2.5 text-center font-semibold text-sm">{language === "en" ? "Open" : "खुले"}</th>
-              <th className="py-2.5 text-center font-semibold text-sm">{language === "en" ? "Resolved" : "हल"}</th>
+              <th className="py-2.5 text-center font-semibold text-sm">
+                {language === "en" ? "Open" : "खुले"}
+              </th>
+              <th className="py-2.5 text-center font-semibold text-sm">
+                {language === "en" ? "Resolved" : "हल"}
+              </th>
               <th className="py-2.5 text-right font-semibold text-sm">{language === "en" ? "Rate" : "दर"}</th>
             </tr>
           </thead>
@@ -38,8 +42,12 @@ export function DepartmentPerformanceCard() {
             {departments.slice(0, 4).map((dept) => (
               <tr key={dept.departmentId} className="hover:bg-muted/20 transition-colors">
                 <td className="py-3 font-semibold text-foreground pr-2 text-sm">{dept.nameEn}</td>
-                <td className="py-3 text-center text-muted-foreground font-medium text-sm">{dept.openIssues}</td>
-                <td className="py-3 text-center text-muted-foreground font-medium text-sm">{dept.resolvedIssues}</td>
+                <td className="py-3 text-center text-muted-foreground font-medium text-sm">
+                  {dept.openIssues}
+                </td>
+                <td className="py-3 text-center text-muted-foreground font-medium text-sm">
+                  {dept.resolvedIssues}
+                </td>
                 <td className="py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                   {dept.resolutionRate}%
                 </td>
@@ -76,9 +84,7 @@ export function IssueHotspotsCard() {
         {hotspots.slice(0, 3).map((spot, idx) => (
           <button
             key={`${spot.latitude},${spot.longitude}`}
-            onClick={() =>
-              navigate(`${ROUTES.CIVIC_MAP}?lat=${spot.latitude}&lng=${spot.longitude}&zoom=14`)
-            }
+            onClick={() => navigate(`${ROUTES.CIVIC_MAP}?lat=${spot.latitude}&lng=${spot.longitude}&zoom=14`)}
             className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/40 hover:bg-muted/40 hover:border-primary/30 transition-all text-left group cursor-pointer"
           >
             <div className="w-7 h-7 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">

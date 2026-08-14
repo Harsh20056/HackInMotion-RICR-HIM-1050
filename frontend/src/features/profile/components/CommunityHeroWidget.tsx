@@ -45,7 +45,7 @@ export function CommunityHeroWidget() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [supportedIssues, setSupportedIssues] = useState<Issue[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
-  
+
   const [shouldPulse, setShouldPulse] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -76,7 +76,8 @@ export function CommunityHeroWidget() {
 
       setStatsLoaded(true);
 
-      profileService.getProfile(user.id)
+      profileService
+        .getProfile(user.id)
         .then((prof) => setUserProfile(prof))
         .catch(() => {});
     } catch {
@@ -120,9 +121,10 @@ export function CommunityHeroWidget() {
       didUpdate = true;
       toast({
         title: language === "en" ? "⭐ Level Up!" : "⭐ स्तर बढ़ा!",
-        description: language === "en"
-          ? `You reached Level ${progress.level}! (${progress.rank})`
-          : `आप स्तर ${progress.level} पर पहुँच गए हैं! (${progress.rank})`,
+        description:
+          language === "en"
+            ? `You reached Level ${progress.level}! (${progress.rank})`
+            : `आप स्तर ${progress.level} पर पहुँच गए हैं! (${progress.rank})`,
       });
     }
 
@@ -220,9 +222,7 @@ export function CommunityHeroWidget() {
           </>
         )}
         <Award className={`w-4 h-4 text-primary ${shouldPulse ? "animate-spin" : ""}`} />
-        <span className="text-xs font-bold text-foreground">
-          Lv.{progress.level}
-        </span>
+        <span className="text-xs font-bold text-foreground">Lv.{progress.level}</span>
         <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center overflow-hidden">
           <User className="w-3.5 h-3.5" />
         </div>

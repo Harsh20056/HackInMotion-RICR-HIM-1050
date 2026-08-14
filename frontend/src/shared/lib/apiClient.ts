@@ -93,7 +93,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    throw new APIError(errorBody?.error?.message || `Request failed: ${response.status}`, response.status, errorBody);
+    throw new APIError(
+      errorBody?.error?.message || `Request failed: ${response.status}`,
+      response.status,
+      errorBody
+    );
   }
 
   if (response.status === 204) return undefined as T;

@@ -66,7 +66,11 @@ export function ResolutionReviewPanel({ issueId, onReviewed }: Props) {
               )
             }
           >
-            {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />}
+            {submitting ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+            )}
             {language === "en" ? "Yes, it's fixed" : "हाँ, ठीक हो गया"}
           </Button>
           <Button size="sm" variant="outline" disabled={submitting} onClick={() => setMode("reopening")}>

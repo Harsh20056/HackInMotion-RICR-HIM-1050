@@ -112,84 +112,103 @@ export default function TransparencyPage() {
 
       {data && (
         <>
-      {/* City-wide summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 my-6">
-        {[
-          { label: language === "en" ? "Work Orders" : "कार्य आदेश", value: data.city.totalWorkOrders, icon: Building2 },
-          { label: language === "en" ? "Resolved" : "हल", value: `${data.city.resolutionRate}%`, icon: TrendingUp },
-          {
-            label: language === "en" ? "SLA Compliance" : "एसएलए अनुपालन",
-            value: data.city.slaCompliance === null ? "—" : `${data.city.slaCompliance}%`,
-            icon: ShieldCheck,
-          },
-          { label: language === "en" ? "Open Backlog" : "लंबित", value: data.city.openBacklog, icon: Clock },
-          { label: language === "en" ? "Breached" : "उल्लंघन", value: data.city.currentlyBreached, icon: AlertTriangle },
-        ].map((card) => (
-          <div key={card.label} className="bg-card border border-border rounded-2xl p-4">
-            <card.icon className="w-4 h-4 text-primary mb-2" />
-            <p className="text-2xl font-extrabold text-foreground">{card.value}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{card.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Department cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {data.departments.map((d) => (
-          <div key={d.departmentId} className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-sm font-bold text-foreground">{d.name}</h2>
-              {d.currentlyBreached > 0 && (
-                <Badge variant="outline" className="text-[10px] text-red-600 border-red-500/25 bg-red-500/5 shrink-0">
-                  {d.currentlyBreached} {language === "en" ? "breached" : "उल्लंघन"}
-                </Badge>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-              <Metric
-                label={language === "en" ? "Resolution rate" : "समाधान दर"}
-                value={`${d.resolutionRate}%`}
-              />
-              <Metric
-                label={language === "en" ? "SLA compliance" : "एसएलए अनुपालन"}
-                value={d.slaCompliance === null ? "—" : `${d.slaCompliance}%`}
-                tone={complianceTone(d.slaCompliance)}
-              />
-              <Metric
-                label={language === "en" ? "Avg resolution" : "औसत समाधान"}
-                value={hours(d.avgResolutionHours, language)}
-              />
-              <Metric
-                label={language === "en" ? "90th percentile" : "90वां प्रतिशतक"}
-                value={hours(d.p90ResolutionHours, language)}
-              />
-              <Metric
-                label={language === "en" ? "Open backlog" : "लंबित कार्य"}
-                value={String(d.openBacklog)}
-              />
-              <Metric
-                label={language === "en" ? "Total handled" : "कुल"}
-                value={String(d.totalWorkOrders)}
-              />
-            </div>
-
-            {/* Resolution rate bar */}
-            <div className="mt-4">
-              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${Math.min(100, d.resolutionRate)}%` }}
-                />
+          {/* City-wide summary */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 my-6">
+            {[
+              {
+                label: language === "en" ? "Work Orders" : "कार्य आदेश",
+                value: data.city.totalWorkOrders,
+                icon: Building2,
+              },
+              {
+                label: language === "en" ? "Resolved" : "हल",
+                value: `${data.city.resolutionRate}%`,
+                icon: TrendingUp,
+              },
+              {
+                label: language === "en" ? "SLA Compliance" : "एसएलए अनुपालन",
+                value: data.city.slaCompliance === null ? "—" : `${data.city.slaCompliance}%`,
+                icon: ShieldCheck,
+              },
+              {
+                label: language === "en" ? "Open Backlog" : "लंबित",
+                value: data.city.openBacklog,
+                icon: Clock,
+              },
+              {
+                label: language === "en" ? "Breached" : "उल्लंघन",
+                value: data.city.currentlyBreached,
+                icon: AlertTriangle,
+              },
+            ].map((card) => (
+              <div key={card.label} className="bg-card border border-border rounded-2xl p-4">
+                <card.icon className="w-4 h-4 text-primary mb-2" />
+                <p className="text-2xl font-extrabold text-foreground">{card.value}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{card.label}</p>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <p className="text-[10px] text-muted-foreground mt-6 text-center">
-        {language === "en" ? "Generated" : "जनरेट"} {new Date(data.generatedAt).toLocaleString()}
-      </p>
+          {/* Department cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.departments.map((d) => (
+              <div key={d.departmentId} className="bg-card border border-border rounded-2xl p-5">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <h2 className="text-sm font-bold text-foreground">{d.name}</h2>
+                  {d.currentlyBreached > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] text-red-600 border-red-500/25 bg-red-500/5 shrink-0"
+                    >
+                      {d.currentlyBreached} {language === "en" ? "breached" : "उल्लंघन"}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                  <Metric
+                    label={language === "en" ? "Resolution rate" : "समाधान दर"}
+                    value={`${d.resolutionRate}%`}
+                  />
+                  <Metric
+                    label={language === "en" ? "SLA compliance" : "एसएलए अनुपालन"}
+                    value={d.slaCompliance === null ? "—" : `${d.slaCompliance}%`}
+                    tone={complianceTone(d.slaCompliance)}
+                  />
+                  <Metric
+                    label={language === "en" ? "Avg resolution" : "औसत समाधान"}
+                    value={hours(d.avgResolutionHours, language)}
+                  />
+                  <Metric
+                    label={language === "en" ? "90th percentile" : "90वां प्रतिशतक"}
+                    value={hours(d.p90ResolutionHours, language)}
+                  />
+                  <Metric
+                    label={language === "en" ? "Open backlog" : "लंबित कार्य"}
+                    value={String(d.openBacklog)}
+                  />
+                  <Metric
+                    label={language === "en" ? "Total handled" : "कुल"}
+                    value={String(d.totalWorkOrders)}
+                  />
+                </div>
+
+                {/* Resolution rate bar */}
+                <div className="mt-4">
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${Math.min(100, d.resolutionRate)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[10px] text-muted-foreground mt-6 text-center">
+            {language === "en" ? "Generated" : "जनरेट"} {new Date(data.generatedAt).toLocaleString()}
+          </p>
         </>
       )}
     </div>

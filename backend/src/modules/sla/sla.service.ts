@@ -99,12 +99,7 @@ export const slaService = {
   },
 
   /** Computes ack/resolve deadlines for a work order about to be created. */
-  async computeDueDates(params: {
-    categoryId: string;
-    departmentId: string;
-    priority: number;
-    from: Date;
-  }) {
+  async computeDueDates(params: { categoryId: string; departmentId: string; priority: number; from: Date }) {
     const policy = await this.resolvePolicy(params);
     if (!policy) return { slaPolicyId: null, ackDueAt: null, dueAt: null };
 

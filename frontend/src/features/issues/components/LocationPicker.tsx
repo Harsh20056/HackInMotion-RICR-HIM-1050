@@ -93,9 +93,7 @@ export default function LocationPicker({
     if (!mapContainerRef.current || mapInstance) return;
 
     const initialCenter: L.LatLngExpression =
-      latitude !== null && longitude !== null
-        ? [latitude, longitude]
-        : [20.5937, 78.9629]; // default to India center
+      latitude !== null && longitude !== null ? [latitude, longitude] : [20.5937, 78.9629]; // default to India center
     const initialZoom = latitude !== null && longitude !== null ? 15 : 5;
 
     const map = L.map(mapContainerRef.current, {
@@ -351,9 +349,7 @@ export default function LocationPicker({
           <Input
             type="text"
             placeholder={
-              language === "en"
-                ? "Search for precise location or address..."
-                : "सटीक स्थान या पता खोजें..."
+              language === "en" ? "Search for precise location or address..." : "सटीक स्थान या पता खोजें..."
             }
             value={searchQuery}
             onChange={(e) => {
@@ -426,7 +422,10 @@ export default function LocationPicker({
 
         {/* Map Center helper message overlay */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[800] bg-card/90 backdrop-blur-sm border border-border/80 rounded-full px-3.5 py-1 text-[10px] font-medium text-muted-foreground shadow-md select-none">
-          📍 {language === "en" ? "Move marker or click map for precision" : "सटीक स्थिति के लिए मार्कर खिसकाएं या नक्शे पर क्लिक करें"}
+          📍{" "}
+          {language === "en"
+            ? "Move marker or click map for precision"
+            : "सटीक स्थिति के लिए मार्कर खिसकाएं या नक्शे पर क्लिक करें"}
         </div>
       </div>
 

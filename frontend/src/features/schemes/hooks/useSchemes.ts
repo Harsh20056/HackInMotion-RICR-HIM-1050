@@ -75,8 +75,7 @@ function checkEligibility(scheme: Scheme, _profile: Profile): boolean {
     if (lower.includes("income") || lower.includes("₹")) {
       totalChecked++;
       // Extract comparison operator and amount
-      const ltMatch =
-        criterion.match(/[<≤]\s*₹?([\d.]+\s*[lLcC]?[\w]*)/i);
+      const ltMatch = criterion.match(/[<≤]\s*₹?([\d.]+\s*[lLcC]?[\w]*)/i);
       if (ltMatch) {
         const threshold = parseIncomeRupees(ltMatch[1]);
         // We approximate using pincode-tier: if user has no income data,
@@ -187,9 +186,7 @@ export function useSchemes(user?: AuthUser | null, profile?: Profile | null) {
     const other: Scheme[] = [];
 
     for (const scheme of schemes) {
-      const isEligible = profile
-        ? checkEligibility(scheme, profile)
-        : scheme.isEligible;
+      const isEligible = profile ? checkEligibility(scheme, profile) : scheme.isEligible;
 
       if (isEligible) {
         eligible.push({ ...scheme, isEligible: true });

@@ -12,21 +12,12 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import {
-  dashboardService,
-  CATEGORY_COLORS,
-} from "../services/dashboardService";
+import { dashboardService, CATEGORY_COLORS } from "../services/dashboardService";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
-import {
-  BarChart3,
-  TrendingUp,
-  PieChart as PieIcon,
-  Sparkles,
-  AlertTriangle,
-} from "lucide-react";
+import { BarChart3, TrendingUp, PieChart as PieIcon, Sparkles, AlertTriangle } from "lucide-react";
 
 const TICK = { fill: "#9ca3af", fontSize: 11 };
 
@@ -64,12 +55,18 @@ function parseBoldText(text: string) {
 export function AnalyticsPanel() {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const { overview, departments = [], hotspots = [], trends = [], byPriority = [], loading, error } = useAnalytics();
+  const {
+    overview,
+    departments = [],
+    hotspots = [],
+    trends = [],
+    byPriority = [],
+    loading,
+    error,
+  } = useAnalytics();
 
   if (loading) {
-    return (
-      <LoadingState message={language === "en" ? "Loading analytics…" : "विश्लेषण लोड हो रहा है…"} />
-    );
+    return <LoadingState message={language === "en" ? "Loading analytics…" : "विश्लेषण लोड हो रहा है…"} />;
   }
 
   if (error) {
@@ -103,17 +100,18 @@ export function AnalyticsPanel() {
 
   const isDeptAdmin = departments.length === 1;
 
-  const chartData = isDeptAdmin && byPriority && byPriority.length > 0
-    ? byPriority.map(p => ({
-        name: language === "en" ? p.nameEn : p.nameHi,
-        count: p.count,
-        color: p.color,
-      }))
-    : overview.byCategory.map((c) => ({
-        name: c.nameEn,
-        count: c.count,
-        color: CATEGORY_COLORS[c.nameEn] ?? "#6366f1",
-      }));
+  const chartData =
+    isDeptAdmin && byPriority && byPriority.length > 0
+      ? byPriority.map((p) => ({
+          name: language === "en" ? p.nameEn : p.nameHi,
+          count: p.count,
+          color: p.color,
+        }))
+      : overview.byCategory.map((c) => ({
+          name: c.nameEn,
+          count: c.count,
+          color: CATEGORY_COLORS[c.nameEn] ?? "#6366f1",
+        }));
 
   const trendData = trends.map((t) => ({ month: t.month, reported: t.reported, resolved: t.resolved }));
 
@@ -129,10 +127,13 @@ export function AnalyticsPanel() {
           <div className="flex items-center gap-2 mb-4">
             <PieIcon className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold text-foreground">
-              {isDeptAdmin 
-                ? (language === "en" ? "Issues by Priority" : "प्राथमिकता के आधार पर मुद्दे")
-                : (language === "en" ? "[Chart: Issues by Category & Status]" : "[चार्ट: श्रेणी व स्थिति]")
-              }
+              {isDeptAdmin
+                ? language === "en"
+                  ? "Issues by Priority"
+                  : "प्राथमिकता के आधार पर मुद्दे"
+                : language === "en"
+                  ? "[Chart: Issues by Category & Status]"
+                  : "[चार्ट: श्रेणी व स्थिति]"}
             </h3>
             {!isDeptAdmin && (
               <span className="text-[10px] text-muted-foreground ml-auto">
@@ -146,9 +147,9 @@ export function AnalyticsPanel() {
               <XAxis type="number" tick={TICK} allowDecimals={false} />
               <YAxis type="category" dataKey="name" tick={TICK} width={110} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: "#64748b18" }} />
-              <Bar 
-                dataKey="count" 
-                radius={[0, 6, 6, 0]} 
+              <Bar
+                dataKey="count"
+                radius={[0, 6, 6, 0]}
                 onClick={!isDeptAdmin ? (d: any) => handleCategoryClick(d.name) : undefined}
               >
                 {chartData.map((entry, idx) => (
@@ -226,4 +227,3 @@ export function AnalyticsPanel() {
     </div>
   );
 }
-

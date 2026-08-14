@@ -95,7 +95,10 @@ export const visionService = {
         id: true,
         title: true,
         resolutionNote: true,
-        media: { select: { id: true, kind: true, url: true, createdAt: true }, orderBy: { createdAt: "asc" } },
+        media: {
+          select: { id: true, kind: true, url: true, createdAt: true },
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
     if (!issue) return;

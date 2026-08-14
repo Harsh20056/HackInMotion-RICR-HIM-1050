@@ -14,12 +14,20 @@ function getCategoryCode(category: string): string {
   if (!category) return "";
   const normalized = category.toLowerCase().trim();
   if (normalized.includes("water")) return "water";
-  if (normalized.includes("sanitation") || normalized.includes("garbage") || normalized.includes("trash")) return "sanitation";
-  if (normalized.includes("electricity") || normalized.includes("electric") || normalized.includes("power")) return "electricity";
+  if (normalized.includes("sanitation") || normalized.includes("garbage") || normalized.includes("trash"))
+    return "sanitation";
+  if (normalized.includes("electricity") || normalized.includes("electric") || normalized.includes("power"))
+    return "electricity";
   if (normalized.includes("road")) return "roads";
   if (normalized.includes("park") || normalized.includes("garden")) return "parks";
   if (normalized.includes("building")) return "buildings";
-  if (normalized.includes("metro") || normalized.includes("station") || normalized.includes("train") || normalized.includes("transit")) return "metro";
+  if (
+    normalized.includes("metro") ||
+    normalized.includes("station") ||
+    normalized.includes("train") ||
+    normalized.includes("transit")
+  )
+    return "metro";
   return normalized;
 }
 
@@ -80,12 +88,8 @@ export function useDashboardIssues(
         setIssues((prev) => [newIssue, ...prev]);
       } else if (payload.eventType === "UPDATE") {
         const updatedIssue = issueService.mapResponseToDomain(payload.new as any);
-        setAllIssues((prev) =>
-          prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue))
-        );
-        setIssues((prev) =>
-          prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue))
-        );
+        setAllIssues((prev) => prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue)));
+        setIssues((prev) => prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue)));
       } else if (payload.eventType === "DELETE") {
         setAllIssues((prev) => prev.filter((issue) => issue.id !== payload.old.id));
         setIssues((prev) => prev.filter((issue) => issue.id !== payload.old.id));
@@ -100,7 +104,7 @@ export function useDashboardIssues(
   const fetchIssues = async () => {
     try {
       setLoading(true);
-      
+
       let limit = userCoords ? 100 : 20;
       let isDeptAdminUser = false;
       let userDeptCode: string | null = null;
@@ -114,7 +118,7 @@ export function useDashboardIssues(
             userCity = roleInfo.city;
             limit = 500; // fetch all so we can filter correctly on frontend
             const depts = await adminService.listDepartments();
-            const found = depts.find(d => d.id === roleInfo.department);
+            const found = depts.find((d) => d.id === roleInfo.department);
             if (found) {
               userDeptCode = found.code;
             }
@@ -129,11 +133,18 @@ export function useDashboardIssues(
 
       if (isDeptAdminUser && userDeptCode) {
         mapped = mapped.filter((issue) => {
-          if (userCity && (!issue.location || !issue.location.toLowerCase().includes(userCity.toLowerCase()))) {
+          if (
+            userCity &&
+            (!issue.location || !issue.location.toLowerCase().includes(userCity.toLowerCase()))
+          ) {
             return false;
           }
           const categoryObj: any = issue.category;
-          const issueCategoryCode = categoryObj ? (typeof categoryObj === 'object' ? categoryObj.code : categoryObj) : '';
+          const issueCategoryCode = categoryObj
+            ? typeof categoryObj === "object"
+              ? categoryObj.code
+              : categoryObj
+            : "";
           if (userDeptCode && !doesCategoryBelongToDepartment(issueCategoryCode, userDeptCode)) {
             return false;
           }
@@ -151,12 +162,7 @@ export function useDashboardIssues(
         const withDistance = mapped
           .filter((issue) => issue.latitude !== null && issue.longitude !== null)
           .map((issue) => {
-            const dist = haversineDistance(
-              userCoords.lat,
-              userCoords.lng,
-              issue.latitude!,
-              issue.longitude!
-            );
+            const dist = haversineDistance(userCoords.lat, userCoords.lng, issue.latitude!, issue.longitude!);
             return { issue, dist };
           });
 

@@ -29,12 +29,9 @@ export const aiService = {
    * TEMPORARY — backend pending (Phase 2). Delegates to the standalone
    * analyzeFormDirect(), which reports a backend-pending status.
    */
-  async analyzeFormDirect(
-    file: File,
-    userQuery?: string
-  ): Promise<FormAnalysisResult> {
+  async analyzeFormDirect(file: File, userQuery?: string): Promise<FormAnalysisResult> {
     return analyzeFormDirect(file, userQuery);
-  }
+  },
 };
 
 export interface FormAnalysisResult {
@@ -70,10 +67,7 @@ export interface FormAnalysisResult {
   };
 }
 
-export async function analyzeFormDirect(
-  file: File,
-  _userQuery?: string
-): Promise<FormAnalysisResult> {
+export async function analyzeFormDirect(file: File, _userQuery?: string): Promise<FormAnalysisResult> {
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
     throw new Error("File size must be under 10MB");
@@ -98,9 +92,7 @@ export async function analyzeFormDirect(
  * NVIDIA NIM vision models accept images (JPEG/PNG/WebP) but NOT raw PDFs.
  * We rasterise at 2x scale (144 DPI) for sharp, readable form text.
  */
-export async function pdfFirstPageToJpeg(
-  file: File
-): Promise<{ base64: string; mimeType: string }> {
+export async function pdfFirstPageToJpeg(file: File): Promise<{ base64: string; mimeType: string }> {
   // Dynamic import keeps pdfjs out of the initial bundle
   const pdfjsLib = await import("pdfjs-dist");
 
@@ -130,4 +122,3 @@ export async function pdfFirstPageToJpeg(
   const base64 = dataUrl.split(",")[1];
   return { base64, mimeType: "image/jpeg" };
 }
-

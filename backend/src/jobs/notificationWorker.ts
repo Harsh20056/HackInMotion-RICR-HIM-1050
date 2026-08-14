@@ -48,11 +48,18 @@ export async function runNotificationDispatch(batchSize = 50): Promise<{ sent: n
       continue;
     }
 
-    const copy = renderTemplate(n.template as NotificationTemplate, (n.payload ?? {}) as Record<string, unknown>);
+    const copy = renderTemplate(
+      n.template as NotificationTemplate,
+      (n.payload ?? {}) as Record<string, unknown>
+    );
     let to = n.recipient.email;
     if (env.NODE_ENV !== "production" && env.DEV_EMAIL_OVERRIDE) {
       logger.info(
-        { intendedRecipient: n.recipient.email, overrideRecipient: env.DEV_EMAIL_OVERRIDE, notificationId: n.id },
+        {
+          intendedRecipient: n.recipient.email,
+          overrideRecipient: env.DEV_EMAIL_OVERRIDE,
+          notificationId: n.id,
+        },
         "DEV_EMAIL_OVERRIDE active — redirecting outbound email"
       );
       to = env.DEV_EMAIL_OVERRIDE;

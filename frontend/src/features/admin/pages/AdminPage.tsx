@@ -9,8 +9,16 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import {
-  Shield, ShieldAlert, LayoutDashboard, MapPin, ChevronLeft, ChevronRight,
-  Wifi, WifiOff, AlertTriangle, ThumbsUp,
+  Shield,
+  ShieldAlert,
+  LayoutDashboard,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Wifi,
+  WifiOff,
+  AlertTriangle,
+  ThumbsUp,
 } from "lucide-react";
 import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
@@ -99,7 +107,9 @@ export default function AdminPage() {
   if (authLoading || isAdmin === null) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <LoadingState message={language === "en" ? "Loading admin data..." : "प्रशासक डेटा लोड हो रहा है..."} />
+        <LoadingState
+          message={language === "en" ? "Loading admin data..." : "प्रशासक डेटा लोड हो रहा है..."}
+        />
       </div>
     );
   }
@@ -155,11 +165,7 @@ export default function AdminPage() {
               {/* Naming the jurisdiction is what makes a short queue legible:
                   without it a city-scoped list looks like missing data. */}
               {" · "}
-              {activeCity
-                ? activeCity
-                : language === "en"
-                  ? "All cities"
-                  : "सभी शहर"}
+              {activeCity ? activeCity : language === "en" ? "All cities" : "सभी शहर"}
             </p>
           </div>
         </div>
@@ -178,7 +184,13 @@ export default function AdminPage() {
             }
           >
             {isRealTimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-            {isRealTimeConnected ? (language === "en" ? "Live" : "लाइव") : language === "en" ? "Offline" : "ऑफ़लाइन"}
+            {isRealTimeConnected
+              ? language === "en"
+                ? "Live"
+                : "लाइव"
+              : language === "en"
+                ? "Offline"
+                : "ऑफ़लाइन"}
           </span>
 
           {/* A department admin has no city control: the backend pins them to

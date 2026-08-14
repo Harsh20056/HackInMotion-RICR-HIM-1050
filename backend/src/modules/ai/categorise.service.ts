@@ -20,7 +20,11 @@ import {
 
 export const categoriseService = {
   /** Synchronous suggestion for the report form. Returns null when AI is off. */
-  async suggest(input: { title: string; description: string; imageUrl?: string }): Promise<CategoriseResult | null> {
+  async suggest(input: {
+    title: string;
+    description: string;
+    imageUrl?: string;
+  }): Promise<CategoriseResult | null> {
     if (!aiEnabled()) return null;
     try {
       const { data } = await complete(

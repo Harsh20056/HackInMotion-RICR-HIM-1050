@@ -63,7 +63,10 @@ export interface CoordinationPlan {
   provider: string;
   model: string;
   promptVersion: string;
-  plan: { isCompound: boolean; subtasks: { order: number; department: string; summary: string; dependsOn: number[] }[] };
+  plan: {
+    isCompound: boolean;
+    subtasks: { order: number; department: string; summary: string; dependsOn: number[] }[];
+  };
   rationale: string;
   confidence: number;
   status: "applied" | "suggested" | "rejected";
@@ -86,7 +89,9 @@ export const coordinationApi = {
     }),
 
   workOrdersForIssue: (issueId: string) =>
-    apiRequest<{ items: CoordWorkOrder[] }>(`/issues/${issueId}/work-orders`, { auth: false }).then((r) => r.items),
+    apiRequest<{ items: CoordWorkOrder[] }>(`/issues/${issueId}/work-orders`, { auth: false }).then(
+      (r) => r.items
+    ),
 
   updateStatus: (workOrderId: string, status: string, note?: string) =>
     apiRequest(`/work-orders/${workOrderId}/status`, { method: "PATCH", body: { status, note } }),

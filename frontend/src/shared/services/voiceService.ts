@@ -85,11 +85,7 @@ const LANGUAGE_MAP: Record<VoiceLanguage, string> = {
 /** Resolve the SpeechRecognition constructor across browser vendors */
 function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
   if (typeof window === "undefined") return null;
-  return (
-    (window as any).SpeechRecognition ||
-    (window as any).webkitSpeechRecognition ||
-    null
-  );
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
 }
 
 // --------------------------------------------------------------------------
@@ -114,9 +110,7 @@ export const voiceService = {
     const SpeechRecognition = getSpeechRecognitionConstructor();
 
     if (!SpeechRecognition) {
-      options.onError?.(
-        "Speech recognition is not supported in this browser. Please use Chrome or Edge."
-      );
+      options.onError?.("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
       return () => {};
     }
 
@@ -124,8 +118,8 @@ export const voiceService = {
 
     // Configuration
     recognition.lang = LANGUAGE_MAP[options.language];
-    recognition.continuous = true;       // Keep recording until manually stopped
-    recognition.interimResults = true;   // Provide live interim results
+    recognition.continuous = true; // Keep recording until manually stopped
+    recognition.interimResults = true; // Provide live interim results
     recognition.maxAlternatives = 1;
 
     // Event handlers
@@ -162,8 +156,7 @@ export const voiceService = {
           errorMessage = "Microphone not found. Please check your microphone.";
           break;
         case "not-allowed":
-          errorMessage =
-            "Microphone access was denied. Please allow access in your browser settings.";
+          errorMessage = "Microphone access was denied. Please allow access in your browser settings.";
           break;
         case "network":
           errorMessage = "Network error during speech recognition.";

@@ -47,33 +47,33 @@ export interface VisionAnalysisOptions {
 
 /** Known civic-issue categories and their display names */
 const CIVIC_CLASS_MAP: Record<string, string> = {
-  pothole:      "Pothole",
-  garbage:      "Garbage / Waste",
-  trash:        "Garbage / Waste",
-  waste:        "Garbage / Waste",
-  flooding:     "Flooding",
+  pothole: "Pothole",
+  garbage: "Garbage / Waste",
+  trash: "Garbage / Waste",
+  waste: "Garbage / Waste",
+  flooding: "Flooding",
   waterlogging: "Waterlogging",
-  streetlight:  "Street Light Outage",
-  graffiti:     "Graffiti / Vandalism",
-  crack:        "Road Crack",
-  debris:       "Debris / Blockage",
-  civic:        "Civic Infrastructure",
-  drain:        "Drainage Issue",
-  sewer:        "Sewer / Sanitation",
+  streetlight: "Street Light Outage",
+  graffiti: "Graffiti / Vandalism",
+  crack: "Road Crack",
+  debris: "Debris / Blockage",
+  civic: "Civic Infrastructure",
+  drain: "Drainage Issue",
+  sewer: "Sewer / Sanitation",
 };
 
 /** Maps detected class to severity score */
 function estimateSeverity(classes: string[]): number {
-  const HIGH_SEVERITY   = ["flooding", "waterlogging", "sewer", "pothole"];
+  const HIGH_SEVERITY = ["flooding", "waterlogging", "sewer", "pothole"];
   const MEDIUM_SEVERITY = ["garbage", "trash", "waste", "debris", "crack"];
-  const LOW_SEVERITY    = ["graffiti", "streetlight", "drain", "civic"];
+  const LOW_SEVERITY = ["graffiti", "streetlight", "drain", "civic"];
 
   let maxScore = 1;
   for (const cls of classes) {
     const lower = cls.toLowerCase();
-    if (HIGH_SEVERITY.some((k) => lower.includes(k)))   maxScore = Math.max(maxScore, 4);
+    if (HIGH_SEVERITY.some((k) => lower.includes(k))) maxScore = Math.max(maxScore, 4);
     if (MEDIUM_SEVERITY.some((k) => lower.includes(k))) maxScore = Math.max(maxScore, 3);
-    if (LOW_SEVERITY.some((k) => lower.includes(k)))    maxScore = Math.max(maxScore, 2);
+    if (LOW_SEVERITY.some((k) => lower.includes(k))) maxScore = Math.max(maxScore, 2);
   }
   return maxScore;
 }
@@ -153,9 +153,7 @@ export const visionService = {
     const annotatedImage: string | null = raw?.annotatedImage ?? raw?.annotated_image ?? null;
 
     // Normalise class names using the civic map
-    const normalisedClasses = rawClasses.map(
-      (cls) => CIVIC_CLASS_MAP[cls.toLowerCase()] ?? cls
-    );
+    const normalisedClasses = rawClasses.map((cls) => CIVIC_CLASS_MAP[cls.toLowerCase()] ?? cls);
 
     const top = normalisedClasses[0] ?? "";
     const severity = estimateSeverity(rawClasses);

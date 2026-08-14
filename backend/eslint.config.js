@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals";
+import prettier from "eslint-config-prettier";
 
 /**
  * Backend lint rules.
@@ -49,5 +50,7 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "no-console": "off",
     },
-  }
+  },
+  // LAST: switches off every stylistic rule that would fight Prettier.
+  prettier
 );

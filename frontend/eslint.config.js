@@ -4,6 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import unusedImports from "eslint-plugin-unused-imports";
+import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -47,4 +48,6 @@ export default tseslint.config(
     files: ["tests/**/*.{ts,tsx}", "*.config.ts"],
     rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
+  // LAST: switches off every stylistic rule that would fight Prettier.
+  prettier
 );

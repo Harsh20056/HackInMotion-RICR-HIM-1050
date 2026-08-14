@@ -49,9 +49,12 @@ class EventBus extends EventEmitter {
    */
   onDepartment(departmentId: string, city: string | null, listener: (e: IssueEvent) => void): () => void {
     const channel = `department:${departmentId}`;
-    const scoped = city === null ? listener : (e: IssueEvent) => {
-      if (e.city === city) listener(e);
-    };
+    const scoped =
+      city === null
+        ? listener
+        : (e: IssueEvent) => {
+            if (e.city === city) listener(e);
+          };
     this.on(channel, scoped);
     return () => this.off(channel, scoped);
   }

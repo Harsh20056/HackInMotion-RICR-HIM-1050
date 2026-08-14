@@ -2,9 +2,9 @@ import { useSearchParams } from "react-router-dom";
 
 export interface MapUrlFilters {
   category: string | null;
-  status:   string | null;
-  city:     string | null;
-  issueId:  string | null;
+  status: string | null;
+  city: string | null;
+  issueId: string | null;
 }
 
 /**
@@ -21,8 +21,8 @@ export function useMapFiltersFromUrl(): MapUrlFilters {
   const [searchParams] = useSearchParams();
   return {
     category: searchParams.get("category"),
-    status:   searchParams.get("status"),
-    city:     searchParams.get("city"),
-    issueId:  searchParams.get("issueId"),
+    status: searchParams.get("status"),
+    city: searchParams.get("city"),
+    issueId: searchParams.get("issueId"),
   };
 }

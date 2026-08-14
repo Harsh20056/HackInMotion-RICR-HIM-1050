@@ -49,7 +49,7 @@ export const profileRepository = {
   async fetchProfile(userId: string, authUser?: AuthUser | null): Promise<ProfileResponse> {
     const profiles = mockTable.getAll<ProfileResponse>(PROFILES_TABLE);
     const existing = profiles.find((p) => p.user_id === userId);
-    
+
     const authFullName = (authUser?.user_metadata?.full_name as string) || "";
     const authPhone = (authUser?.user_metadata?.phone as string) || null;
 
@@ -97,7 +97,13 @@ export const profileRepository = {
     return mockTable.insert<ProfileResponse>(PROFILES_TABLE, created);
   },
 
-  seedProfileFromAuth(userId: string, fullName?: string, phone?: string | null, city?: string | null, state?: string | null): void {
+  seedProfileFromAuth(
+    userId: string,
+    fullName?: string,
+    phone?: string | null,
+    city?: string | null,
+    state?: string | null
+  ): void {
     const profiles = mockTable.getAll<ProfileResponse>(PROFILES_TABLE);
     const existing = profiles.find((p) => p.user_id === userId);
     const now = new Date().toISOString();
@@ -138,7 +144,10 @@ export const profileRepository = {
     }
   },
 
-  async updateProfile(userId: string, profile: Partial<Omit<ProfileResponse, "id" | "user_id" | "created_at" | "updated_at">>): Promise<ProfileResponse> {
+  async updateProfile(
+    userId: string,
+    profile: Partial<Omit<ProfileResponse, "id" | "user_id" | "created_at" | "updated_at">>
+  ): Promise<ProfileResponse> {
     const updated = mockTable.update<ProfileResponse>(PROFILES_TABLE, "user_id", userId, {
       ...profile,
       updated_at: new Date().toISOString(),
@@ -186,7 +195,11 @@ export const profileRepository = {
     return row;
   },
 
-  async updateNotificationPreferences(userId: string, key: string, value: boolean): Promise<NotificationPreferencesRow> {
+  async updateNotificationPreferences(
+    userId: string,
+    key: string,
+    value: boolean
+  ): Promise<NotificationPreferencesRow> {
     const backendField = BACKEND_BACKED_FIELDS[key];
     if (backendField) {
       await apiRequest<BackendNotificationPreferences>("/notifications/preferences", {

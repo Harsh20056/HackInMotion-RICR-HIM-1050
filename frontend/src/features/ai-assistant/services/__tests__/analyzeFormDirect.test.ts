@@ -13,7 +13,9 @@ describe("analyzeFormDirect", () => {
 
   it("rejects unsupported MIME types", async () => {
     const badFile = new File(["hello"], "document.txt", { type: "text/plain" });
-    await expect(analyzeFormDirect(badFile)).rejects.toThrow("Only PDF, JPEG, PNG, or WebP files are accepted");
+    await expect(analyzeFormDirect(badFile)).rejects.toThrow(
+      "Only PDF, JPEG, PNG, or WebP files are accepted"
+    );
   });
 
   it("reports a backend-pending status for valid files (Phase 2 backend not available)", async () => {

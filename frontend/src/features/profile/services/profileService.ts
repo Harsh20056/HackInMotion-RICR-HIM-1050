@@ -25,9 +25,12 @@ export const profileService = {
     return this.mapResponseToDomain(raw);
   },
 
-  async updateProfile(userId: string, input: Partial<Omit<Profile, "id" | "userId" | "createdAt">>): Promise<Profile> {
+  async updateProfile(
+    userId: string,
+    input: Partial<Omit<Profile, "id" | "userId" | "createdAt">>
+  ): Promise<Profile> {
     const updatePayload: Partial<Omit<ProfileResponse, "id" | "user_id" | "created_at" | "updated_at">> = {};
-    
+
     if (input.fullName !== undefined) updatePayload.full_name = input.fullName;
     if (input.phone !== undefined) updatePayload.phone = input.phone;
     if (input.address !== undefined) updatePayload.address = input.address;

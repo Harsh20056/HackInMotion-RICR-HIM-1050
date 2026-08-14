@@ -46,7 +46,7 @@ export const documentService = {
     try {
       // 1. VLM Text Reading & OCR Extraction
       onProgress("reading");
-      
+
       let fileBase64: string;
       let effectiveMimeType: string;
 
@@ -65,8 +65,8 @@ export const documentService = {
       // Check validation gate
       if (!aiResult.supported) {
         throw new Error(
-          aiResult.rejection_reason || 
-          "This image is not a recognized government document. Selfies, landscape photos, memes, or general non-govt files are not allowed."
+          aiResult.rejection_reason ||
+            "This image is not a recognized government document. Selfies, landscape photos, memes, or general non-govt files are not allowed."
         );
       }
 
@@ -83,7 +83,7 @@ export const documentService = {
       // 3. Save metadata record to database
       onProgress("saving");
       const fileSizeMb = parseFloat((file.size / (1024 * 1024)).toFixed(2));
-      
+
       const recordPayload = {
         user_id: userId,
         name: file.name,
@@ -124,7 +124,7 @@ export const documentService = {
    */
   async getDownloadUrl(filePath: string): Promise<string> {
     return documentRepository.getDocumentSignedUrl(filePath);
-  }
+  },
 };
 
 /**

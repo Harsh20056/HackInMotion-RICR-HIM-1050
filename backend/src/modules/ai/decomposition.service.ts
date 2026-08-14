@@ -80,7 +80,8 @@ export const decompositionService = {
       return null;
     }
 
-    const shouldApply = result.isCompound && result.confidence >= AUTO_APPLY_THRESHOLD() && result.subtasks.length > 1;
+    const shouldApply =
+      result.isCompound && result.confidence >= AUTO_APPLY_THRESHOLD() && result.subtasks.length > 1;
 
     const plan = await prisma.coordinationPlan.create({
       data: {
@@ -191,7 +192,10 @@ export const decompositionService = {
       await prisma.workOrderDependency.createMany({ data: edges, skipDuplicates: true });
     }
 
-    logger.info({ issueId, planId, workOrders: byOrder.size, dependencies: edges.length }, "Coordination plan applied");
+    logger.info(
+      { issueId, planId, workOrders: byOrder.size, dependencies: edges.length },
+      "Coordination plan applied"
+    );
   },
 
   /** The plan behind an issue, for the admin coordination panel. */

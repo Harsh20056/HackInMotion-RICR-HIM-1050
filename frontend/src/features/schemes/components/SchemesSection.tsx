@@ -22,10 +22,7 @@ import { EmptyState } from "@/shared/components/EmptyState";
 import { useDocuments } from "@/features/documents/hooks/useDocuments";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/config/routes";
-import { 
-  schemeAttachmentService, 
-  SchemeAttachment 
-} from "../services/schemeAttachmentService";
+import { schemeAttachmentService, SchemeAttachment } from "../services/schemeAttachmentService";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +42,7 @@ import {
   ChevronUp,
   Link2,
   FileCheck,
-  FileX
+  FileX,
 } from "lucide-react";
 
 interface EligibilityResult {
@@ -53,14 +50,18 @@ interface EligibilityResult {
   reasons: string[];
 }
 
-function evaluateEligibility(schemeId: string, inputs: {
-  age: number;
-  income: number;
-  gender: string;
-  occupation: string;
-  housing: string;
-  shgMember: string;
-}, lang: "en" | "hi"): EligibilityResult {
+function evaluateEligibility(
+  schemeId: string,
+  inputs: {
+    age: number;
+    income: number;
+    gender: string;
+    occupation: string;
+    housing: string;
+    shgMember: string;
+  },
+  lang: "en" | "hi"
+): EligibilityResult {
   const reasons: string[] = [];
   let isEligible = true;
 
@@ -75,7 +76,11 @@ function evaluateEligibility(schemeId: string, inputs: {
         reasons.push(lang === "en" ? "Family income exceeds ₹3 Lakhs" : "पारिवारिक आय ₹3 लाख से अधिक है");
       }
       if (isEligible) {
-        reasons.push(lang === "en" ? "Income is under ₹3 Lakhs and does not own a pucca house" : "आय ₹3 लाख से कम है और कोई पक्का मकान नहीं है");
+        reasons.push(
+          lang === "en"
+            ? "Income is under ₹3 Lakhs and does not own a pucca house"
+            : "आय ₹3 लाख से कम है और कोई पक्का मकान नहीं है"
+        );
       }
       break;
 
@@ -95,14 +100,20 @@ function evaluateEligibility(schemeId: string, inputs: {
         reasons.push(lang === "en" ? "Occupation is not Farmer" : "व्यवसाय किसान नहीं है");
       }
       if (isEligible) {
-        reasons.push(lang === "en" ? "Verified as small/marginal farmer with agricultural land" : "कृषि भूमि वाले छोटे/सीमांत किसान के रूप में सत्यापित");
+        reasons.push(
+          lang === "en"
+            ? "Verified as small/marginal farmer with agricultural land"
+            : "कृषि भूमि वाले छोटे/सीमांत किसान के रूप में सत्यापित"
+        );
       }
       break;
 
     case "4": // PM Vishwakarma
       if (inputs.occupation !== "artisan") {
         isEligible = false;
-        reasons.push(lang === "en" ? "Occupation is not Artisan / Craftsperson" : "व्यवसाय कारीगर / शिल्पकार नहीं है");
+        reasons.push(
+          lang === "en" ? "Occupation is not Artisan / Craftsperson" : "व्यवसाय कारीगर / शिल्पकार नहीं है"
+        );
       }
       if (inputs.age < 18) {
         isEligible = false;
@@ -123,7 +134,9 @@ function evaluateEligibility(schemeId: string, inputs: {
         reasons.push(lang === "en" ? "Family income exceeds ₹2 Lakhs" : "पारिवारिक आय ₹2 लाख से अधिक है");
       }
       if (isEligible) {
-        reasons.push(lang === "en" ? "Student with family income under ₹2 Lakhs" : "₹2 लाख से कम पारिवारिक आय वाले छात्र");
+        reasons.push(
+          lang === "en" ? "Student with family income under ₹2 Lakhs" : "₹2 लाख से कम पारिवारिक आय वाले छात्र"
+        );
       }
       break;
 
@@ -134,20 +147,32 @@ function evaluateEligibility(schemeId: string, inputs: {
       }
       if (inputs.shgMember !== "yes") {
         isEligible = false;
-        reasons.push(lang === "en" ? "Must be a Self-Help Group (SHG) member" : "स्वयं सहायता समूह (SHG) का सदस्य होना आवश्यक है");
+        reasons.push(
+          lang === "en"
+            ? "Must be a Self-Help Group (SHG) member"
+            : "स्वयं सहायता समूह (SHG) का सदस्य होना आवश्यक है"
+        );
       }
       if (isEligible) {
-        reasons.push(lang === "en" ? "Female member of Self-Help Group (SHG)" : "स्वयं सहायता समूह (SHG) की महिला सदस्य");
+        reasons.push(
+          lang === "en" ? "Female member of Self-Help Group (SHG)" : "स्वयं सहायता समूह (SHG) की महिला सदस्य"
+        );
       }
       break;
 
     case "7": // PM Mudra Yojana
       if (inputs.occupation !== "self_employed" && inputs.occupation !== "business") {
         isEligible = false;
-        reasons.push(lang === "en" ? "Must be self-employed or owning a micro-business" : "स्व-नियोजित या सूक्ष्म-व्यवसाय का स्वामी होना चाहिए");
+        reasons.push(
+          lang === "en"
+            ? "Must be self-employed or owning a micro-business"
+            : "स्व-नियोजित या सूक्ष्म-व्यवसाय का स्वामी होना चाहिए"
+        );
       }
       if (isEligible) {
-        reasons.push(lang === "en" ? "Self-employed or micro-business owner" : "स्व-नियोजित या सूक्ष्म-व्यवसाय स्वामी");
+        reasons.push(
+          lang === "en" ? "Self-employed or micro-business owner" : "स्व-नियोजित या सूक्ष्म-व्यवसाय स्वामी"
+        );
       }
       break;
 
@@ -209,14 +234,18 @@ export function SchemesSection() {
 
     const newResults: Record<string, EligibilityResult> = {};
     for (const s of schemes) {
-      newResults[s.id] = evaluateEligibility(s.id, {
-        age: ageNum,
-        income: incomeNum,
-        gender: formData.gender,
-        occupation: formData.occupation,
-        housing: formData.housing,
-        shgMember: formData.shgMember,
-      }, language);
+      newResults[s.id] = evaluateEligibility(
+        s.id,
+        {
+          age: ageNum,
+          income: incomeNum,
+          gender: formData.gender,
+          occupation: formData.occupation,
+          housing: formData.housing,
+          shgMember: formData.shgMember,
+        },
+        language
+      );
     }
     setCalculatedResults(newResults);
     setHasCalculated(true);
@@ -260,12 +289,8 @@ export function SchemesSection() {
             <Shield className="w-4 h-4" />
             {t("schemes.badge")}
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            {t("schemes.title")}
-          </h2>
-          <p className="text-muted-foreground">
-            {t("schemes.subtitle")}
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">{t("schemes.title")}</h2>
+          <p className="text-muted-foreground">{t("schemes.subtitle")}</p>
         </div>
 
         {/* Eligibility Checker Card */}
@@ -279,7 +304,9 @@ export function SchemesSection() {
                 {language === "en" ? "Interactive Eligibility Calculator" : "इंटरएक्टिव पात्रता कैलकुलेटर"}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {language === "en" ? "Enter your details to check which welfare schemes match your profile." : "यह जांचने के लिए अपना विवरण दर्ज करें कि कौन सी कल्याणकारी योजनाएं आपकी प्रोफ़ाइल से मेल खाती हैं।"}
+                {language === "en"
+                  ? "Enter your details to check which welfare schemes match your profile."
+                  : "यह जांचने के लिए अपना विवरण दर्ज करें कि कौन सी कल्याणकारी योजनाएं आपकी प्रोफ़ाइल से मेल खाती हैं।"}
               </p>
             </div>
           </div>
@@ -348,9 +375,15 @@ export function SchemesSection() {
               >
                 <option value="student">{language === "en" ? "Student" : "छात्र"}</option>
                 <option value="farmer">{language === "en" ? "Farmer" : "किसान"}</option>
-                <option value="artisan">{language === "en" ? "Artisan / Craftsperson" : "कारीगर / शिल्पकार"}</option>
-                <option value="self_employed">{language === "en" ? "Self Employed / Micro-Business" : "स्व-नियोजित / सूक्ष्म व्यवसाय"}</option>
-                <option value="salaried">{language === "en" ? "Salaried / Employee" : "वेतनभोगी / कर्मचारी"}</option>
+                <option value="artisan">
+                  {language === "en" ? "Artisan / Craftsperson" : "कारीगर / शिल्पकार"}
+                </option>
+                <option value="self_employed">
+                  {language === "en" ? "Self Employed / Micro-Business" : "स्व-नियोजित / सूक्ष्म व्यवसाय"}
+                </option>
+                <option value="salaried">
+                  {language === "en" ? "Salaried / Employee" : "वेतनभोगी / कर्मचारी"}
+                </option>
                 <option value="other">{language === "en" ? "Unemployed / Other" : "बेरोजगार / अन्य"}</option>
               </select>
             </div>
@@ -367,7 +400,9 @@ export function SchemesSection() {
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="pucca">{language === "en" ? "Owns a Pucca House" : "पक्का मकान है"}</option>
-                <option value="kutcha">{language === "en" ? "Rented / Kutcha House" : "किराए का / कच्चा मकान"}</option>
+                <option value="kutcha">
+                  {language === "en" ? "Rented / Kutcha House" : "किराए का / कच्चा मकान"}
+                </option>
               </select>
             </div>
 
@@ -465,9 +500,7 @@ export function SchemesSection() {
           <div className="py-12 bg-card rounded-2xl border border-border">
             <LoadingState
               message={
-                language === "en"
-                  ? "Fetching government schemes..."
-                  : "सरकारी योजनाएं लोड हो रही हैं..."
+                language === "en" ? "Fetching government schemes..." : "सरकारी योजनाएं लोड हो रही हैं..."
               }
             />
           </div>
@@ -479,21 +512,25 @@ export function SchemesSection() {
           <EmptyState
             title={
               activeTab === "eligible"
-                ? (language === "en" ? "No Eligible Schemes Found" : "कोई पात्र योजना नहीं मिली")
-                : (language === "en" ? "No Schemes Found" : "कोई योजना नहीं मिली")
+                ? language === "en"
+                  ? "No Eligible Schemes Found"
+                  : "कोई पात्र योजना नहीं मिली"
+                : language === "en"
+                  ? "No Schemes Found"
+                  : "कोई योजना नहीं मिली"
             }
             description={
               activeTab === "eligible"
-                ? (hasCalculated
-                  ? (language === "en"
+                ? hasCalculated
+                  ? language === "en"
                     ? "Try adjusting the calculator settings to match other criteria."
-                    : "अन्य मानदंडों से मिलान करने के लिए कैलकुलेटर सेटिंग्स को समायोजित करने का प्रयास करें।")
-                  : (language === "en"
+                    : "अन्य मानदंडों से मिलान करने के लिए कैलकुलेटर सेटिंग्स को समायोजित करने का प्रयास करें।"
+                  : language === "en"
                     ? "Use the Interactive Eligibility Calculator above to analyze welfare schemes for you."
-                    : "अपने लिए कल्याणकारी योजनाओं का विश्लेषण करने के लिए ऊपर दिए गए इंटरएक्टिव पात्रता कैलकुलेटर का उपयोग करें।"))
-                : (language === "en"
+                    : "अपने लिए कल्याणकारी योजनाओं का विश्लेषण करने के लिए ऊपर दिए गए इंटरएक्टिव पात्रता कैलकुलेटर का उपयोग करें।"
+                : language === "en"
                   ? "We couldn't find any schemes in the database."
-                  : "हमें डेटाबेस में कोई योजना नहीं मिली।")
+                  : "हमें डेटाबेस में कोई योजना नहीं मिली।"
             }
           />
         ) : (
@@ -521,9 +558,7 @@ export function SchemesSection() {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-foreground mb-2">{t("schemes.fakeWarning")}</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t("schemes.fakeDesc")}
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">{t("schemes.fakeDesc")}</p>
             <Button
               variant="outline"
               size="sm"
@@ -576,9 +611,7 @@ function SchemeCard({
     const required = scheme.requiredDocuments || [];
     if (required.length === 0) return null;
 
-    const uploadedTypes = new Set(
-      lockerDocuments.map((d) => d.document_type?.toLowerCase() || "")
-    );
+    const uploadedTypes = new Set(lockerDocuments.map((d) => d.document_type?.toLowerCase() || ""));
 
     const available = required.filter((r) => uploadedTypes.has(r.toLowerCase()));
     const missing = required.filter((r) => !uploadedTypes.has(r.toLowerCase()));
@@ -633,13 +666,7 @@ function SchemeCard({
   };
 
   const handleAttach = (docType: string, file: any) => {
-    schemeAttachmentService.attachFileToScheme(
-      scheme.id,
-      docType,
-      file.id,
-      file.file_path,
-      file.name
-    );
+    schemeAttachmentService.attachFileToScheme(scheme.id, docType, file.id, file.file_path, file.name);
   };
 
   const handleDetach = (docType: string) => {
@@ -649,9 +676,7 @@ function SchemeCard({
   return (
     <div
       className={`group bg-card rounded-2xl border shadow-card hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between animate-slide-up ${
-        showEligible
-          ? "border-accent/40 ring-1 ring-accent/20"
-          : "border-border"
+        showEligible ? "border-accent/40 ring-1 ring-accent/20" : "border-border"
       }`}
       style={{ animationDelay: `${index * 0.1}s` }}
     >
@@ -667,7 +692,10 @@ function SchemeCard({
             </div>
             {/* Dynamic Readiness Badge */}
             {documentMetrics && (
-              <Badge variant="outline" className={`text-[10px] font-bold py-0 px-2 rounded-full border ${documentMetrics.statusColor}`}>
+              <Badge
+                variant="outline"
+                className={`text-[10px] font-bold py-0 px-2 rounded-full border ${documentMetrics.statusColor}`}
+              >
                 {documentMetrics.statusText}
               </Badge>
             )}
@@ -681,7 +709,10 @@ function SchemeCard({
               </span>
             </div>
             {documentMetrics && (
-              <Badge variant="outline" className={`text-[10px] font-bold py-0 px-2 rounded-full border ${documentMetrics.statusColor}`}>
+              <Badge
+                variant="outline"
+                className={`text-[10px] font-bold py-0 px-2 rounded-full border ${documentMetrics.statusColor}`}
+              >
                 {documentMetrics.statusText}
               </Badge>
             )}
@@ -740,7 +771,7 @@ function SchemeCard({
                 <span className="text-primary">{documentMetrics.percentage}%</span>
               </div>
               <div className="w-full bg-muted h-2 rounded-full overflow-hidden flex">
-                <div 
+                <div
                   className="bg-primary h-full transition-all duration-500 rounded-full"
                   style={{ width: `${documentMetrics.percentage}%` }}
                 />
@@ -749,19 +780,20 @@ function SchemeCard({
               <p className="text-[10px] text-muted-foreground mt-1.5 font-medium leading-none">
                 {language === "en"
                   ? `${documentMetrics.available.length} of ${documentMetrics.required.length} required documents available`
-                  : `${documentMetrics.required.length} में से ${documentMetrics.available.length} आवश्यक दस्तावेज़ उपलब्ध हैं`
-                }
+                  : `${documentMetrics.required.length} में से ${documentMetrics.available.length} आवश्यक दस्तावेज़ उपलब्ध हैं`}
               </p>
             </div>
           )}
 
           {/* Calculator Reasons */}
           {isCalculated && calculationResult && (
-            <div className={`mt-4 p-3 rounded-xl text-xs border text-left ${
-              calculationResult.isEligible 
-                ? "bg-accent/5 border-accent/25 text-foreground" 
-                : "bg-destructive/5 border-destructive/25 text-muted-foreground"
-            }`}>
+            <div
+              className={`mt-4 p-3 rounded-xl text-xs border text-left ${
+                calculationResult.isEligible
+                  ? "bg-accent/5 border-accent/25 text-foreground"
+                  : "bg-destructive/5 border-destructive/25 text-muted-foreground"
+              }`}
+            >
               <span className="font-semibold block mb-1 text-foreground">
                 {language === "en" ? "Result Details:" : "परिणाम विवरण:"}
               </span>
@@ -781,22 +813,23 @@ function SchemeCard({
                   <FolderLock className="w-3.5 h-3.5 text-primary" />
                   {language === "en" ? "Required Documents" : "आवश्यक दस्तावेज़"}
                 </h4>
-                
+
                 <div className="space-y-2">
                   {documentMetrics.required.map((docType) => {
                     const availableFiles = lockerDocuments.filter(
                       (d) => d.document_type?.toLowerCase() === docType.toLowerCase()
                     );
                     const isAvailable = availableFiles.length > 0;
-                    
+
                     // Check if there is an active attachment
                     const attachment = activeAttachments.find(
-                      (a) => a.schemeId === scheme.id && a.documentType.toLowerCase() === docType.toLowerCase()
+                      (a) =>
+                        a.schemeId === scheme.id && a.documentType.toLowerCase() === docType.toLowerCase()
                     );
 
                     return (
-                      <div 
-                        key={docType} 
+                      <div
+                        key={docType}
                         className="flex items-center justify-between p-2.5 bg-muted/40 border border-border/30 rounded-lg text-xs"
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -807,7 +840,10 @@ function SchemeCard({
                           )}
                           <div className="min-w-0">
                             <span className="font-medium text-foreground">
-                              {getDocTypeLabel(docType)} {isAvailable ? `(${language === "en" ? "Available" : "उपलब्ध"})` : `(${language === "en" ? "Missing" : "गायब"})`}
+                              {getDocTypeLabel(docType)}{" "}
+                              {isAvailable
+                                ? `(${language === "en" ? "Available" : "उपलब्ध"})`
+                                : `(${language === "en" ? "Missing" : "गायब"})`}
                             </span>
                             {attachment && (
                               <span className="text-[10px] text-accent font-semibold truncate block mt-0.5 max-w-[150px]">
@@ -820,9 +856,9 @@ function SchemeCard({
                         {/* Attach/Upload Action Button */}
                         <div className="shrink-0 ml-3">
                           {attachment ? (
-                            <Button 
-                              variant="ghost" 
-                              size="xs" 
+                            <Button
+                              variant="ghost"
+                              size="xs"
                               onClick={() => handleDetach(docType)}
                               className="text-destructive hover:bg-destructive/10 text-[10px] h-7 px-2 font-bold"
                             >
@@ -830,9 +866,9 @@ function SchemeCard({
                             </Button>
                           ) : isAvailable ? (
                             availableFiles.length === 1 ? (
-                              <Button 
-                                variant="outline" 
-                                size="xs" 
+                              <Button
+                                variant="outline"
+                                size="xs"
                                 onClick={() => handleAttach(docType, availableFiles[0])}
                                 className="text-primary hover:bg-primary/10 text-[10px] h-7 px-2 border-primary/20 flex items-center gap-1 font-bold"
                               >
@@ -842,9 +878,9 @@ function SchemeCard({
                             ) : (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="xs" 
+                                  <Button
+                                    variant="outline"
+                                    size="xs"
                                     className="text-primary hover:bg-primary/10 text-[10px] h-7 px-2 border-primary/20 flex items-center gap-1 font-bold"
                                   >
                                     <Link2 className="w-3 h-3" />
@@ -854,8 +890,8 @@ function SchemeCard({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-56">
                                   {availableFiles.map((file) => (
-                                    <DropdownMenuItem 
-                                      key={file.id} 
+                                    <DropdownMenuItem
+                                      key={file.id}
                                       onClick={() => handleAttach(docType, file)}
                                       className="text-xs truncate cursor-pointer"
                                     >
@@ -866,9 +902,9 @@ function SchemeCard({
                               </DropdownMenu>
                             )
                           ) : (
-                            <Button 
-                              variant="outline" 
-                              size="xs" 
+                            <Button
+                              variant="outline"
+                              size="xs"
                               onClick={handleOpenLocker}
                               className="text-muted-foreground hover:bg-muted text-[10px] h-7 px-2 border-border"
                             >
@@ -886,14 +922,17 @@ function SchemeCard({
               <div className="flex items-center justify-between p-3.5 bg-muted/40 border border-border/40 rounded-xl text-xs gap-3">
                 <p className="text-muted-foreground font-medium flex-1">
                   {documentMetrics.percentage === 100
-                    ? (language === "en" ? "Your required documents are ready." : "आपके आवश्यक दस्तावेज़ तैयार हैं।")
-                    : (language === "en" ? "Upload the missing documents to improve application readiness." : "आवेदन तत्परता में सुधार के लिए गायब दस्तावेज़ों को अपलोड करें।")
-                  }
+                    ? language === "en"
+                      ? "Your required documents are ready."
+                      : "आपके आवश्यक दस्तावेज़ तैयार हैं।"
+                    : language === "en"
+                      ? "Upload the missing documents to improve application readiness."
+                      : "आवेदन तत्परता में सुधार के लिए गायब दस्तावेज़ों को अपलोड करें।"}
                 </p>
                 {documentMetrics.percentage < 100 && (
-                  <Button 
-                    variant="outline" 
-                    size="xs" 
+                  <Button
+                    variant="outline"
+                    size="xs"
                     onClick={handleOpenLocker}
                     className="shrink-0 gap-1 text-[11px] font-bold"
                   >
@@ -919,10 +958,10 @@ function SchemeCard({
               {language === "en" ? "Not Eligible" : "पात्र नहीं"}
             </span>
           )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-1 font-bold text-xs" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 font-bold text-xs"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? (

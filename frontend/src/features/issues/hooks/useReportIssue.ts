@@ -47,22 +47,26 @@ const extractFrameFromVideo = async (file: File, seekTimeSeconds: number = 1.5):
           return;
         }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error("Failed to export canvas to Blob"));
-            return;
-          }
-          const frameFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + "_frame.jpg", {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
-          resolve(frameFile);
-          URL.revokeObjectURL(objectUrl);
-          // Free video element resources
-          video.src = "";
-          video.load();
-        }, "image/jpeg", 0.9);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to export canvas to Blob"));
+              return;
+            }
+            const frameFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + "_frame.jpg", {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(frameFile);
+            URL.revokeObjectURL(objectUrl);
+            // Free video element resources
+            video.src = "";
+            video.load();
+          },
+          "image/jpeg",
+          0.9
+        );
       } catch (err) {
         reject(err);
         URL.revokeObjectURL(objectUrl);
@@ -87,7 +91,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  
+
   // Coordinates and Address state updated by LocationPicker component
   const [location, setLocation] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -96,7 +100,11 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [duplicateCandidate, setDuplicateCandidate] = useState<{ id: string; title: string; distanceM?: number } | null>(null);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<{
+    id: string;
+    title: string;
+    distanceM?: number;
+  } | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
@@ -126,7 +134,8 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
     const ALLOWED_IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     const ALLOWED_VIDEO_MIMES = ["video/mp4", "video/quicktime", "video/webm"];
     const extension = file.name.split(".").pop()?.toLowerCase();
-    const isVideo = ALLOWED_VIDEO_MIMES.includes(file.type) || ["mp4", "mov", "webm"].includes(extension || "");
+    const isVideo =
+      ALLOWED_VIDEO_MIMES.includes(file.type) || ["mp4", "mov", "webm"].includes(extension || "");
 
     let processedFile = file;
 
@@ -138,7 +147,10 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
         logger.error("Video frame extraction failed:", err);
         toast({
           title: activeLanguage === "en" ? "Video analysis failed" : "वीडियो विश्लेषण विफल",
-          description: activeLanguage === "en" ? "Could not extract a frame from this video." : "इस वीडियो से फ्रेम नहीं निकाला जा सका।",
+          description:
+            activeLanguage === "en"
+              ? "Could not extract a frame from this video."
+              : "इस वीडियो से फ्रेम नहीं निकाला जा सका।",
           variant: "destructive",
         });
         setDetecting(false);
@@ -149,9 +161,10 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       if (!ALLOWED_IMAGE_MIMES.includes(file.type)) {
         toast({
           title: activeLanguage === "en" ? "Unsupported file type" : "असमर्थित फ़ाइल प्रकार",
-          description: activeLanguage === "en" 
-            ? "Only JPG, PNG, WEBP, GIF, MP4, MOV, and WEBM files are allowed" 
-            : "केवल JPG, PNG, WEBP, GIF, MP4, MOV, और WEBM फाइलों की अनुमति है",
+          description:
+            activeLanguage === "en"
+              ? "Only JPG, PNG, WEBP, GIF, MP4, MOV, and WEBM files are allowed"
+              : "केवल JPG, PNG, WEBP, GIF, MP4, MOV, और WEBM फाइलों की अनुमति है",
           variant: "destructive",
         });
         return;
@@ -162,9 +175,10 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       if (!isValidSignature) {
         toast({
           title: activeLanguage === "en" ? "Invalid Image File" : "अवैध छवि फ़ाइल",
-          description: activeLanguage === "en" 
-            ? "File header does not match its extension. Upload rejected for security reasons." 
-            : "फ़ाइल हेडर इसके एक्सटेंशन से मेल नहीं खाता है। सुरक्षा कारणों से अपलोड अस्वीकार कर दिया गया।",
+          description:
+            activeLanguage === "en"
+              ? "File header does not match its extension. Upload rejected for security reasons."
+              : "फ़ाइल हेडर इसके एक्सटेंशन से मेल नहीं खाता है। सुरक्षा कारणों से अपलोड अस्वीकार कर दिया गया।",
           variant: "destructive",
         });
         return;
@@ -196,14 +210,18 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
           if (mapped) setSelectedCategory(mapped);
           toast({
             title: activeLanguage === "en" ? "Detection complete" : "पहचान पूर्ण",
-            description: activeLanguage === "en"
-              ? `Detected: ${result.classes.join(", ")} (Severity: ${result.severityLabel.toUpperCase()})`
-              : `पाया गया: ${result.classes.join(", ")} (तीव्रता: ${result.severityLabel.toUpperCase()})`,
+            description:
+              activeLanguage === "en"
+                ? `Detected: ${result.classes.join(", ")} (Severity: ${result.severityLabel.toUpperCase()})`
+                : `पाया गया: ${result.classes.join(", ")} (तीव्रता: ${result.severityLabel.toUpperCase()})`,
           });
         } else {
           toast({
             title: activeLanguage === "en" ? "No issues detected" : "कोई समस्या नहीं मिली",
-            description: activeLanguage === "en" ? "Please select a category manually." : "कृपया श्रेणी मैन्युअल रूप से चुनें।",
+            description:
+              activeLanguage === "en"
+                ? "Please select a category manually."
+                : "कृपया श्रेणी मैन्युअल रूप से चुनें।",
           });
         }
       } catch (err) {
@@ -255,9 +273,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       onTranscript: (text, isFinal) => {
         if (isFinal) {
           // Append final result to description with a space separator
-          setDescription((prev) =>
-            prev ? `${prev.trimEnd()} ${text}` : text
-          );
+          setDescription((prev) => (prev ? `${prev.trimEnd()} ${text}` : text));
           setInterimTranscript("");
         } else {
           setInterimTranscript(text);
@@ -289,7 +305,10 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
     if (!user) {
       toast({
         title: activeLanguage === "en" ? "Sign in Required" : "साइन इन आवश्यक",
-        description: activeLanguage === "en" ? "Please sign in to report an issue." : "समस्या दर्ज करने के लिए कृपया साइन इन करें।",
+        description:
+          activeLanguage === "en"
+            ? "Please sign in to report an issue."
+            : "समस्या दर्ज करने के लिए कृपया साइन इन करें।",
         variant: "destructive",
       });
       navigate(ROUTES.SIGN_IN);
@@ -321,7 +340,12 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       await issueService.reportNewIssue(
         user.id,
         {
-          ...(validationResult.data as { title: string; description: string; category: string; location: string }),
+          ...(validationResult.data as {
+            title: string;
+            description: string;
+            category: string;
+            location: string;
+          }),
           latitude,
           longitude,
         },
@@ -352,9 +376,10 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
     gamificationService.dispatchGamificationUpdate();
     toast({
       title: activeLanguage === "en" ? "Issue Reported!" : "समस्या दर्ज!",
-      description: activeLanguage === "en"
-        ? "Your issue has been submitted successfully. The community can now support it."
-        : "आपकी समस्या सफलतापूर्वक दर्ज की गई है। समुदाय अब इसका समर्थन कर सकता है।",
+      description:
+        activeLanguage === "en"
+          ? "Your issue has been submitted successfully. The community can now support it."
+          : "आपकी समस्या सफलतापूर्वक दर्ज की गई है। समुदाय अब इसका समर्थन कर सकता है।",
     });
     navigate(ROUTES.DASHBOARD);
   };

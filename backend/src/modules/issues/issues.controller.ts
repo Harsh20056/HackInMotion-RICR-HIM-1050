@@ -33,15 +33,20 @@ export const issuesRouter = Router();
  * queue — `?departmentId=<uuid>&pageSize=500` returned any department's entire
  * backlog across every city.
  */
-issuesRouter.get("/", optionalAuthenticate, validate(listIssuesQuerySchema, "query"), async (req, res, next) => {
-  try {
-    const filters = req.validatedQuery as ListIssuesQuery;
-    const cityScope = req.auth ? resolveCityScope(req.auth) : null;
-    res.json(await issuesService.list(cityScope === null ? filters : { ...filters, city: cityScope }));
-  } catch (err) {
-    next(err);
+issuesRouter.get(
+  "/",
+  optionalAuthenticate,
+  validate(listIssuesQuerySchema, "query"),
+  async (req, res, next) => {
+    try {
+      const filters = req.validatedQuery as ListIssuesQuery;
+      const cityScope = req.auth ? resolveCityScope(req.auth) : null;
+      res.json(await issuesService.list(cityScope === null ? filters : { ...filters, city: cityScope }));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 /**
  * Bulk verification state. Must stay above `GET /:id`, or Express matches
@@ -61,17 +66,22 @@ issuesRouter.get(
   }
 );
 
-issuesRouter.get("/:id", optionalAuthenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
-  try {
-    const issue = await issuesService.getById(req.params.id as string);
-    // Detail reads are scoped too, otherwise an out-of-city issue stays
-    // reachable by id even though it never appears in any list.
-    if (req.auth) assertCityAccess(req.auth, issue.city);
-    res.json(issue);
-  } catch (err) {
-    next(err);
+issuesRouter.get(
+  "/:id",
+  optionalAuthenticate,
+  validate(uuidParam("id"), "params"),
+  async (req, res, next) => {
+    try {
+      const issue = await issuesService.getById(req.params.id as string);
+      // Detail reads are scoped too, otherwise an out-of-city issue stays
+      // reachable by id even though it never appears in any list.
+      if (req.auth) assertCityAccess(req.auth, issue.city);
+      res.json(issue);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 issuesRouter.post("/", authenticate, validate(createIssueSchema), async (req, res, next) => {
   try {
@@ -80,7 +90,12 @@ issuesRouter.post("/", authenticate, validate(createIssueSchema), async (req, re
       res.status(200).json(result);
       return;
     }
-    await writeAuditLog(req, { action: "issue.create", entityType: "issue", entityId: result.issue.id, after: result.issue });
+    await writeAuditLog(req, {
+      action: "issue.create",
+      entityType: "issue",
+      entityId: result.issue.id,
+      after: result.issue,
+    });
     res.status(201).json(result);
   } catch (err) {
     next(err);
@@ -95,7 +110,11 @@ issuesRouter.post(
   async (req, res, next) => {
     try {
       const issue = await issuesService.confirmDuplicate(req.body, req.auth!.sub);
-      await writeAuditLog(req, { action: "issue.confirm_duplicate", entityType: "issue", entityId: issue.id });
+      await writeAuditLog(req, {
+        action: "issue.confirm_duplicate",
+        entityType: "issue",
+        entityId: issue.id,
+      });
       res.status(200).json(issue);
     } catch (err) {
       next(err);
@@ -103,23 +122,33 @@ issuesRouter.post(
   }
 );
 
-issuesRouter.post("/:id/support", authenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
-  try {
-    const issue = await issuesService.support(req.params.id as string, req.auth!.sub);
-    res.status(200).json(issue);
-  } catch (err) {
-    next(err);
+issuesRouter.post(
+  "/:id/support",
+  authenticate,
+  validate(uuidParam("id"), "params"),
+  async (req, res, next) => {
+    try {
+      const issue = await issuesService.support(req.params.id as string, req.auth!.sub);
+      res.status(200).json(issue);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-issuesRouter.delete("/:id/support", authenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
-  try {
-    await issuesService.unsupport(req.params.id as string, req.auth!.sub);
-    res.status(204).send();
-  } catch (err) {
-    next(err);
+issuesRouter.delete(
+  "/:id/support",
+  authenticate,
+  validate(uuidParam("id"), "params"),
+  async (req, res, next) => {
+    try {
+      await issuesService.unsupport(req.params.id as string, req.auth!.sub);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // ── Lifecycle (PS #5) ──────────────────────────────────────────────────────
 

@@ -2,7 +2,10 @@ import { prisma } from "../shared/lib/prisma.js";
 import { logger } from "../shared/lib/logger.js";
 import { env } from "../config/env.js";
 import { slaService, EscalationStep } from "../modules/sla/sla.service.js";
-import { notificationsService, NotificationTemplate } from "../modules/notifications/notifications.service.js";
+import {
+  notificationsService,
+  NotificationTemplate,
+} from "../modules/notifications/notifications.service.js";
 
 /**
  * SLA sweeper. Runs every 5 minutes and is deliberately idempotent: the

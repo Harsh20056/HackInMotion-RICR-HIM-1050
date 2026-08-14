@@ -87,20 +87,20 @@ const mockIssues = [
     category: "Parks & Gardens",
     location: "Children's Park, MP Nagar, Bhopal",
     status: "in-progress",
-    latitude: 23.2350,
-    longitude: 77.4320,
+    latitude: 23.235,
+    longitude: 77.432,
     created_at: "2026-06-25T12:00:00Z",
     supports_count: 2,
-  }
+  },
 ];
 
 describe("CivicMapPage Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock the issues fetch method to return our custom mock data
     vi.spyOn(issueService, "fetchAllIssuesForMap").mockResolvedValue(
-      mockIssues.map(i => issueService.mapResponseToDomain(i as any))
+      mockIssues.map((i) => issueService.mapResponseToDomain(i as any))
     );
   });
 

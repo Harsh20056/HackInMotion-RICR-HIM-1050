@@ -13,12 +13,12 @@ import { ROUTES } from "@/shared/config/routes";
 import { STATUS_LABELS } from "@/shared/constants/statuses";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { EmptyState } from "@/shared/components/EmptyState";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/shared/components/ui/dialog";
 import { profileService } from "@/features/profile/services/profileService";
 import { issueService } from "@/features/issues/services/issueService";
@@ -26,10 +26,10 @@ import { issueVerificationService } from "@/features/issues/services/issueVerifi
 import { aiInsightService } from "@/features/issues/services/aiInsightService";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
-import { 
-  MapPin, 
-  ThumbsUp, 
-  Clock, 
+import {
+  MapPin,
+  ThumbsUp,
+  Clock,
   Droplets,
   Trash2,
   Zap,
@@ -70,7 +70,9 @@ const AIInsightPanel = lazy(() =>
   import("@/features/issues/components/AIInsightPanel").then((m) => ({ default: m.AIInsightPanel }))
 );
 const ResolutionReviewPanel = lazy(() =>
-  import("@/features/issues/components/ResolutionReviewPanel").then((m) => ({ default: m.ResolutionReviewPanel }))
+  import("@/features/issues/components/ResolutionReviewPanel").then((m) => ({
+    default: m.ResolutionReviewPanel,
+  }))
 );
 const CoordinationPanel = lazy(() =>
   import("@/features/admin/components/CoordinationPanel").then((m) => ({ default: m.CoordinationPanel }))
@@ -119,46 +121,46 @@ function useApproachingViewport<T extends HTMLElement>(rootMargin = "300px") {
 const categoryIcons: Record<string, React.ReactNode> = {
   "Water Supply": <Droplets className="w-4 h-4" />,
   "जल आपूर्ति": <Droplets className="w-4 h-4" />,
-  "Sanitation": <Trash2 className="w-4 h-4" />,
-  "स्वच्छता": <Trash2 className="w-4 h-4" />,
-  "Electricity": <Zap className="w-4 h-4" />,
-  "बिजली": <Zap className="w-4 h-4" />,
-  "Roads": <Construction className="w-4 h-4" />,
-  "सड़कें": <Construction className="w-4 h-4" />,
+  Sanitation: <Trash2 className="w-4 h-4" />,
+  स्वच्छता: <Trash2 className="w-4 h-4" />,
+  Electricity: <Zap className="w-4 h-4" />,
+  बिजली: <Zap className="w-4 h-4" />,
+  Roads: <Construction className="w-4 h-4" />,
+  सड़कें: <Construction className="w-4 h-4" />,
   "Parks & Gardens": <TreePine className="w-4 h-4" />,
   "पार्क और बगीचे": <TreePine className="w-4 h-4" />,
-  "Buildings": <Building2 className="w-4 h-4" />,
-  "भवन": <Building2 className="w-4 h-4" />,
+  Buildings: <Building2 className="w-4 h-4" />,
+  भवन: <Building2 className="w-4 h-4" />,
   "Metro & Transit": <Train className="w-4 h-4" />,
   "मेट्रो और ट्रांजिट": <Train className="w-4 h-4" />,
 };
 
 const statusConfig: Record<string, { class: string; icon: React.ReactNode }> = {
-  [IssueStatus.REPORTED]: { 
+  [IssueStatus.REPORTED]: {
     class: "status-reported",
-    icon: <AlertTriangle className="w-3 h-3" />
+    icon: <AlertTriangle className="w-3 h-3" />,
   },
-  [IssueStatus.IN_PROGRESS]: { 
+  [IssueStatus.IN_PROGRESS]: {
     class: "status-in-progress",
-    icon: <Timer className="w-3 h-3" />
+    icon: <Timer className="w-3 h-3" />,
   },
-  [IssueStatus.RESOLVED]: { 
+  [IssueStatus.RESOLVED]: {
     class: "status-resolved",
-    icon: <CheckCircle2 className="w-3 h-3" />
+    icon: <CheckCircle2 className="w-3 h-3" />,
   },
 };
 
-function DeptStatusBreakdownCard({ issues, language }: { issues: Issue[], language: "en" | "hi" }) {
+function DeptStatusBreakdownCard({ issues, language }: { issues: Issue[]; language: "en" | "hi" }) {
   const counts = {
-    reported: issues.filter(i => i.status === "reported").length,
-    acknowledged: issues.filter(i => i.status === "acknowledged").length,
-    in_progress: issues.filter(i => i.status === "in_progress").length,
-    resolved: issues.filter(i => i.status === "resolved").length,
-    closed: issues.filter(i => i.status === "closed").length,
+    reported: issues.filter((i) => i.status === "reported").length,
+    acknowledged: issues.filter((i) => i.status === "acknowledged").length,
+    in_progress: issues.filter((i) => i.status === "in_progress").length,
+    resolved: issues.filter((i) => i.status === "resolved").length,
+    closed: issues.filter((i) => i.status === "closed").length,
   };
   const total = issues.length || 1;
 
-  const STATUS_CONFIG: Record<string, { labelEn: string, labelHi: string, color: string }> = {
+  const STATUS_CONFIG: Record<string, { labelEn: string; labelHi: string; color: string }> = {
     reported: { labelEn: "Reported", labelHi: "रिपोर्ट की गई", color: "bg-yellow-500" },
     acknowledged: { labelEn: "Acknowledged", labelHi: "स्वीकृत", color: "bg-purple-500" },
     in_progress: { labelEn: "In Progress", labelHi: "प्रगति में", color: "bg-blue-500" },
@@ -203,10 +205,10 @@ function DeptStatusBreakdownCard({ issues, language }: { issues: Issue[], langua
   );
 }
 
-function DeptAreaBreakdownCard({ issues, language }: { issues: Issue[], language: "en" | "hi" }) {
+function DeptAreaBreakdownCard({ issues, language }: { issues: Issue[]; language: "en" | "hi" }) {
   const areaCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    issues.forEach(issue => {
+    issues.forEach((issue) => {
       if (!issue.location) return;
       const parts = issue.location.split(",");
       const area = parts[0]?.trim();
@@ -237,7 +239,10 @@ function DeptAreaBreakdownCard({ issues, language }: { issues: Issue[], language
       ) : (
         <div className="divide-y divide-border/40">
           {areaCounts.map((entry, idx) => (
-            <div key={entry.area} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 text-xs">
+            <div
+              key={entry.area}
+              className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 text-xs"
+            >
               <div className="flex items-center gap-3">
                 <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px]">
                   {idx + 1}
@@ -263,7 +268,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedIssueId = searchParams.get("issueId");
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -290,16 +295,20 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user?.id) {
-      adminService.getUserRole(user.id).then((roleInfo) => {
-        setIsDeptAdmin(roleInfo.role === UserRole.DEPARTMENT_ADMIN);
-      }).catch((err) => logger.info("Could not fetch user role in dashboard:", err));
+      adminService
+        .getUserRole(user.id)
+        .then((roleInfo) => {
+          setIsDeptAdmin(roleInfo.role === UserRole.DEPARTMENT_ADMIN);
+        })
+        .catch((err) => logger.info("Could not fetch user role in dashboard:", err));
     }
   }, [user]);
 
   // Fetch logged-in user's profile to extract their filled city and set default filter
   useEffect(() => {
     if (user?.id) {
-      profileService.getProfile(user.id, user)
+      profileService
+        .getProfile(user.id, user)
         .then((prof) => {
           if (prof?.city && prof.city.trim() !== "") {
             const cityVal = prof.city.trim();
@@ -324,7 +333,10 @@ export default function DashboardPage() {
     if (!gateCity.trim() || !gateState.trim()) {
       toast({
         title: language === "en" ? "Location Required" : "स्थान आवश्यक",
-        description: language === "en" ? "Please enter both City and State to access dashboard." : "डैशबोर्ड पर जाने के लिए कृपया शहर और राज्य दोनों दर्ज करें।",
+        description:
+          language === "en"
+            ? "Please enter both City and State to access dashboard."
+            : "डैशबोर्ड पर जाने के लिए कृपया शहर और राज्य दोनों दर्ज करें।",
         variant: "destructive",
       });
       return;
@@ -343,7 +355,8 @@ export default function DashboardPage() {
       setShowLocationGateModal(false);
       toast({
         title: language === "en" ? "Location Saved!" : "स्थान सहेजा गया!",
-        description: language === "en" ? "Welcome to your Samadhan Dashboard." : "समाधान डैशबोर्ड में आपका स्वागत है।",
+        description:
+          language === "en" ? "Welcome to your Samadhan Dashboard." : "समाधान डैशबोर्ड में आपका स्वागत है।",
       });
     } catch (err) {
       toast({
@@ -368,9 +381,10 @@ export default function DashboardPage() {
     await issueVerificationService.voteOnIssue(issueId, vote);
     toast({
       title: language === "en" ? "Vote Registered" : "मत दर्ज किया गया",
-      description: language === "en" 
-        ? "Thank you for contributing to community verification!" 
-        : "सामुदायिक सत्यापन में योगदान देने के लिए धन्यवाद!",
+      description:
+        language === "en"
+          ? "Thank you for contributing to community verification!"
+          : "सामुदायिक सत्यापन में योगदान देने के लिए धन्यवाद!",
     });
   };
 
@@ -412,8 +426,29 @@ export default function DashboardPage() {
       if (!issue.location) return;
       const parts = issue.location.split(",").map((p) => p.trim());
       for (const part of parts) {
-        if (!/\d/.test(part) && part.length > 2 && part !== "India" && !part.includes("Pradesh") && !part.includes("Tahsil")) {
-          if (["Bhopal", "Indore", "Huzur", "Gwalior", "Jabalpur", "Ujjain", "Delhi", "Mumbai", "Bangalore", "Pune", "Jaipur", "Lucknow"].includes(part)) {
+        if (
+          !/\d/.test(part) &&
+          part.length > 2 &&
+          part !== "India" &&
+          !part.includes("Pradesh") &&
+          !part.includes("Tahsil")
+        ) {
+          if (
+            [
+              "Bhopal",
+              "Indore",
+              "Huzur",
+              "Gwalior",
+              "Jabalpur",
+              "Ujjain",
+              "Delhi",
+              "Mumbai",
+              "Bangalore",
+              "Pune",
+              "Jaipur",
+              "Lucknow",
+            ].includes(part)
+          ) {
             citySet.add(part);
           }
         }
@@ -468,7 +503,8 @@ export default function DashboardPage() {
       fetchReporterProfile(found.userId);
     } else {
       setLoadingSelected(true);
-      issueService.getIssueById(selectedIssueId)
+      issueService
+        .getIssueById(selectedIssueId)
         .then((issue) => {
           setSelectedIssue(issue);
           fetchReporterProfile(issue.userId);
@@ -524,7 +560,13 @@ export default function DashboardPage() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === " " && e.target === e.currentTarget) {
       e.preventDefault();
-      const sectionIds = ["hero-section", "stats-section", "analytics-section", "performance-section", "live-feed-section"];
+      const sectionIds = [
+        "hero-section",
+        "stats-section",
+        "analytics-section",
+        "performance-section",
+        "live-feed-section",
+      ];
       for (const id of sectionIds) {
         const el = document.getElementById(id);
         if (el) {
@@ -540,15 +582,15 @@ export default function DashboardPage() {
   };
 
   return (
-    <div 
+    <div
       tabIndex={0}
       onKeyDown={handleKeyDown}
       className="container mx-auto px-4 py-6 max-w-7xl space-y-8 focus:outline-none scroll-smooth"
     >
       {/* SECTION 1: HERO HEADER */}
-      <section 
-        id="hero-section" 
-        tabIndex={0} 
+      <section
+        id="hero-section"
+        tabIndex={0}
         className="scroll-mt-24 focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-2xl p-2"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -560,9 +602,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight mb-2">
               {language === "en" ? "Issues Near You" : "आपके पास की समस्याएं"}
             </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              {t("issues.subtitle")}
-            </p>
+            <p className="text-sm text-muted-foreground max-w-2xl">{t("issues.subtitle")}</p>
           </div>
           <Link to={ROUTES.REPORT_ISSUE}>
             <Button className="shrink-0 gap-2 bg-[#b45309] hover:bg-[#92400e] text-white rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm border-0">
@@ -574,9 +614,9 @@ export default function DashboardPage() {
       </section>
 
       {/* SECTION 2: STATS CARDS BAR (4 Cards Row) */}
-      <section 
-        id="stats-section" 
-        tabIndex={0} 
+      <section
+        id="stats-section"
+        tabIndex={0}
         className="scroll-mt-24 focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-2xl p-1"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -615,9 +655,9 @@ export default function DashboardPage() {
       </section>
 
       {/* SECTION 3: CIVIC ANALYTICS PANEL */}
-      <section 
-        id="analytics-section" 
-        tabIndex={0} 
+      <section
+        id="analytics-section"
+        tabIndex={0}
         className="scroll-mt-24 focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-2xl p-1"
       >
         <div className="bg-card border border-border/80 rounded-2xl shadow-card overflow-hidden">
@@ -654,9 +694,9 @@ export default function DashboardPage() {
       </section>
 
       {/* SECTION 4: DEPARTMENT PERFORMANCE & ISSUE HOTSPOTS (2 Column Grid) */}
-      <section 
-        id="performance-section" 
-        tabIndex={0} 
+      <section
+        id="performance-section"
+        tabIndex={0}
         className="scroll-mt-24 focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-2xl p-1"
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -675,9 +715,9 @@ export default function DashboardPage() {
       </section>
 
       {/* SECTION 5: LIVE ISSUES FEED (3-4 Cards per Row Layout) */}
-      <section 
-        id="live-feed-section" 
-        tabIndex={0} 
+      <section
+        id="live-feed-section"
+        tabIndex={0}
         className="scroll-mt-24 focus:outline-none focus:ring-1 focus:ring-primary/20 rounded-2xl p-1"
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-card border border-border/80 p-4 rounded-2xl shadow-sm">
@@ -689,7 +729,10 @@ export default function DashboardPage() {
             <h2 className="text-base font-bold uppercase tracking-wider text-foreground">
               {language === "en" ? "LIVE ISSUES FEED" : "लाइव समस्या फ़ीड"}
             </h2>
-            <Badge variant="outline" className="ml-2 text-xs font-semibold text-muted-foreground border-border/60">
+            <Badge
+              variant="outline"
+              className="ml-2 text-xs font-semibold text-muted-foreground border-border/60"
+            >
               {filteredIssues.length} {language === "en" ? "reports" : "रिपोर्ट"}
             </Badge>
           </div>
@@ -708,7 +751,9 @@ export default function DashboardPage() {
                   }}
                   className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
                 >
-                  <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Cities" : "सभी शहर"}</option>
+                  <option value="ALL" className="bg-card text-foreground">
+                    {language === "en" ? "All Cities" : "सभी शहर"}
+                  </option>
                   {availableCities.map((city) => (
                     <option key={city} value={city} className="bg-card text-foreground">
                       📍 {city}
@@ -729,13 +774,27 @@ export default function DashboardPage() {
                   }}
                   className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
                 >
-                  <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Categories" : "सभी श्रेणियां"}</option>
-                  <option value="Water Supply" className="bg-card text-foreground">{language === "en" ? "Water Supply" : "जल आपूर्ति"}</option>
-                  <option value="Sanitation" className="bg-card text-foreground">{language === "en" ? "Sanitation" : "स्वच्छता"}</option>
-                  <option value="Electricity" className="bg-card text-foreground">{language === "en" ? "Electricity" : "बिजली"}</option>
-                  <option value="Roads" className="bg-card text-foreground">{language === "en" ? "Roads" : "सड़कें"}</option>
-                  <option value="Parks & Gardens" className="bg-card text-foreground">{language === "en" ? "Parks & Gardens" : "पार्क और बगीचे"}</option>
-                  <option value="Buildings" className="bg-card text-foreground">{language === "en" ? "Buildings" : "भवन"}</option>
+                  <option value="ALL" className="bg-card text-foreground">
+                    {language === "en" ? "All Categories" : "सभी श्रेणियां"}
+                  </option>
+                  <option value="Water Supply" className="bg-card text-foreground">
+                    {language === "en" ? "Water Supply" : "जल आपूर्ति"}
+                  </option>
+                  <option value="Sanitation" className="bg-card text-foreground">
+                    {language === "en" ? "Sanitation" : "स्वच्छता"}
+                  </option>
+                  <option value="Electricity" className="bg-card text-foreground">
+                    {language === "en" ? "Electricity" : "बिजली"}
+                  </option>
+                  <option value="Roads" className="bg-card text-foreground">
+                    {language === "en" ? "Roads" : "सड़कें"}
+                  </option>
+                  <option value="Parks & Gardens" className="bg-card text-foreground">
+                    {language === "en" ? "Parks & Gardens" : "पार्क और बगीचे"}
+                  </option>
+                  <option value="Buildings" className="bg-card text-foreground">
+                    {language === "en" ? "Buildings" : "भवन"}
+                  </option>
                 </select>
               </div>
             )}
@@ -750,10 +809,18 @@ export default function DashboardPage() {
                 }}
                 className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer pr-1"
               >
-                <option value="ALL" className="bg-card text-foreground">{language === "en" ? "All Statuses" : "सभी स्थितियां"}</option>
-                <option value={IssueStatus.REPORTED} className="bg-card text-foreground">{language === "en" ? "Reported" : "दर्ज"}</option>
-                <option value={IssueStatus.IN_PROGRESS} className="bg-card text-foreground">{language === "en" ? "In Progress" : "प्रगति में"}</option>
-                <option value={IssueStatus.RESOLVED} className="bg-card text-foreground">{language === "en" ? "Resolved" : "हल"}</option>
+                <option value="ALL" className="bg-card text-foreground">
+                  {language === "en" ? "All Statuses" : "सभी स्थितियां"}
+                </option>
+                <option value={IssueStatus.REPORTED} className="bg-card text-foreground">
+                  {language === "en" ? "Reported" : "दर्ज"}
+                </option>
+                <option value={IssueStatus.IN_PROGRESS} className="bg-card text-foreground">
+                  {language === "en" ? "In Progress" : "प्रगति में"}
+                </option>
+                <option value={IssueStatus.RESOLVED} className="bg-card text-foreground">
+                  {language === "en" ? "Resolved" : "हल"}
+                </option>
               </select>
             </div>
 
@@ -778,8 +845,8 @@ export default function DashboardPage() {
           <EmptyState
             title={language === "en" ? "No Matching Issues Found" : "कोई मेल खाती समस्या नहीं मिली"}
             description={
-              language === "en" 
-                ? "No reports match your current filters. Try resetting the filters or selecting a different city/category." 
+              language === "en"
+                ? "No reports match your current filters. Try resetting the filters or selecting a different city/category."
                 : "आपकी चुनी हुई फ़िल्टर शर्तों से कोई रिपोर्ट नहीं मिलती। फ़िल्टर रीसेट करें या दूसरा शहर चुनें।"
             }
             actionText={language === "en" ? "Reset All Filters" : "सभी फ़िल्टर रीसेट करें"}
@@ -790,15 +857,17 @@ export default function DashboardPage() {
             {/* 3 to 4 Column Grid for Desktop Viewports */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
               {filteredIssues.slice(0, visibleCount).map((issue, index) => (
-                <IssueCard 
-                  key={issue.id} 
-                  issue={issue} 
-                  index={index} 
+                <IssueCard
+                  key={issue.id}
+                  issue={issue}
+                  index={index}
                   isSupported={supportedIssues.has(issue.id)}
                   isSupporting={supportingId === issue.id}
                   onSupport={() => handleSupport(issue.id)}
                   onViewDetails={() => handleViewDetails(issue.id)}
-                  onViewOnMap={issue.latitude && issue.longitude ? () => handleViewOnMap(issue.id) : undefined}
+                  onViewOnMap={
+                    issue.latitude && issue.longitude ? () => handleViewOnMap(issue.id) : undefined
+                  }
                   getTimeAgo={getTimeAgo}
                   activeLanguage={language}
                 />
@@ -807,7 +876,7 @@ export default function DashboardPage() {
 
             {filteredIssues.length > visibleCount && (
               <div className="flex justify-center mt-8">
-                <Button 
+                <Button
                   onClick={() => setVisibleCount((prev) => prev + 12)}
                   className="rounded-full px-8 py-2.5 bg-card hover:bg-primary hover:text-primary-foreground text-foreground border border-border/80 font-bold shadow-md transition-all text-sm cursor-pointer"
                 >
@@ -820,8 +889,8 @@ export default function DashboardPage() {
       </section>
 
       {/* Complaint Detail Dialog */}
-      <Dialog 
-        open={!!selectedIssueId} 
+      <Dialog
+        open={!!selectedIssueId}
         onOpenChange={(open) => {
           if (!open) {
             searchParams.delete("issueId");
@@ -829,80 +898,81 @@ export default function DashboardPage() {
           }
         }}
       >
-
-      {/* Mandatory Location Information Gate Modal for First-Time Registration or Missing City/State */}
-      <Dialog open={showLocationGateModal} onOpenChange={() => {}}>
-        <DialogContent 
-          className="sm:max-w-md bg-card border border-border shadow-2xl rounded-2xl p-6 [&>button]:hidden z-50"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <DialogHeader className="text-left">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-              <MapPin className="w-6 h-6" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-foreground">
-              {language === "en" ? "Location Information Required" : "स्थान विवरण आवश्यक"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground mt-1">
-              {language === "en" 
-                ? "Please enter your City and State to access your personalized civic dashboard and view local community reports." 
-                : "अपने व्यक्तिगत नागरिक डैशबोर्ड और स्थानीय सामुदायिक रिपोर्ट तक पहुंचने के लिए कृपया अपना शहर और राज्य दर्ज करें।"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveLocationGate} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="gateCity" className="text-sm font-semibold">
-                {language === "en" ? "City *" : "शहर *"}
-              </Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="gateCity"
-                  type="text"
-                  placeholder={language === "en" ? "e.g. Bhopal" : "जैसे भोपाल"}
-                  value={gateCity}
-                  onChange={(e) => setGateCity(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+        {/* Mandatory Location Information Gate Modal for First-Time Registration or Missing City/State */}
+        <Dialog open={showLocationGateModal} onOpenChange={() => {}}>
+          <DialogContent
+            className="sm:max-w-md bg-card border border-border shadow-2xl rounded-2xl p-6 [&>button]:hidden z-50"
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
+            <DialogHeader className="text-left">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
+                <MapPin className="w-6 h-6" />
               </div>
-            </div>
+              <DialogTitle className="text-xl font-bold text-foreground">
+                {language === "en" ? "Location Information Required" : "स्थान विवरण आवश्यक"}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
+                {language === "en"
+                  ? "Please enter your City and State to access your personalized civic dashboard and view local community reports."
+                  : "अपने व्यक्तिगत नागरिक डैशबोर्ड और स्थानीय सामुदायिक रिपोर्ट तक पहुंचने के लिए कृपया अपना शहर और राज्य दर्ज करें।"}
+              </DialogDescription>
+            </DialogHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="gateState" className="text-sm font-semibold">
-                {language === "en" ? "State *" : "राज्य *"}
-              </Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="gateState"
-                  type="text"
-                  placeholder={language === "en" ? "e.g. Madhya Pradesh" : "जैसे मध्य प्रदेश"}
-                  value={gateState}
-                  onChange={(e) => setGateState(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+            <form onSubmit={handleSaveLocationGate} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="gateCity" className="text-sm font-semibold">
+                  {language === "en" ? "City *" : "शहर *"}
+                </Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="gateCity"
+                    type="text"
+                    placeholder={language === "en" ? "e.g. Bhopal" : "जैसे भोपाल"}
+                    value={gateCity}
+                    onChange={(e) => setGateCity(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="pt-2">
-              <Button type="submit" className="w-full font-bold shadow-md h-11" disabled={isSavingGate}>
-                {isSavingGate ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    {language === "en" ? "Saving Location..." : "स्थान सहेजा जा रहा है..."}
-                  </>
-                ) : (
-                  language === "en" ? "Save & Enter Dashboard" : "सहेजें और डैशबोर्ड पर जाएं"
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <div className="space-y-2">
+                <Label htmlFor="gateState" className="text-sm font-semibold">
+                  {language === "en" ? "State *" : "राज्य *"}
+                </Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="gateState"
+                    type="text"
+                    placeholder={language === "en" ? "e.g. Madhya Pradesh" : "जैसे मध्य प्रदेश"}
+                    value={gateState}
+                    onChange={(e) => setGateState(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button type="submit" className="w-full font-bold shadow-md h-11" disabled={isSavingGate}>
+                  {isSavingGate ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      {language === "en" ? "Saving Location..." : "स्थान सहेजा जा रहा है..."}
+                    </>
+                  ) : language === "en" ? (
+                    "Save & Enter Dashboard"
+                  ) : (
+                    "सहेजें और डैशबोर्ड पर जाएं"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
         <DialogContent className="max-w-xl overflow-y-auto max-h-[90vh] p-0 border-none bg-card/95 backdrop-blur-md shadow-2xl rounded-2xl">
           {loadingSelected || !selectedIssue ? (
             <div className="p-12 flex flex-col items-center justify-center gap-4">
@@ -913,18 +983,43 @@ export default function DashboardPage() {
             </div>
           ) : (
             (() => {
-              const { confirmations, disagreements, confidence, isVerified, userVote } = 
+              const { confirmations, disagreements, confidence, isVerified, userVote } =
                 issueVerificationService.getComputedState(selectedIssue.id);
               const insight = aiInsightService.getSyncInsight(selectedIssue);
               const hasDepartment = !!insight?.department;
 
               const timelineSteps = [
                 { key: "reported", labelEn: "Reported", labelHi: "दर्ज की गई", complete: true },
-                { key: "ai_categorized", labelEn: "AI Categorized", labelHi: "एआई वर्गीकृत", complete: !!selectedIssue.category },
+                {
+                  key: "ai_categorized",
+                  labelEn: "AI Categorized",
+                  labelHi: "एआई वर्गीकृत",
+                  complete: !!selectedIssue.category,
+                },
                 { key: "community_verified", labelEn: "Verified", labelHi: "सत्यापित", complete: isVerified },
-                { key: "department_assigned", labelEn: "Dept Assigned", labelHi: "विभाग", complete: hasDepartment || selectedIssue.status === IssueStatus.IN_PROGRESS || selectedIssue.status === IssueStatus.RESOLVED },
-                { key: "in_progress", labelEn: "In Progress", labelHi: "प्रगति में", complete: selectedIssue.status === IssueStatus.IN_PROGRESS || selectedIssue.status === IssueStatus.RESOLVED },
-                { key: "resolved", labelEn: "Resolved", labelHi: "सुलझाया गया", complete: selectedIssue.status === IssueStatus.RESOLVED },
+                {
+                  key: "department_assigned",
+                  labelEn: "Dept Assigned",
+                  labelHi: "विभाग",
+                  complete:
+                    hasDepartment ||
+                    selectedIssue.status === IssueStatus.IN_PROGRESS ||
+                    selectedIssue.status === IssueStatus.RESOLVED,
+                },
+                {
+                  key: "in_progress",
+                  labelEn: "In Progress",
+                  labelHi: "प्रगति में",
+                  complete:
+                    selectedIssue.status === IssueStatus.IN_PROGRESS ||
+                    selectedIssue.status === IssueStatus.RESOLVED,
+                },
+                {
+                  key: "resolved",
+                  labelEn: "Resolved",
+                  labelHi: "सुलझाया गया",
+                  complete: selectedIssue.status === IssueStatus.RESOLVED,
+                },
               ];
 
               return (
@@ -949,9 +1044,12 @@ export default function DashboardPage() {
                       <Badge variant="secondary" className="text-xs">
                         {selectedIssue.category}
                       </Badge>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        statusConfig[selectedIssue.status]?.class || statusConfig[IssueStatus.REPORTED].class
-                      }`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          statusConfig[selectedIssue.status]?.class ||
+                          statusConfig[IssueStatus.REPORTED].class
+                        }`}
+                      >
                         {statusConfig[selectedIssue.status]?.icon || statusConfig[IssueStatus.REPORTED].icon}
                         {STATUS_LABELS[selectedIssue.status]?.[language] || selectedIssue.status}
                       </span>
@@ -991,11 +1089,14 @@ export default function DashboardPage() {
                             {language === "en" ? "Reported On" : "रिपोर्ट की तिथि"}
                           </p>
                           <p className="text-sm font-semibold text-foreground">
-                            {new Date(selectedIssue.createdAt).toLocaleDateString(language === "en" ? "en-US" : "hi-IN", {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
+                            {new Date(selectedIssue.createdAt).toLocaleDateString(
+                              language === "en" ? "en-US" : "hi-IN",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )}
                           </p>
                         </div>
                       </div>
@@ -1026,11 +1127,13 @@ export default function DashboardPage() {
                       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 p-3 bg-muted/20 border border-border/40 rounded-xl">
                         {timelineSteps.map((step, idx) => (
                           <div key={step.key} className="flex flex-col items-center text-center relative">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${
-                              step.complete 
-                                ? "bg-green-500 text-white" 
-                                : "bg-muted text-muted-foreground border border-border"
-                            }`}>
+                            <div
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${
+                                step.complete
+                                  ? "bg-green-500 text-white"
+                                  : "bg-muted text-muted-foreground border border-border"
+                              }`}
+                            >
                               {step.complete ? "✓" : idx + 1}
                             </div>
                             <span className="text-[10px] font-semibold mt-1.5 text-foreground leading-tight line-clamp-2 px-0.5">
@@ -1047,7 +1150,10 @@ export default function DashboardPage() {
                         {language === "en" ? "Description" : "विवरण"}
                       </h4>
                       <p className="text-sm text-muted-foreground leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/30 whitespace-pre-wrap font-sans">
-                        {selectedIssue.description || (language === "en" ? "No description provided." : "कोई विवरण प्रदान नहीं किया गया।")}
+                        {selectedIssue.description ||
+                          (language === "en"
+                            ? "No description provided."
+                            : "कोई विवरण प्रदान नहीं किया गया।")}
                       </p>
                     </div>
 
@@ -1069,15 +1175,21 @@ export default function DashboardPage() {
 
                       <div className="grid grid-cols-3 gap-3 text-center mb-4">
                         <div className="p-2 bg-muted/30 rounded-lg">
-                          <p className="text-xs text-muted-foreground">{language === "en" ? "Confirmations" : "पुष्टि"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "en" ? "Confirmations" : "पुष्टि"}
+                          </p>
                           <p className="text-lg font-bold text-green-500">{confirmations}</p>
                         </div>
                         <div className="p-2 bg-muted/30 rounded-lg">
-                          <p className="text-xs text-muted-foreground">{language === "en" ? "Disagreements" : "असहमतियां"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "en" ? "Disagreements" : "असहमतियां"}
+                          </p>
                           <p className="text-lg font-bold text-red-500">{disagreements}</p>
                         </div>
                         <div className="p-2 bg-muted/30 rounded-lg">
-                          <p className="text-xs text-muted-foreground">{language === "en" ? "Confidence" : "विश्वास"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "en" ? "Confidence" : "विश्वास"}
+                          </p>
                           <p className="text-lg font-bold text-primary">{confidence}%</p>
                         </div>
                       </div>
@@ -1108,29 +1220,27 @@ export default function DashboardPage() {
 
                       {userVote && (
                         <p className="text-[10px] text-muted-foreground text-center mt-2.5 italic">
-                          {language === "en" 
+                          {language === "en"
                             ? `You have already verified this issue as: ${userVote === "confirm" ? "Confirm Issue" : "Not an Issue"}.`
-                            : `आपने पहले ही इस समस्या को सत्यापित किया है: ${userVote === "confirm" ? "पुष्टि करें" : "समस्या नहीं है"}.`
-                          }
+                            : `आपने पहले ही इस समस्या को सत्यापित किया है: ${userVote === "confirm" ? "पुष्टि करें" : "समस्या नहीं है"}.`}
                         </p>
                       )}
                     </div>
 
                     {/* Resolution outcome — only the reporter decides whether it holds */}
-                    {user?.id === selectedIssue.userId &&
-                      selectedIssue.status === IssueStatus.RESOLVED && (
-                        <Suspense fallback={<PanelFallback className="h-24" />}>
-                          <ResolutionReviewPanel
-                            issueId={selectedIssue.id}
-                            onReviewed={() => {
-                              searchParams.delete("issueId");
-                              setSearchParams(searchParams);
-                              refetch();
-                              refetchAnalytics();
-                            }}
-                          />
-                        </Suspense>
-                      )}
+                    {user?.id === selectedIssue.userId && selectedIssue.status === IssueStatus.RESOLVED && (
+                      <Suspense fallback={<PanelFallback className="h-24" />}>
+                        <ResolutionReviewPanel
+                          issueId={selectedIssue.id}
+                          onReviewed={() => {
+                            searchParams.delete("issueId");
+                            setSearchParams(searchParams);
+                            refetch();
+                            refetchAnalytics();
+                          }}
+                        />
+                      </Suspense>
+                    )}
 
                     {/* Multi-department coordination: work orders, blockers, referrals */}
                     <Suspense fallback={<PanelFallback className="h-24" />}>
@@ -1145,73 +1255,79 @@ export default function DashboardPage() {
                     )}
 
                     {/* Footer / Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-border mt-5">
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">{selectedIssue.supportsCount}</span>{" "}
-                    {language === "en" ? "supports" : "समर्थन"}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {selectedIssue.latitude && selectedIssue.longitude && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                        onClick={() => handleViewOnMap(selectedIssue.id)}
-                      >
-                        <Map className="w-3.5 h-3.5" />
-                        {language === "en" ? "View on Map" : "मानचित्र"}
-                      </Button>
-                    )}
-                    <Button 
-                      variant={supportedIssues.has(selectedIssue.id) ? "default" : "outline"} 
-                      size="sm" 
-                      className="gap-2"
-                      onClick={() => handleSupport(selectedIssue.id)}
-                      disabled={supportingId === selectedIssue.id}
-                    >
-                      {supportingId === selectedIssue.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ThumbsUp className={`w-4 h-4 ${supportedIssues.has(selectedIssue.id) ? "fill-current" : ""}`} />
-                      )}
-                      {supportedIssues.has(selectedIssue.id)
-                        ? (language === "en" ? "Supported" : "समर्थित")
-                        : (language === "en" ? "Support" : "समर्थन")}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        searchParams.delete("issueId");
-                        setSearchParams(searchParams);
-                      }}
-                    >
-                      {language === "en" ? "Close" : "बंद करें"}
-                    </Button>
+                    <div className="flex items-center justify-between pt-4 border-t border-border mt-5">
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">{selectedIssue.supportsCount}</span>{" "}
+                        {language === "en" ? "supports" : "समर्थन"}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedIssue.latitude && selectedIssue.longitude && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                            onClick={() => handleViewOnMap(selectedIssue.id)}
+                          >
+                            <Map className="w-3.5 h-3.5" />
+                            {language === "en" ? "View on Map" : "मानचित्र"}
+                          </Button>
+                        )}
+                        <Button
+                          variant={supportedIssues.has(selectedIssue.id) ? "default" : "outline"}
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => handleSupport(selectedIssue.id)}
+                          disabled={supportingId === selectedIssue.id}
+                        >
+                          {supportingId === selectedIssue.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <ThumbsUp
+                              className={`w-4 h-4 ${supportedIssues.has(selectedIssue.id) ? "fill-current" : ""}`}
+                            />
+                          )}
+                          {supportedIssues.has(selectedIssue.id)
+                            ? language === "en"
+                              ? "Supported"
+                              : "समर्थित"
+                            : language === "en"
+                              ? "Support"
+                              : "समर्थन"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            searchParams.delete("issueId");
+                            setSearchParams(searchParams);
+                          }}
+                        >
+                          {language === "en" ? "Close" : "बंद करें"}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          );
-        })()
-      )}
-    </DialogContent>
+              );
+            })()
+          )}
+        </DialogContent>
       </Dialog>
     </div>
   );
 }
 
-function StatCard({ 
-  value, 
-  label, 
-  trend, 
+function StatCard({
+  value,
+  label,
+  trend,
   color,
   mapHref,
   topIcon,
-}: { 
-  value: string; 
-  label: string; 
-  trend: string; 
+}: {
+  value: string;
+  label: string;
+  trend: string;
   color: "primary" | "accent" | "warning" | "info" | "dark";
   mapHref?: string;
   topIcon?: React.ReactNode;
@@ -1244,8 +1360,8 @@ function StatCard({
   );
 }
 
-function IssueCard({ 
-  issue, 
+function IssueCard({
+  issue,
   index,
   isSupported,
   isSupporting,
@@ -1254,8 +1370,8 @@ function IssueCard({
   onViewOnMap,
   getTimeAgo,
   activeLanguage,
-}: { 
-  issue: Issue; 
+}: {
+  issue: Issue;
   index: number;
   isSupported: boolean;
   isSupporting: boolean;
@@ -1269,7 +1385,7 @@ function IssueCard({
   const categoryIcon = categoryIcons[issue.category] || <AlertTriangle className="w-4 h-4" />;
   const localizedStatusLabel = STATUS_LABELS[issue.status]?.[activeLanguage] || issue.status;
 
-  const [_verificationState, setVerificationState] = useState(() => 
+  const [_verificationState, setVerificationState] = useState(() =>
     issueVerificationService.getComputedState(issue.id)
   );
 
@@ -1285,7 +1401,7 @@ function IssueCard({
   }, [issue.id, issue.title]);
 
   return (
-    <div 
+    <div
       className="group bg-card rounded-2xl border border-border/80 shadow-card hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden animate-slide-up flex flex-col cursor-pointer"
       style={{ animationDelay: `${index * 0.05}s` }}
       onClick={onViewDetails}
@@ -1308,11 +1424,17 @@ function IssueCard({
         <div>
           {/* Header Badges */}
           <div className="flex items-center justify-between gap-2 mb-2.5">
-            <Badge variant="secondary" className="text-xs font-bold flex items-center gap-1 bg-muted/70 text-muted-foreground px-2.5 py-1">
+            <Badge
+              variant="secondary"
+              className="text-xs font-bold flex items-center gap-1 bg-muted/70 text-muted-foreground px-2.5 py-1"
+            >
               {categoryIcon}
               <span>{issue.category}</span>
             </Badge>
-            <Badge variant="outline" className="text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 px-2.5 py-1 flex items-center gap-1">
+            <Badge
+              variant="outline"
+              className="text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 px-2.5 py-1 flex items-center gap-1"
+            >
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>{localizedStatusLabel}</span>
             </Badge>
@@ -1342,7 +1464,10 @@ function IssueCard({
             {onViewOnMap && (
               <button
                 className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors ml-1"
-                onClick={(e) => { e.stopPropagation(); onViewOnMap(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewOnMap();
+                }}
                 title={activeLanguage === "en" ? "View on Map" : "मानचित्र पर देखें"}
               >
                 <Map className="w-3.5 h-3.5" />
@@ -1351,9 +1476,9 @@ function IssueCard({
             )}
           </div>
 
-          <Button 
-            variant={isSupported ? "default" : "outline"} 
-            size="sm" 
+          <Button
+            variant={isSupported ? "default" : "outline"}
+            size="sm"
             className={`gap-1.5 h-8 text-xs px-3 rounded-lg font-semibold ${isSupported ? "bg-primary text-primary-foreground" : "border-border/80 text-foreground"}`}
             onClick={(e) => {
               e.stopPropagation();

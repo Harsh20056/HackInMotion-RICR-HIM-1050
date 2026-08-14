@@ -4,7 +4,12 @@ import { eventBus } from "../../shared/lib/eventBus.js";
 import { AppError, ForbiddenError, NotFoundError } from "../../shared/errors/AppError.js";
 import { AccessTokenClaims } from "../../shared/lib/jwt.js";
 import { assertCityAccess } from "../../shared/middleware/rbac.js";
-import { isTransitionAllowed, actorMayTransition, timestampFieldFor, ALLOWED_ISSUE_TRANSITIONS } from "./lifecycle.js";
+import {
+  isTransitionAllowed,
+  actorMayTransition,
+  timestampFieldFor,
+  ALLOWED_ISSUE_TRANSITIONS,
+} from "./lifecycle.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 import { enqueueAi } from "../../jobs/scheduler.js";
 
@@ -16,7 +21,9 @@ class UnprocessableError extends AppError {
 }
 
 /** Work order status mirrored from the issue's lifecycle state. */
-const ISSUE_TO_WORK_ORDER_STATUS: Partial<Record<IssueStatus, "pending" | "acknowledged" | "in_progress" | "done" | "rejected">> = {
+const ISSUE_TO_WORK_ORDER_STATUS: Partial<
+  Record<IssueStatus, "pending" | "acknowledged" | "in_progress" | "done" | "rejected">
+> = {
   reported: "pending",
   reopened: "pending",
   acknowledged: "acknowledged",
@@ -43,7 +50,13 @@ export interface TransitionInput {
  * notifies the owning department instead.
  */
 async function notifyOnTransition(
-  issue: { id: string; publicRef: string; title: string; reportedBy: string; workOrders: { departmentId: string }[] },
+  issue: {
+    id: string;
+    publicRef: string;
+    title: string;
+    reportedBy: string;
+    workOrders: { departmentId: string }[];
+  },
   to: IssueStatus,
   reason: string | null,
   actor: AccessTokenClaims
@@ -94,10 +107,11 @@ export const lifecycleService = {
     }
 
     if (!isTransitionAllowed(from, to)) {
-      throw new UnprocessableError(
-        `Illegal transition "${from}" -> "${to}".`,
-        { from, to, allowed: ALLOWED_ISSUE_TRANSITIONS[from] }
-      );
+      throw new UnprocessableError(`Illegal transition "${from}" -> "${to}".`, {
+        from,
+        to,
+        allowed: ALLOWED_ISSUE_TRANSITIONS[from],
+      });
     }
 
     const isReporter = issue.reportedBy === actor.sub;
@@ -121,8 +135,7 @@ export const lifecycleService = {
       if (!input.resolutionNote?.trim()) {
         throw new UnprocessableError("A resolution note is required when marking an issue resolved.");
       }
-      const hasProof =
-        !!input.proofUrl || issue.media.some((m) => m.kind === "resolution_proof");
+      const hasProof = !!input.proofUrl || issue.media.some((m) => m.kind === "resolution_proof");
       if (!hasProof) {
         throw new UnprocessableError(
           "A proof-of-resolution photo is required when marking an issue resolved."

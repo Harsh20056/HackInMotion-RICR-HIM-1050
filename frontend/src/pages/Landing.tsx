@@ -18,7 +18,7 @@ import {
   CheckCheck,
   ChevronRight,
   HardHat,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 
 /**
@@ -64,10 +64,10 @@ export default function Landing() {
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
-    
+
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
-        center: [23.2330, 77.4340],
+        center: [23.233, 77.434],
         zoom: 15,
         zoomControl: false,
         dragging: false,
@@ -76,11 +76,11 @@ export default function Landing() {
         scrollWheelZoom: false,
         boxZoom: false,
         keyboard: false,
-        attributionControl: false
+        attributionControl: false,
       });
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
+        maxZoom: 19,
       }).addTo(map);
 
       mapInstanceRef.current = map;
@@ -106,7 +106,7 @@ export default function Landing() {
           const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
           window.scrollTo({
             top: offsetPosition,
-            behavior: "smooth"
+            behavior: "smooth",
           });
         }
       }, 100);
@@ -220,7 +220,9 @@ export default function Landing() {
     {
       code: "PWD",
       name: isHi ? "लोक निर्माण विभाग (PWD)" : "Public Works Department (PWD)",
-      desc: isHi ? "मुख्य सड़कें, फ्लाईओवर व पुल निर्माण" : "Main Arterial Roads, Flyovers & Bridge Infrastructure",
+      desc: isHi
+        ? "मुख्य सड़कें, फ्लाईओवर व पुल निर्माण"
+        : "Main Arterial Roads, Flyovers & Bridge Infrastructure",
       color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
     },
     {
@@ -232,7 +234,9 @@ export default function Landing() {
     {
       code: "MPMKVVCL",
       name: isHi ? "मध्य क्षेत्र विद्युत वितरण कंपनी" : "MP Madhya Kshetra Vidyut Vitaran",
-      desc: isHi ? "विद्युत ग्रिड, ट्रांसफार्मर एवं स्ट्रीटलाइट" : "Power Distribution & Streetlighting Grids",
+      desc: isHi
+        ? "विद्युत ग्रिड, ट्रांसफार्मर एवं स्ट्रीटलाइट"
+        : "Power Distribution & Streetlighting Grids",
       color: "bg-orange-500/10 text-orange-600 border-orange-500/20",
     },
     {
@@ -244,7 +248,9 @@ export default function Landing() {
     {
       code: "TP",
       name: isHi ? "ट्रैफिक पुलिस एवं नागरिक सुरक्षा" : "Traffic Police & Civic Enforcement",
-      desc: isHi ? "सड़क सुरक्षा, सिग्नल समन्वय व अतिक्रमण" : "Road Safety, Signal Systems & Encroachment Removal",
+      desc: isHi
+        ? "सड़क सुरक्षा, सिग्नल समन्वय व अतिक्रमण"
+        : "Road Safety, Signal Systems & Encroachment Removal",
       color: "bg-rose-500/10 text-rose-600 border-rose-500/20",
     },
   ];
@@ -370,7 +376,7 @@ export default function Landing() {
                   <div className="relative h-56 sm:h-64 w-full rounded-2xl border border-border/60 overflow-hidden flex items-center justify-center">
                     {/* Leaflet Map base */}
                     <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0" />
-                    
+
                     {/* Subtle Overlay to blend the map and grid/pins */}
                     <div className="absolute inset-0 bg-[#f8fafc]/10 dark:bg-slate-950/20 pointer-events-none z-10" />
 
@@ -437,13 +443,14 @@ export default function Landing() {
       </section>
 
       {/* ── SECTION 2: EVERYTHING YOUR CITY NEEDS ── */}
-      <section id="solution-section" className="pt-6 pb-10 sm:pt-8 sm:pb-12 bg-muted/20 border-b border-border/40">
+      <section
+        id="solution-section"
+        className="pt-6 pb-10 sm:pt-8 sm:pb-12 bg-muted/20 border-b border-border/40"
+      >
         <div className="container mx-auto px-4 sm:px-6 text-center max-w-5xl space-y-8">
           <div className="space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              {isHi
-                ? "आपके शहर की हर जरूरत, एक ही स्थान पर"
-                : "Everything your city needs, in one place"}
+              {isHi ? "आपके शहर की हर जरूरत, एक ही स्थान पर" : "Everything your city needs, in one place"}
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {isHi
@@ -458,7 +465,9 @@ export default function Landing() {
                 key={i}
                 className="bg-card rounded-3xl border border-border/80 p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-primary/40 transition-all space-y-2.5 group"
               >
-                <div className={`w-10 h-10 rounded-2xl ${f.badgeBg} flex items-center justify-center transition-transform group-hover:scale-105`}>
+                <div
+                  className={`w-10 h-10 rounded-2xl ${f.badgeBg} flex items-center justify-center transition-transform group-hover:scale-105`}
+                >
                   {f.icon}
                 </div>
                 <h3 className="text-base font-bold text-foreground">{f.title}</h3>
@@ -474,9 +483,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 text-center max-w-5xl space-y-8">
           <div className="space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              {isHi
-                ? "नागरिक समस्या समाधान कैसे कार्य करता है"
-                : "How Coordinated Redressal Works"}
+              {isHi ? "नागरिक समस्या समाधान कैसे कार्य करता है" : "How Coordinated Redressal Works"}
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {isHi
@@ -492,12 +499,12 @@ export default function Landing() {
                 className="bg-card rounded-3xl border border-border/80 p-5 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-all relative overflow-hidden"
               >
                 <div className="flex items-center justify-between">
-                  <div className={`w-10 h-10 rounded-2xl border ${s.iconBg} flex items-center justify-center`}>
+                  <div
+                    className={`w-10 h-10 rounded-2xl border ${s.iconBg} flex items-center justify-center`}
+                  >
                     {s.icon}
                   </div>
-                  <span className="text-xs font-black text-muted-foreground/60 tracking-wider">
-                    {s.num}
-                  </span>
+                  <span className="text-xs font-black text-muted-foreground/60 tracking-wider">{s.num}</span>
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="text-sm font-bold text-foreground">{s.title}</h3>
@@ -514,9 +521,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 text-center max-w-5xl space-y-8">
           <div className="space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              {isHi
-                ? "एकीकृत भोपाल नगर पालिका विभाग"
-                : "Integrated Bhopal Departments"}
+              {isHi ? "एकीकृत भोपाल नगर पालिका विभाग" : "Integrated Bhopal Departments"}
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {isHi
@@ -531,7 +536,9 @@ export default function Landing() {
                 key={i}
                 className="bg-card rounded-3xl border border-border/80 p-4 shadow-sm hover:border-primary/40 transition-all flex items-start gap-3.5"
               >
-                <div className={`w-9 h-9 rounded-xl border flex items-center justify-center font-bold text-xs shrink-0 ${dept.color}`}>
+                <div
+                  className={`w-9 h-9 rounded-xl border flex items-center justify-center font-bold text-xs shrink-0 ${dept.color}`}
+                >
                   {dept.code.slice(0, 2)}
                 </div>
                 <div className="space-y-0.5 min-w-0">
@@ -698,7 +705,12 @@ export default function Landing() {
 // ── Clean Vector Indian Flag SVG ──────────────────────────────
 function _CleanIndianFlag() {
   return (
-    <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-sm">
+    <svg
+      viewBox="0 0 500 300"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full filter drop-shadow-sm"
+    >
       <defs>
         {/* Gradients for smooth, clean vector 3D look */}
         <linearGradient id="flag-saffron-grad" x1="0" y1="0" x2="0" y2="1">
@@ -718,13 +730,22 @@ function _CleanIndianFlag() {
       {/* Flag Stripes (rendered with precise wave curves) */}
       <g>
         {/* Saffron Stripe */}
-        <path d="M 40,60 C 130,45 220,75 310,60 C 390,48 450,58 470,60 L 470,105 C 450,103 390,93 310,105 C 220,120 130,90 40,105 Z" fill="url(#flag-saffron-grad)" />
-        
+        <path
+          d="M 40,60 C 130,45 220,75 310,60 C 390,48 450,58 470,60 L 470,105 C 450,103 390,93 310,105 C 220,120 130,90 40,105 Z"
+          fill="url(#flag-saffron-grad)"
+        />
+
         {/* White Stripe */}
-        <path d="M 40,105 C 130,90 220,120 310,105 C 390,93 450,103 470,105 L 470,150 C 450,148 390,138 310,150 C 220,165 130,135 40,150 Z" fill="url(#flag-white-grad)" />
-        
+        <path
+          d="M 40,105 C 130,90 220,120 310,105 C 390,93 450,103 470,105 L 470,150 C 450,148 390,138 310,150 C 220,165 130,135 40,150 Z"
+          fill="url(#flag-white-grad)"
+        />
+
         {/* Green Stripe */}
-        <path d="M 40,150 C 130,135 220,165 310,150 C 390,138 450,148 470,150 L 470,195 C 450,193 390,183 310,195 C 220,210 130,180 40,195 Z" fill="url(#flag-green-grad)" />
+        <path
+          d="M 40,150 C 130,135 220,165 310,150 C 390,138 450,148 470,150 L 470,195 C 450,193 390,183 310,195 C 220,210 130,180 40,195 Z"
+          fill="url(#flag-green-grad)"
+        />
       </g>
 
       {/* Ashoka Chakra */}
@@ -737,17 +758,7 @@ function _CleanIndianFlag() {
           const rad = (angle * Math.PI) / 180;
           const x2 = 21 * Math.cos(rad);
           const y2 = 21 * Math.sin(rad);
-          return (
-            <line
-              key={i}
-              x1={0}
-              y1={0}
-              x2={x2}
-              y2={y2}
-              stroke="#000080"
-              strokeWidth="1.2"
-            />
-          );
+          return <line key={i} x1={0} y1={0} x2={x2} y2={y2} stroke="#000080" strokeWidth="1.2" />;
         })}
         {/* Tiny dots on the outer edge */}
         {[...Array(24)].map((_, i) => {
@@ -755,15 +766,7 @@ function _CleanIndianFlag() {
           const rad = (angle * Math.PI) / 180;
           const cx = 19.5 * Math.cos(rad);
           const cy = 19.5 * Math.sin(rad);
-          return (
-            <circle
-              key={`dot-${i}`}
-              cx={cx}
-              cy={cy}
-              r="0.7"
-              fill="#000080"
-            />
-          );
+          return <circle key={`dot-${i}`} cx={cx} cy={cy} r="0.7" fill="#000080" />;
         })}
       </g>
     </svg>
@@ -773,14 +776,25 @@ function _CleanIndianFlag() {
 // ── Stylized Brush Painted Indian Flag SVG ──────────────────────
 function IndianFlagBrush() {
   return (
-    <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-md">
+    <svg
+      viewBox="0 0 500 300"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full filter drop-shadow-md"
+    >
       <defs>
         {/* The filter to create the rough, organic hand-painted brush edges */}
         <filter id="brush-edges" x="-10%" y="-10%" width="120%" height="120%">
           <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G" />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="15"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
         </filter>
-        
+
         {/* Gradient for subtle flag texture */}
         <linearGradient id="brush-saffron" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#FF9933" />
@@ -795,13 +809,25 @@ function IndianFlagBrush() {
       {/* Flag Stripes (rendered with the displacement filter) */}
       <g filter="url(#brush-edges)">
         {/* Saffron Stripe (slightly wavy path) */}
-        <path d="M 40,55 C 120,40 240,65 360,45 C 430,35 470,50 480,55 L 475,100 C 460,95 420,85 360,95 C 240,115 120,85 35,100 Z" fill="url(#brush-saffron)" opacity="0.95" />
-        
+        <path
+          d="M 40,55 C 120,40 240,65 360,45 C 430,35 470,50 480,55 L 475,100 C 460,95 420,85 360,95 C 240,115 120,85 35,100 Z"
+          fill="url(#brush-saffron)"
+          opacity="0.95"
+        />
+
         {/* White Stripe (slightly overlapping the saffron and green) */}
-        <path d="M 33,103 C 115,88 235,112 355,95 C 425,85 465,97 478,103 L 473,150 C 458,145 418,135 355,145 C 235,162 115,135 30,150 Z" fill="#FFFFFF" opacity="0.98" />
-        
+        <path
+          d="M 33,103 C 115,88 235,112 355,95 C 425,85 465,97 478,103 L 473,150 C 458,145 418,135 355,145 C 235,162 115,135 30,150 Z"
+          fill="#FFFFFF"
+          opacity="0.98"
+        />
+
         {/* Green Stripe */}
-        <path d="M 28,153 C 110,138 230,162 350,145 C 420,135 460,147 473,153 L 468,198 C 453,193 413,183 350,193 C 230,210 110,183 25,198 Z" fill="url(#brush-green)" opacity="0.95" />
+        <path
+          d="M 28,153 C 110,138 230,162 350,145 C 420,135 460,147 473,153 L 468,198 C 453,193 413,183 350,193 C 230,210 110,183 25,198 Z"
+          fill="url(#brush-green)"
+          opacity="0.95"
+        />
 
         {/* Small paint splatters for realistic brush effect */}
         <circle cx="25" cy="50" r="3" fill="#FF9933" opacity="0.7" />
@@ -821,17 +847,7 @@ function IndianFlagBrush() {
           const rad = (angle * Math.PI) / 180;
           const x2 = 23 * Math.cos(rad);
           const y2 = 23 * Math.sin(rad);
-          return (
-            <line
-              key={i}
-              x1={0}
-              y1={0}
-              x2={x2}
-              y2={y2}
-              stroke="#000080"
-              strokeWidth="1.2"
-            />
-          );
+          return <line key={i} x1={0} y1={0} x2={x2} y2={y2} stroke="#000080" strokeWidth="1.2" />;
         })}
         {/* Tiny decorative circles between spokes at the outer edge */}
         {[...Array(24)].map((_, i) => {
@@ -839,15 +855,7 @@ function IndianFlagBrush() {
           const rad = (angle * Math.PI) / 180;
           const cx = 21.5 * Math.cos(rad);
           const cy = 21.5 * Math.sin(rad);
-          return (
-            <circle
-              key={`dot-${i}`}
-              cx={cx}
-              cy={cy}
-              r="0.8"
-              fill="#000080"
-            />
-          );
+          return <circle key={`dot-${i}`} cx={cx} cy={cy} r="0.8" fill="#000080" />;
         })}
       </g>
     </svg>

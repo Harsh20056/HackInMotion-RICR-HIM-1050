@@ -2,16 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
-import { 
-  MapPin, 
-  Shield, 
-  ArrowRight,
-  CheckCircle2,
-  Users,
-  Clock,
-  Trophy,
-  FolderLock
-} from "lucide-react";
+import { MapPin, Shield, ArrowRight, CheckCircle2, Users, Clock, Trophy, FolderLock } from "lucide-react";
 
 export function HeroSection() {
   const { t, language } = useLanguage();
@@ -26,9 +17,12 @@ export function HeroSection() {
     <section className="relative min-h-screen hero-gradient pt-24 pb-16 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
       <div className="container mx-auto px-4 relative">
@@ -42,18 +36,26 @@ export function HeroSection() {
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-6 animate-slide-up leading-tight">
             {t("hero.title1")}{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">{t("hero.title2")}</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">
+              {t("hero.title2")}
+            </span>
             <br />
             {t("hero.title3")} <span className="text-secondary">Samadhan</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <p
+            className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up"
+            style={{ animationDelay: "0.1s" }}
+          >
             {t("hero.subtitle")}
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-slide-up"
+            style={{ animationDelay: "0.2s" }}
+          >
             <Link to={ROUTES.REPORT_ISSUE}>
               <Button variant="hero" className="group">
                 <MapPin className="w-5 h-5" />
@@ -110,7 +112,10 @@ export function HeroSection() {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 animate-fade-in" style={{ animationDelay: "0.6s" }}>
+          <div
+            className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 animate-fade-in"
+            style={{ animationDelay: "0.6s" }}
+          >
             {stats.map((stat) => (
               <div key={stat.labelKey} className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-1">
@@ -130,16 +135,16 @@ export function HeroSection() {
   );
 }
 
-function QuickActionCard({ 
-  icon, 
-  title, 
-  description, 
+function QuickActionCard({
+  icon,
+  title,
+  description,
   href,
-  delay 
-}: { 
-  icon: React.ReactNode; 
-  title: string; 
-  description: string; 
+  delay,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
   href: string;
   delay: string;
 }) {

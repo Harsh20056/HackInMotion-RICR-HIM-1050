@@ -9,4 +9,3 @@ export { visionService } from "./services/visionService";
 // report-issue flow (and its deps) into every module that imports
 // issueService/issueRepository from this barrel, including the
 // always-mounted Header widget.
-

@@ -34,13 +34,13 @@ describe("useReportIssue Hook state management & submission", () => {
     act(() => {
       result.current.setLocation("Gaur City, Delhi");
       result.current.setLatitude(28.6139);
-      result.current.setLongitude(77.2090);
+      result.current.setLongitude(77.209);
       result.current.setGeocodeStatus("success");
     });
 
     expect(result.current.location).toBe("Gaur City, Delhi");
     expect(result.current.latitude).toBe(28.6139);
-    expect(result.current.longitude).toBe(77.2090);
+    expect(result.current.longitude).toBe(77.209);
     expect(result.current.geocodeStatus).toBe("success");
 
     // 2. Set other valid form fields
@@ -65,7 +65,7 @@ describe("useReportIssue Hook state management & submission", () => {
         category: "roads",
         location: "Gaur City, Delhi",
         latitude: 28.6139,
-        longitude: 77.2090,
+        longitude: 77.209,
       }),
       null,
       "en"
@@ -75,7 +75,7 @@ describe("useReportIssue Hook state management & submission", () => {
   it("rejects files larger than 10MB in handleImageChange", async () => {
     const { result } = renderHook(() => useReportIssue(mockUser, "en"));
     const largeFile = new File(["a".repeat(11 * 1024 * 1024)], "too_large.jpg", { type: "image/jpeg" });
-    
+
     const event = {
       target: {
         files: [largeFile],

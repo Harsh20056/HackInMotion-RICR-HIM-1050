@@ -43,7 +43,7 @@ describe("gamificationService", () => {
       userId: "user123",
       mediaUrl: null,
       masterIssueId: null,
-    }
+    },
   ];
 
   const mockSupported: Issue[] = [
@@ -62,7 +62,7 @@ describe("gamificationService", () => {
       userId: "other_user",
       mediaUrl: null,
       masterIssueId: null,
-    }
+    },
   ];
 
   it("calculates XP and level progress correctly", () => {
@@ -83,20 +83,20 @@ describe("gamificationService", () => {
     const progress = gamificationService.computeProgress(mockIssues, mockSupported);
 
     // "first_report" should be unlocked
-    const firstReport = progress.achievements.find(a => a.id === "first_report");
+    const firstReport = progress.achievements.find((a) => a.id === "first_report");
     expect(firstReport?.unlocked).toBe(true);
 
     // "road_guardian" should be unlocked since issue1 is in category "Roads"
-    const roadGuardian = progress.achievements.find(a => a.id === "road_guardian");
+    const roadGuardian = progress.achievements.find((a) => a.id === "road_guardian");
     expect(roadGuardian?.unlocked).toBe(true);
 
     // "water_warrior" should be unlocked since issue2 is in category "Water Supply"
-    const waterWarrior = progress.achievements.find(a => a.id === "water_warrior");
+    const waterWarrior = progress.achievements.find((a) => a.id === "water_warrior");
     expect(waterWarrior?.unlocked).toBe(true);
 
     // "clean_city" should be locked because mockIssues doesn't contain category "Sanitation"
     // (Sanitation is in supported issues, but clean_city achievement requires the user to *report* it)
-    const cleanCity = progress.achievements.find(a => a.id === "clean_city");
+    const cleanCity = progress.achievements.find((a) => a.id === "clean_city");
     expect(cleanCity?.unlocked).toBe(false);
   });
 
@@ -112,7 +112,7 @@ describe("gamificationService", () => {
     const leaderboard = gamificationService.getDemoLeaderboard(progress, "Test User");
 
     // Rajesh (145), Priya (98), Amit (62), Test User (37), Sunita (28)
-    const currentUserEntry = leaderboard.find(e => e.isCurrentUser);
+    const currentUserEntry = leaderboard.find((e) => e.isCurrentUser);
     expect(currentUserEntry).toBeDefined();
     expect(currentUserEntry?.rank).toBe(4); // Test User (37) should rank 4th, ahead of Sunita (28)
   });

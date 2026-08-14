@@ -29,9 +29,7 @@ export type MockChangeEvent<T> = {
 
 function emitChange<T>(table: string, event: MockChangeEvent<T>): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent(`samadhan_mock_change_${table}`, { detail: event })
-  );
+  window.dispatchEvent(new CustomEvent(`samadhan_mock_change_${table}`, { detail: event }));
 }
 
 export function subscribeToTable<T>(

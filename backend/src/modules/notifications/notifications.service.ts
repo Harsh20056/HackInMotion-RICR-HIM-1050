@@ -51,7 +51,7 @@ const PRIORITY_LABELS: Record<number, string> = {
 };
 
 function priorityLabel(priority: unknown): string {
-  return typeof priority === "number" ? PRIORITY_LABELS[priority] ?? `P${priority}` : "Unset";
+  return typeof priority === "number" ? (PRIORITY_LABELS[priority] ?? `P${priority}`) : "Unset";
 }
 
 /**
@@ -166,7 +166,8 @@ export function renderTemplate(
 /** Which preference flag governs each template. */
 function preferenceKeyFor(template: NotificationTemplate): "statusChanges" | "assignments" | "slaAlerts" {
   if (template === "work_order.assigned") return "assignments";
-  if (template === "sla.breached" || template === "sla.escalated" || template === "sla.digest") return "slaAlerts";
+  if (template === "sla.breached" || template === "sla.escalated" || template === "sla.digest")
+    return "slaAlerts";
   return "statusChanges";
 }
 
@@ -222,7 +223,11 @@ export const notificationsService = {
   },
 
   /** Fan-out helper: same notification to many recipients, de-duplicated. */
-  async enqueueMany(recipientIds: string[], template: NotificationTemplate, payload?: Record<string, unknown>) {
+  async enqueueMany(
+    recipientIds: string[],
+    template: NotificationTemplate,
+    payload?: Record<string, unknown>
+  ) {
     const unique = [...new Set(recipientIds.filter(Boolean))];
     await Promise.all(unique.map((recipientId) => this.enqueue({ recipientId, template, payload })));
   },
@@ -239,7 +244,10 @@ export const notificationsService = {
     });
 
     return rows.map((n) => {
-      const copy = renderTemplate(n.template as NotificationTemplate, (n.payload ?? {}) as Record<string, unknown>);
+      const copy = renderTemplate(
+        n.template as NotificationTemplate,
+        (n.payload ?? {}) as Record<string, unknown>
+      );
       return {
         id: n.id,
         template: n.template,

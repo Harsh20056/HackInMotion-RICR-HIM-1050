@@ -45,7 +45,10 @@ export interface AiProvider {
   isConfigured(): boolean;
   supportsVision(): boolean;
   /** Must return parsed JSON or throw. Never returns partially-valid data. */
-  complete(req: CompletionRequest, signal: AbortSignal): Promise<{
+  complete(
+    req: CompletionRequest,
+    signal: AbortSignal
+  ): Promise<{
     raw: unknown;
     promptTokens?: number;
     outputTokens?: number;

@@ -74,7 +74,12 @@ export const issuesService = {
     return {
       ...toApiIssue(row),
       media: media.map((m) => ({ id: m.id, kind: m.kind, url: m.url })),
-      workOrders: workOrders.map((wo) => ({ id: wo.id, departmentId: wo.departmentId, role: wo.role, status: wo.status })),
+      workOrders: workOrders.map((wo) => ({
+        id: wo.id,
+        departmentId: wo.departmentId,
+        role: wo.role,
+        status: wo.status,
+      })),
     };
   },
 

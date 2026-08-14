@@ -21,8 +21,7 @@ const IssueDetail = lazy(() => import("@/features/issues/pages/IssueDetailPage")
 const Transparency = lazy(() => import("@/features/transparency/pages/TransparencyPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-function 
-PageLoader() {
+function PageLoader() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -43,7 +42,7 @@ export function AppRoutes() {
           <Route path={ROUTES.CIVIC_MAP} element={<CivicMap />} />
           {/* Public accountability scorecard — deliberately unauthenticated. */}
           <Route path={ROUTES.TRANSPARENCY} element={<Transparency />} />
-          
+
           {/* Protected Citizen Routes */}
           <Route
             path={ROUTES.DASHBOARD}

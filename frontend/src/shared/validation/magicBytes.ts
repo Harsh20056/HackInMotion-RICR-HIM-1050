@@ -2,10 +2,7 @@
  * Validates a file's content by checking its magic number/file signature (first few bytes).
  * This prevents renaming malicious files (e.g. evil.exe to photo.png) to bypass security.
  */
-export async function validateFileSignature(
-  file: File,
-  allowedMimeTypes: string[]
-): Promise<boolean> {
+export async function validateFileSignature(file: File, allowedMimeTypes: string[]): Promise<boolean> {
   return new Promise((resolve) => {
     const fileReader = new FileReader();
 

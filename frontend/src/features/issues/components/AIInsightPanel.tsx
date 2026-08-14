@@ -2,15 +2,7 @@ import { useState, useEffect } from "react";
 import { Issue } from "@/shared/types/domain/Issue";
 import { aiInsightService, IssueInsight } from "../services/aiInsightService";
 import { useLanguage } from "@/app/providers/LanguageProvider";
-import {
-  Sparkles,
-  Building2,
-  Clock,
-  AlertTriangle,
-  Loader2,
-  Zap,
-  Shield,
-} from "lucide-react";
+import { Sparkles, Building2, Clock, AlertTriangle, Loader2, Zap, Shield } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,21 +14,18 @@ interface AIInsightPanelProps {
 // ---------------------------------------------------------------------------
 // Severity / Priority config
 // ---------------------------------------------------------------------------
-const SEVERITY_CONFIG: Record<
-  string,
-  { en: string; hi: string; cls: string }
-> = {
-  low:      { en: "Low",      hi: "निम्न",   cls: "bg-green-500/10  text-green-500  border-green-500/30"  },
-  medium:   { en: "Medium",   hi: "मध्यम",   cls: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30" },
-  high:     { en: "High",     hi: "उच्च",    cls: "bg-orange-500/10 text-orange-500 border-orange-500/30" },
-  critical: { en: "Critical", hi: "गंभीर",   cls: "bg-red-500/10    text-red-500    border-red-500/30"    },
+const SEVERITY_CONFIG: Record<string, { en: string; hi: string; cls: string }> = {
+  low: { en: "Low", hi: "निम्न", cls: "bg-green-500/10  text-green-500  border-green-500/30" },
+  medium: { en: "Medium", hi: "मध्यम", cls: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30" },
+  high: { en: "High", hi: "उच्च", cls: "bg-orange-500/10 text-orange-500 border-orange-500/30" },
+  critical: { en: "Critical", hi: "गंभीर", cls: "bg-red-500/10    text-red-500    border-red-500/30" },
 };
 
 const PRIORITY_CONFIG: Record<string, { en: string; hi: string; cls: string }> = {
-  low:    { en: "Low",        hi: "निम्न",     cls: "text-green-500"  },
-  medium: { en: "Medium",     hi: "मध्यम",     cls: "text-yellow-500" },
-  high:   { en: "High",       hi: "उच्च",      cls: "text-orange-500" },
-  urgent: { en: "Urgent 🚨",  hi: "तत्काल 🚨", cls: "text-red-500"   },
+  low: { en: "Low", hi: "निम्न", cls: "text-green-500" },
+  medium: { en: "Medium", hi: "मध्यम", cls: "text-yellow-500" },
+  high: { en: "High", hi: "उच्च", cls: "text-orange-500" },
+  urgent: { en: "Urgent 🚨", hi: "तत्काल 🚨", cls: "text-red-500" },
 };
 
 // ---------------------------------------------------------------------------
@@ -94,9 +83,7 @@ export function AIInsightPanel({ issue }: AIInsightPanelProps) {
             {language === "en" ? "Powered by Gemini 2.5 Flash" : "Gemini 2.5 Flash द्वारा"}
           </p>
         </div>
-        {loading && (
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
-        )}
+        {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />}
       </div>
 
       {/* ── Body ───────────────────────────────────────────────────────────── */}
@@ -138,9 +125,7 @@ export function AIInsightPanel({ issue }: AIInsightPanelProps) {
                     {language === "en" ? "Severity" : "गंभीरता"}
                   </p>
                 </div>
-                <p className="text-sm font-bold">
-                  {language === "hi" ? sev!.hi : sev!.en}
-                </p>
+                <p className="text-sm font-bold">{language === "hi" ? sev!.hi : sev!.en}</p>
               </div>
               <div className="rounded-xl p-3 border border-border/50 bg-muted/20">
                 <div className="flex items-center gap-1 mb-1.5">
@@ -149,9 +134,7 @@ export function AIInsightPanel({ issue }: AIInsightPanelProps) {
                     {language === "en" ? "Priority" : "प्राथमिकता"}
                   </p>
                 </div>
-                <p className={`text-sm font-bold ${pri!.cls}`}>
-                  {language === "hi" ? pri!.hi : pri!.en}
-                </p>
+                <p className={`text-sm font-bold ${pri!.cls}`}>{language === "hi" ? pri!.hi : pri!.en}</p>
               </div>
             </div>
 
@@ -179,9 +162,7 @@ export function AIInsightPanel({ issue }: AIInsightPanelProps) {
                 </p>
                 <p className="text-sm font-bold text-foreground">
                   ~{insight.estimatedResolutionDays}{" "}
-                  {language === "en"
-                    ? `day${insight.estimatedResolutionDays !== 1 ? "s" : ""}`
-                    : "दिन"}
+                  {language === "en" ? `day${insight.estimatedResolutionDays !== 1 ? "s" : ""}` : "दिन"}
                 </p>
               </div>
             </div>

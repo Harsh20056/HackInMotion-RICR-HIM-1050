@@ -16,12 +16,7 @@ export interface UserAuthContext {
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.USER]: ["create:issues", "support:issues"],
   [UserRole.DEPARTMENT_ADMIN]: ["view:admin_dashboard", "manage:issues"],
-  [UserRole.ADMIN]: [
-    "create:issues",
-    "support:issues",
-    "view:admin_dashboard",
-    "manage:issues",
-  ],
+  [UserRole.ADMIN]: ["create:issues", "support:issues", "view:admin_dashboard", "manage:issues"],
   [UserRole.SUPER_ADMIN]: [
     "create:issues",
     "support:issues",
@@ -45,9 +40,7 @@ export function hasPermission(
 
   // Normalise string/enum input to UserAuthContext
   const ctx: UserAuthContext =
-    typeof userContext === "string"
-      ? { role: userContext as UserRole }
-      : (userContext as UserAuthContext);
+    typeof userContext === "string" ? { role: userContext as UserRole } : (userContext as UserAuthContext);
 
   const permissions = ROLE_PERMISSIONS[ctx.role];
   if (!permissions) return false;

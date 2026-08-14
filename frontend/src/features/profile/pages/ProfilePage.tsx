@@ -39,26 +39,26 @@ import {
   Flame,
   Sparkles,
   Award,
-  Medal
+  Medal,
 } from "lucide-react";
 import { gamificationService } from "../services/gamificationService";
 
 const statusConfig: Record<string, { class: string; icon: React.ReactNode }> = {
-  [IssueStatus.REPORTED]: { 
+  [IssueStatus.REPORTED]: {
     class: "bg-warning/15 text-warning",
-    icon: <AlertTriangle className="w-3 h-3" />
+    icon: <AlertTriangle className="w-3 h-3" />,
   },
-  [IssueStatus.IN_PROGRESS]: { 
+  [IssueStatus.IN_PROGRESS]: {
     class: "bg-info/15 text-info",
-    icon: <Timer className="w-3 h-3" />
+    icon: <Timer className="w-3 h-3" />,
   },
-  [IssueStatus.RESOLVED]: { 
+  [IssueStatus.RESOLVED]: {
     class: "bg-accent/15 text-accent",
-    icon: <CheckCircle2 className="w-3 h-3" />
+    icon: <CheckCircle2 className="w-3 h-3" />,
   },
-  [IssueStatus.REJECTED]: { 
+  [IssueStatus.REJECTED]: {
     class: "bg-destructive/15 text-destructive",
-    icon: <AlertTriangle className="w-3 h-3" />
+    icon: <AlertTriangle className="w-3 h-3" />,
   },
 };
 
@@ -129,7 +129,9 @@ export default function ProfilePage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                {profile?.fullName || (user?.user_metadata?.full_name as string) || (language === "en" ? "My Profile" : "मेरी प्रोफ़ाइल")}
+                {profile?.fullName ||
+                  (user?.user_metadata?.full_name as string) ||
+                  (language === "en" ? "My Profile" : "मेरी प्रोफ़ाइल")}
               </h1>
               <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5" />
@@ -138,9 +140,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <Button 
-            variant="outline" 
-            onClick={handleSignOut} 
+          <Button
+            variant="outline"
+            onClick={handleSignOut}
             className="gap-2 rounded-xl font-semibold border-border/80 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30 transition-all self-end sm:self-center"
           >
             <LogOut className="w-4 h-4 text-rose-500" />
@@ -152,19 +154,31 @@ export default function ProfilePage() {
         <div>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto bg-muted/40 p-1.5 rounded-2xl border border-border/60 gap-1.5">
-              <TabsTrigger value="profile" className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger
+                value="profile"
+                className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm"
+              >
                 <User className="w-4 h-4 shrink-0" />
                 <span className="truncate">{language === "en" ? "Profile" : "प्रोफ़ाइल"}</span>
               </TabsTrigger>
-              <TabsTrigger value="issues" className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger
+                value="issues"
+                className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm"
+              >
                 <FileText className="w-4 h-4 shrink-0" />
                 <span className="truncate">{language === "en" ? "My Issues" : "मेरी समस्याएं"}</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger
+                value="notifications"
+                className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm"
+              >
                 <Bell className="w-4 h-4 shrink-0" />
                 <span className="truncate">{language === "en" ? "Notifications" : "अधिसूचनाएं"}</span>
               </TabsTrigger>
-              <TabsTrigger value="hero" className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger
+                value="hero"
+                className="gap-2 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm"
+              >
                 <Award className="w-4 h-4 text-amber-500 shrink-0" />
                 <span className="truncate">{language === "en" ? "Community Hero" : "सामुदायिक नायक"}</span>
               </TabsTrigger>
@@ -188,7 +202,7 @@ export default function ProfilePage() {
                         <Input
                           id="fullName"
                           value={profile?.fullName || ""}
-                          onChange={(e) => setProfile(p => p ? {...p, fullName: e.target.value} : null)}
+                          onChange={(e) => setProfile((p) => (p ? { ...p, fullName: e.target.value } : null))}
                           className="pl-10 h-11 rounded-xl"
                         />
                       </div>
@@ -203,7 +217,7 @@ export default function ProfilePage() {
                         <Input
                           id="phone"
                           value={profile?.phone || ""}
-                          onChange={(e) => setProfile(p => p ? {...p, phone: e.target.value} : null)}
+                          onChange={(e) => setProfile((p) => (p ? { ...p, phone: e.target.value } : null))}
                           className="pl-10 h-11 rounded-xl"
                           placeholder="+91 "
                         />
@@ -220,7 +234,7 @@ export default function ProfilePage() {
                       <Input
                         id="address"
                         value={profile?.address || ""}
-                        onChange={(e) => setProfile(p => p ? {...p, address: e.target.value} : null)}
+                        onChange={(e) => setProfile((p) => (p ? { ...p, address: e.target.value } : null))}
                         className="pl-10 h-11 rounded-xl"
                         placeholder={language === "en" ? "House/Street/Locality" : "मकान/गली/मुहल्ला"}
                       />
@@ -235,7 +249,7 @@ export default function ProfilePage() {
                       <Input
                         id="city"
                         value={profile?.city || ""}
-                        onChange={(e) => setProfile(p => p ? {...p, city: e.target.value} : null)}
+                        onChange={(e) => setProfile((p) => (p ? { ...p, city: e.target.value } : null))}
                         className="h-11 rounded-xl font-medium"
                         required
                       />
@@ -248,7 +262,7 @@ export default function ProfilePage() {
                       <Input
                         id="state"
                         value={profile?.state || ""}
-                        onChange={(e) => setProfile(p => p ? {...p, state: e.target.value} : null)}
+                        onChange={(e) => setProfile((p) => (p ? { ...p, state: e.target.value } : null))}
                         className="h-11 rounded-xl font-medium"
                         required
                       />
@@ -261,14 +275,18 @@ export default function ProfilePage() {
                       <Input
                         id="pincode"
                         value={profile?.pincode || ""}
-                        onChange={(e) => setProfile(p => p ? {...p, pincode: e.target.value} : null)}
+                        onChange={(e) => setProfile((p) => (p ? { ...p, pincode: e.target.value } : null))}
                         className="h-11 rounded-xl font-medium"
                       />
                     </div>
                   </div>
 
                   <div className="pt-2">
-                    <Button type="submit" disabled={saving} className="gap-2 h-11 px-8 rounded-xl font-bold shadow-md">
+                    <Button
+                      type="submit"
+                      disabled={saving}
+                      className="gap-2 h-11 px-8 rounded-xl font-bold shadow-md"
+                    >
                       {saving ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -312,10 +330,16 @@ export default function ProfilePage() {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {language === "en" ? `Supported (${supportedIssues.length})` : `समर्थित (${supportedIssues.length})`}
+                      {language === "en"
+                        ? `Supported (${supportedIssues.length})`
+                        : `समर्थित (${supportedIssues.length})`}
                     </button>
                   </div>
-                  <Button size="sm" onClick={() => navigate(ROUTES.REPORT_ISSUE)} className="w-full sm:w-auto rounded-xl font-bold h-10 px-5">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(ROUTES.REPORT_ISSUE)}
+                    className="w-full sm:w-auto rounded-xl font-bold h-10 px-5"
+                  >
                     {language === "en" ? "+ Report New Issue" : "+ नई रिपोर्ट"}
                   </Button>
                 </div>
@@ -325,8 +349,8 @@ export default function ProfilePage() {
                     <EmptyState
                       title={language === "en" ? "No Issues Reported" : "कोई समस्या दर्ज नहीं"}
                       description={
-                        language === "en" 
-                          ? "You haven't reported any civic issues yet." 
+                        language === "en"
+                          ? "You haven't reported any civic issues yet."
                           : "आपने अभी तक कोई नागरिक समस्या दर्ज नहीं की है।"
                       }
                       actionText={language === "en" ? "Report an Issue" : "समस्या दर्ज करें"}
@@ -338,7 +362,7 @@ export default function ProfilePage() {
                         const status = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
                         const localizedLabel = STATUS_LABELS[issue.status]?.[language] || issue.status;
                         return (
-                          <div 
+                          <div
                             key={issue.id}
                             className="p-5 bg-muted/20 border border-border/60 rounded-2xl hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer shadow-sm text-left"
                             onClick={() => navigate(ROUTES.ISSUE_DETAIL.replace(":id", issue.id))}
@@ -349,14 +373,14 @@ export default function ProfilePage() {
                                   <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5">
                                     {issue.category}
                                   </Badge>
-                                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${status.class}`}>
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${status.class}`}
+                                  >
                                     {status.icon}
                                     {localizedLabel}
                                   </span>
                                 </div>
-                                <h4 className="font-bold text-base text-foreground mb-1">
-                                  {issue.title}
-                                </h4>
+                                <h4 className="font-bold text-base text-foreground mb-1">{issue.title}</h4>
                                 {issue.location && (
                                   <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1 font-medium">
                                     <MapPin className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
@@ -379,65 +403,63 @@ export default function ProfilePage() {
                       })}
                     </div>
                   )
+                ) : supportedIssues.length === 0 ? (
+                  <EmptyState
+                    title={language === "en" ? "No Supported Issues" : "कोई समर्थित समस्या नहीं"}
+                    description={
+                      language === "en"
+                        ? "You haven't supported or upvoted any issues yet."
+                        : "आपने अभी तक किसी समस्या का समर्थन या वोट नहीं किया है।"
+                    }
+                    actionText={language === "en" ? "Browse Issues" : "समस्याएं देखें"}
+                    onAction={() => navigate(ROUTES.DASHBOARD)}
+                  />
                 ) : (
-                  supportedIssues.length === 0 ? (
-                    <EmptyState
-                      title={language === "en" ? "No Supported Issues" : "कोई समर्थित समस्या नहीं"}
-                      description={
-                        language === "en" 
-                          ? "You haven't supported or upvoted any issues yet." 
-                          : "आपने अभी तक किसी समस्या का समर्थन या वोट नहीं किया है।"
-                      }
-                      actionText={language === "en" ? "Browse Issues" : "समस्याएं देखें"}
-                      onAction={() => navigate(ROUTES.DASHBOARD)}
-                    />
-                  ) : (
-                    <div className="space-y-4">
-                      {supportedIssues.map((issue) => {
-                        const status = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
-                        const localizedLabel = STATUS_LABELS[issue.status]?.[language] || issue.status;
-                        return (
-                          <div 
-                            key={issue.id}
-                            className="p-5 bg-muted/20 border border-border/60 rounded-2xl hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer shadow-sm text-left"
-                            onClick={() => navigate(ROUTES.ISSUE_DETAIL.replace(":id", issue.id))}
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 text-left">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5">
-                                    {issue.category}
-                                  </Badge>
-                                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${status.class}`}>
-                                    {status.icon}
-                                    {localizedLabel}
-                                  </span>
-                                </div>
-                                <h4 className="font-bold text-base text-foreground mb-1">
-                                  {issue.title}
-                                </h4>
-                                {issue.location && (
-                                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1 font-medium">
-                                    <MapPin className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
-                                    {issue.location}
-                                  </p>
-                                )}
+                  <div className="space-y-4">
+                    {supportedIssues.map((issue) => {
+                      const status = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
+                      const localizedLabel = STATUS_LABELS[issue.status]?.[language] || issue.status;
+                      return (
+                        <div
+                          key={issue.id}
+                          className="p-5 bg-muted/20 border border-border/60 rounded-2xl hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer shadow-sm text-left"
+                          onClick={() => navigate(ROUTES.ISSUE_DETAIL.replace(":id", issue.id))}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 text-left">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5">
+                                  {issue.category}
+                                </Badge>
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${status.class}`}
+                                >
+                                  {status.icon}
+                                  {localizedLabel}
+                                </span>
                               </div>
-                              <div className="text-right text-xs text-muted-foreground shrink-0">
-                                <div className="flex items-center gap-1 justify-end font-medium">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  {new Date(issue.createdAt).toLocaleDateString()}
-                                </div>
-                                <p className="text-xs font-bold text-primary mt-1.5">
-                                  👍 {issue.supportsCount} {language === "en" ? "supports" : "समर्थन"}
+                              <h4 className="font-bold text-base text-foreground mb-1">{issue.title}</h4>
+                              {issue.location && (
+                                <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1 font-medium">
+                                  <MapPin className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
+                                  {issue.location}
                                 </p>
+                              )}
+                            </div>
+                            <div className="text-right text-xs text-muted-foreground shrink-0">
+                              <div className="flex items-center gap-1 justify-end font-medium">
+                                <Clock className="w-3.5 h-3.5" />
+                                {new Date(issue.createdAt).toLocaleDateString()}
                               </div>
+                              <p className="text-xs font-bold text-primary mt-1.5">
+                                👍 {issue.supportsCount} {language === "en" ? "supports" : "समर्थन"}
+                              </p>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </TabsContent>
@@ -453,21 +475,29 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <NotificationToggle
                       label={language === "en" ? "Email Notifications" : "ईमेल अधिसूचनाएं"}
-                      description={language === "en" ? "Receive updates via email" : "ईमेल द्वारा अपडेट प्राप्त करें"}
+                      description={
+                        language === "en" ? "Receive updates via email" : "ईमेल द्वारा अपडेट प्राप्त करें"
+                      }
                       checked={notifications?.email_notifications || false}
                       onCheckedChange={(v) => handleNotificationUpdate("email_notifications", v)}
                       icon={<Mail className="w-5 h-5 text-primary" />}
                     />
                     <NotificationToggle
                       label={language === "en" ? "SMS Notifications" : "SMS अधिसूचनाएं"}
-                      description={language === "en" ? "Receive updates via SMS" : "SMS द्वारा अपडेट प्राप्त करें"}
+                      description={
+                        language === "en" ? "Receive updates via SMS" : "SMS द्वारा अपडेट प्राप्त करें"
+                      }
                       checked={notifications?.sms_notifications || false}
                       onCheckedChange={(v) => handleNotificationUpdate("sms_notifications", v)}
                       icon={<Phone className="w-5 h-5 text-primary" />}
                     />
                     <NotificationToggle
                       label={language === "en" ? "Push Notifications" : "पुश अधिसूचनाएं"}
-                      description={language === "en" ? "Receive push notifications in browser" : "ब्राउज़र में पुश अधिसूचनाएं प्राप्त करें"}
+                      description={
+                        language === "en"
+                          ? "Receive push notifications in browser"
+                          : "ब्राउज़र में पुश अधिसूचनाएं प्राप्त करें"
+                      }
                       checked={notifications?.push_notifications || false}
                       onCheckedChange={(v) => handleNotificationUpdate("push_notifications", v)}
                       icon={<Bell className="w-5 h-5 text-primary" />}
@@ -483,25 +513,39 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <NotificationToggle
                       label={language === "en" ? "Issue Updates" : "समस्या अपडेट"}
-                      description={language === "en" ? "Get notified when your issues are updated" : "जब आपकी समस्याएं अपडेट हों तो सूचित करें"}
+                      description={
+                        language === "en"
+                          ? "Get notified when your issues are updated"
+                          : "जब आपकी समस्याएं अपडेट हों तो सूचित करें"
+                      }
                       checked={notifications?.issue_updates || false}
                       onCheckedChange={(v) => handleNotificationUpdate("issue_updates", v)}
                     />
                     <NotificationToggle
                       label={language === "en" ? "Scheme Alerts" : "योजना अलर्ट"}
-                      description={language === "en" ? "New schemes matching your profile" : "आपकी प्रोफ़ाइल से मेल खाती नई योजनाएं"}
+                      description={
+                        language === "en"
+                          ? "New schemes matching your profile"
+                          : "आपकी प्रोफ़ाइल से मेल खाती नई योजनाएं"
+                      }
                       checked={notifications?.scheme_alerts || false}
                       onCheckedChange={(v) => handleNotificationUpdate("scheme_alerts", v)}
                     />
                     <NotificationToggle
                       label={language === "en" ? "Document Reminders" : "दस्तावेज़ अनुस्मारक"}
-                      description={language === "en" ? "Expiry and renewal reminders" : "समाप्ति और नवीनीकरण अनुस्मारक"}
+                      description={
+                        language === "en" ? "Expiry and renewal reminders" : "समाप्ति और नवीनीकरण अनुस्मारक"
+                      }
                       checked={notifications?.document_reminders || false}
                       onCheckedChange={(v) => handleNotificationUpdate("document_reminders", v)}
                     />
                     <NotificationToggle
                       label={language === "en" ? "Weekly Digest" : "साप्ताहिक सारांश"}
-                      description={language === "en" ? "Weekly summary of activity in your area" : "आपके क्षेत्र में गतिविधि का साप्ताहिक सारांश"}
+                      description={
+                        language === "en"
+                          ? "Weekly summary of activity in your area"
+                          : "आपके क्षेत्र में गतिविधि का साप्ताहिक सारांश"
+                      }
                       checked={notifications?.weekly_digest || false}
                       onCheckedChange={(v) => handleNotificationUpdate("weekly_digest", v)}
                     />
@@ -552,7 +596,9 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm font-bold">
                     <span className="text-muted-foreground">
-                      {language === "en" ? `Level ${gamificationState.level}` : `स्तर ${gamificationState.level}`}
+                      {language === "en"
+                        ? `Level ${gamificationState.level}`
+                        : `स्तर ${gamificationState.level}`}
                     </span>
                     <span className="text-foreground">
                       {gamificationState.currentLevelXp} / {gamificationState.nextLevelXp} XP
@@ -583,19 +629,25 @@ export default function ProfilePage() {
                     <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">
                       {language === "en" ? "Verifications" : "सत्यापन"}
                     </p>
-                    <p className="text-2xl font-extrabold text-foreground">{gamificationState.verificationsCount}</p>
+                    <p className="text-2xl font-extrabold text-foreground">
+                      {gamificationState.verificationsCount}
+                    </p>
                   </div>
                   <div className="bg-muted/20 p-4 rounded-2xl border border-border/40">
                     <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">
                       {language === "en" ? "Reported" : "दर्ज मामले"}
                     </p>
-                    <p className="text-2xl font-extrabold text-foreground">{gamificationState.reportedCount}</p>
+                    <p className="text-2xl font-extrabold text-foreground">
+                      {gamificationState.reportedCount}
+                    </p>
                   </div>
                   <div className="bg-muted/20 p-4 rounded-2xl border border-border/40">
                     <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">
                       {language === "en" ? "Resolved" : "समाधान"}
                     </p>
-                    <p className="text-2xl font-extrabold text-foreground">{gamificationState.resolvedCount}</p>
+                    <p className="text-2xl font-extrabold text-foreground">
+                      {gamificationState.resolvedCount}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -626,7 +678,7 @@ export default function ProfilePage() {
                           <span className="text-[10px] font-bold text-center truncate w-full">
                             {ach.title}
                           </span>
-                          
+
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-card border border-border/80 rounded-xl p-3 shadow-2xl opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 z-50 text-xs">
                             <p className="font-bold text-foreground">{ach.title}</p>
@@ -634,11 +686,16 @@ export default function ProfilePage() {
                               {ach.description}
                             </p>
                             <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40 text-[10px]">
-                              <span className={`font-bold ${ach.unlocked ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"}`}>
-                                {ach.unlocked 
-                                  ? (language === "en" ? "✓ Unlocked" : "✓ अनलॉक")
-                                  : (language === "en" ? "✕ Locked" : "✕ लॉक")
-                                }
+                              <span
+                                className={`font-bold ${ach.unlocked ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"}`}
+                              >
+                                {ach.unlocked
+                                  ? language === "en"
+                                    ? "✓ Unlocked"
+                                    : "✓ अनलॉक"
+                                  : language === "en"
+                                    ? "✕ Locked"
+                                    : "✕ लॉक"}
                               </span>
                               <span className="text-primary font-extrabold">+{ach.xpValue} XP</span>
                             </div>
@@ -668,18 +725,22 @@ export default function ProfilePage() {
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
-                            entry.rank === 1
-                              ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                              : entry.rank === 2
-                              ? "bg-slate-400/20 text-slate-600 dark:text-slate-300"
-                              : entry.rank === 3
-                              ? "bg-amber-600/20 text-amber-700 dark:text-amber-400"
-                              : "bg-muted text-muted-foreground"
-                          }`}>
+                          <span
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
+                              entry.rank === 1
+                                ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                                : entry.rank === 2
+                                  ? "bg-slate-400/20 text-slate-600 dark:text-slate-300"
+                                  : entry.rank === 3
+                                    ? "bg-amber-600/20 text-amber-700 dark:text-amber-400"
+                                    : "bg-muted text-muted-foreground"
+                            }`}
+                          >
                             {entry.rank}
                           </span>
-                          <span className={`truncate ${entry.isCurrentUser ? "font-bold text-foreground" : "font-semibold text-foreground/80"}`}>
+                          <span
+                            className={`truncate ${entry.isCurrentUser ? "font-bold text-foreground" : "font-semibold text-foreground/80"}`}
+                          >
                             {entry.name}
                           </span>
                         </div>
@@ -687,9 +748,7 @@ export default function ProfilePage() {
                           <span className="text-xs font-semibold text-muted-foreground">
                             Lv.{entry.level}
                           </span>
-                          <span className="font-extrabold text-foreground">
-                            {entry.impactScore} pts
-                          </span>
+                          <span className="font-extrabold text-foreground">{entry.impactScore} pts</span>
                         </div>
                       </div>
                     ))}

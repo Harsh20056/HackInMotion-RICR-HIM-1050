@@ -35,7 +35,7 @@ function mulberry32(seed: number) {
 const rand = mulberry32(20260813);
 
 const randInt = (min: number, max: number) => Math.floor(rand() * (max - min + 1)) + min;
-const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
+const pick = <T>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
 
 /**
  * `city` is the jurisdiction the department's single seeded admin account is
@@ -59,29 +59,105 @@ const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
  */
 const DEPARTMENTS = [
   { code: "water_supply", nameEn: "Jal Board / Water Corporation", nameHi: "जल बोर्ड", adminCity: "Bhopal" },
-  { code: "roads", nameEn: "Public Works Department (PWD)", nameHi: "लोक निर्माण विभाग", adminCity: "Bhopal" },
-  { code: "sanitation", nameEn: "Municipal Solid Waste Management", nameHi: "नगर निगम स्वच्छता विभाग", adminCity: "Bhopal" },
-  { code: "electricity", nameEn: "State Electricity Board / DISCOM", nameHi: "राज्य विद्युत बोर्ड", adminCity: "Indore" },
+  {
+    code: "roads",
+    nameEn: "Public Works Department (PWD)",
+    nameHi: "लोक निर्माण विभाग",
+    adminCity: "Bhopal",
+  },
+  {
+    code: "sanitation",
+    nameEn: "Municipal Solid Waste Management",
+    nameHi: "नगर निगम स्वच्छता विभाग",
+    adminCity: "Bhopal",
+  },
+  {
+    code: "electricity",
+    nameEn: "State Electricity Board / DISCOM",
+    nameHi: "राज्य विद्युत बोर्ड",
+    adminCity: "Indore",
+  },
   { code: "parks", nameEn: "Horticulture Department", nameHi: "उद्यान विभाग", adminCity: "Indore" },
-  { code: "buildings", nameEn: "Building & Construction Department", nameHi: "भवन एवं निर्माण विभाग", adminCity: "Indore" },
-  { code: "metro", nameEn: "Metro Transit Authority (Bhopal Metro)", nameHi: "मेट्रो ट्रांजिट अथॉरिटी (भोपाल मेट्रो)", adminCity: "Bhopal" },
+  {
+    code: "buildings",
+    nameEn: "Building & Construction Department",
+    nameHi: "भवन एवं निर्माण विभाग",
+    adminCity: "Indore",
+  },
+  {
+    code: "metro",
+    nameEn: "Metro Transit Authority (Bhopal Metro)",
+    nameHi: "मेट्रो ट्रांजिट अथॉरिटी (भोपाल मेट्रो)",
+    adminCity: "Bhopal",
+  },
 ];
 
 const CATEGORIES = [
-  { code: "water", nameEn: "Water Supply", nameHi: "जल आपूर्ति", dept: "water_supply", priority: 2, radius: 100, window: 72 },
-  { code: "sanitation", nameEn: "Sanitation", nameHi: "स्वच्छता", dept: "sanitation", priority: 3, radius: 75, window: 48 },
-  { code: "electricity", nameEn: "Electricity", nameHi: "बिजली", dept: "electricity", priority: 1, radius: 100, window: 24 },
+  {
+    code: "water",
+    nameEn: "Water Supply",
+    nameHi: "जल आपूर्ति",
+    dept: "water_supply",
+    priority: 2,
+    radius: 100,
+    window: 72,
+  },
+  {
+    code: "sanitation",
+    nameEn: "Sanitation",
+    nameHi: "स्वच्छता",
+    dept: "sanitation",
+    priority: 3,
+    radius: 75,
+    window: 48,
+  },
+  {
+    code: "electricity",
+    nameEn: "Electricity",
+    nameHi: "बिजली",
+    dept: "electricity",
+    priority: 1,
+    radius: 100,
+    window: 24,
+  },
   { code: "roads", nameEn: "Roads", nameHi: "सड़कें", dept: "roads", priority: 3, radius: 50, window: 168 },
-  { code: "parks", nameEn: "Parks & Gardens", nameHi: "पार्क और बगीचे", dept: "parks", priority: 4, radius: 75, window: 168 },
-  { code: "buildings", nameEn: "Buildings", nameHi: "भवन", dept: "buildings", priority: 2, radius: 50, window: 168 },
-  { code: "metro", nameEn: "Metro Transit & Stations", nameHi: "मेट्रो ट्रांजिट और स्टेशन", dept: "metro", priority: 2, radius: 100, window: 48 },
+  {
+    code: "parks",
+    nameEn: "Parks & Gardens",
+    nameHi: "पार्क और बगीचे",
+    dept: "parks",
+    priority: 4,
+    radius: 75,
+    window: 168,
+  },
+  {
+    code: "buildings",
+    nameEn: "Buildings",
+    nameHi: "भवन",
+    dept: "buildings",
+    priority: 2,
+    radius: 50,
+    window: 168,
+  },
+  {
+    code: "metro",
+    nameEn: "Metro Transit & Stations",
+    nameHi: "मेट्रो ट्रांजिट और स्टेशन",
+    dept: "metro",
+    priority: 2,
+    radius: 100,
+    window: 48,
+  },
 ];
 
 // Demonstrates multi-department routing via data, not code: sanitation
 // issues also notify the roads department (garbage often blocks roadways).
-const EXTRA_ROUTING_RULES: { categoryCode: string; departmentCode: string; role: "supporting" | "notify"; priority: number }[] = [
-  { categoryCode: "sanitation", departmentCode: "roads", role: "notify", priority: 5 },
-];
+const EXTRA_ROUTING_RULES: {
+  categoryCode: string;
+  departmentCode: string;
+  role: "supporting" | "notify";
+  priority: number;
+}[] = [{ categoryCode: "sanitation", departmentCode: "roads", role: "notify", priority: 5 }];
 
 /**
  * Real ward / arterial-road points so reverse geocoding returns a
@@ -244,19 +320,42 @@ const DESCRIPTIONS: Record<string, string[]> = {
 };
 
 const CITIZEN_NAMES = [
-  "Rajesh Kumar", "Priya Sharma", "Amit Patel", "Sunita Devi", "Vikram Singh",
-  "Anjali Verma", "Mohammed Irfan", "Kavita Joshi", "Deepak Malviya", "Neha Agrawal",
-  "Sanjay Yadav", "Rekha Chouhan",
+  "Rajesh Kumar",
+  "Priya Sharma",
+  "Amit Patel",
+  "Sunita Devi",
+  "Vikram Singh",
+  "Anjali Verma",
+  "Mohammed Irfan",
+  "Kavita Joshi",
+  "Deepak Malviya",
+  "Neha Agrawal",
+  "Sanjay Yadav",
+  "Rekha Chouhan",
 ];
 
 const RESOLUTION_NOTES: Record<string, string[]> = {
-  water: ["Pipeline section replaced and pressure restored.", "Leak clamped and the road surface reinstated."],
-  sanitation: ["Bin cleared and collection frequency increased for this lane.", "Sewer line jetted and the spill area disinfected."],
-  electricity: ["Faulty streetlight fitting replaced and tested.", "Loose conductor re-tensioned and insulation restored."],
+  water: [
+    "Pipeline section replaced and pressure restored.",
+    "Leak clamped and the road surface reinstated.",
+  ],
+  sanitation: [
+    "Bin cleared and collection frequency increased for this lane.",
+    "Sewer line jetted and the spill area disinfected.",
+  ],
+  electricity: [
+    "Faulty streetlight fitting replaced and tested.",
+    "Loose conductor re-tensioned and insulation restored.",
+  ],
   roads: ["Pothole filled with hot mix and compacted.", "Carriageway patched and the surface levelled."],
   parks: ["Grass cut, track cleared and debris removed.", "Play equipment repaired and safety-checked."],
   buildings: ["Crack grouted and the wall re-plastered.", "Railing re-anchored and load-tested."],
-  metro: ["Escalator technician repaired the motor and tested operations.", "Ticket machine sensor cleaned and calibrated.", "Cleanliness team dispatched, platform cleared.", "AC unit serviced and refrigerant recharged."],
+  metro: [
+    "Escalator technician repaired the motor and tested operations.",
+    "Ticket machine sensor cleaned and calibrated.",
+    "Cleanliness team dispatched, platform cleared.",
+    "AC unit serviced and refrigerant recharged.",
+  ],
 };
 
 const now = new Date();
@@ -374,7 +473,12 @@ async function upsertUsers(deptIds: Map<string, string>) {
   await prisma.user.upsert({
     where: { email: superAdminEmail },
     update: {},
-    create: { email: superAdminEmail, passwordHash: superAdminHash, fullName: "Super Admin", role: "super_admin" },
+    create: {
+      email: superAdminEmail,
+      passwordHash: superAdminHash,
+      fullName: "Super Admin",
+      role: "super_admin",
+    },
   });
 
   // Each department admin has its own email + password env var.
@@ -406,7 +510,7 @@ async function upsertUsers(deptIds: Map<string, string>) {
 
   const citizenHash = await bcrypt.hash(requireEnv("SEED_CITIZEN_PASSWORD"), BCRYPT_ROUNDS);
   const citizenIds: string[] = [];
-  
+
   // Seed the standard demo citizen
   const citizenDemoEmail = "citizen@samadhan.gov";
   const citizenDemoRow = await prisma.user.upsert({
@@ -585,174 +689,205 @@ async function seedIssues(
 
       const idByRef = new Map(inserted.map((r) => [r.public_ref, r.id]));
 
-  const reports: Prisma.IssueReportCreateManyInput[] = [];
-  const history: Prisma.IssueStatusHistoryCreateManyInput[] = [];
-  const media: Prisma.IssueMediaCreateManyInput[] = [];
-  const workOrders: Prisma.WorkOrderCreateManyInput[] = [];
-  const supports: Prisma.IssueSupportCreateManyInput[] = [];
-  const verifications: Prisma.CitizenVerificationCreateManyInput[] = [];
-  const issueUpdates: { id: string; supportsCount: number; acknowledgedAt: Date | null; resolvedAt: Date | null; verifiedAt: Date | null; resolutionNote: string | null; resolvedById: string | null }[] = [];
+      const reports: Prisma.IssueReportCreateManyInput[] = [];
+      const history: Prisma.IssueStatusHistoryCreateManyInput[] = [];
+      const media: Prisma.IssueMediaCreateManyInput[] = [];
+      const workOrders: Prisma.WorkOrderCreateManyInput[] = [];
+      const supports: Prisma.IssueSupportCreateManyInput[] = [];
+      const verifications: Prisma.CitizenVerificationCreateManyInput[] = [];
+      const issueUpdates: {
+        id: string;
+        supportsCount: number;
+        acknowledgedAt: Date | null;
+        resolvedAt: Date | null;
+        verifiedAt: Date | null;
+        resolutionNote: string | null;
+        resolvedById: string | null;
+      }[] = [];
 
-  const rules = await prisma.categoryDepartmentRule.findMany();
+      const rules = await prisma.categoryDepartmentRule.findMany();
 
-  // Dense wards get the duplicate clusters, so dedup is visible where it
-  // would realistically happen.
-  const clusterRefs = new Set(
-    todo.filter((p) => p.lifecycle !== "open").slice(0, 10).map((p) => p.ref)
-  );
-  // A handful of issues become genuine community hotspots.
-  const hotspotRefs = new Set(todo.filter((_, i) => i % 17 === 0).slice(0, 8).map((p) => p.ref));
+      // Dense wards get the duplicate clusters, so dedup is visible where it
+      // would realistically happen.
+      const clusterRefs = new Set(
+        todo
+          .filter((p) => p.lifecycle !== "open")
+          .slice(0, 10)
+          .map((p) => p.ref)
+      );
+      // A handful of issues become genuine community hotspots.
+      const hotspotRefs = new Set(
+        todo
+          .filter((_, i) => i % 17 === 0)
+          .slice(0, 8)
+          .map((p) => p.ref)
+      );
 
-  for (const p of todo) {
-    const issueId = idByRef.get(p.ref)!;
-    const deptAdminId = deptAdminIds.get(p.dept)!;
-    const catId = catIds.get(p.categoryCode)!;
+      for (const p of todo) {
+        const issueId = idByRef.get(p.ref)!;
+        const deptAdminId = deptAdminIds.get(p.dept)!;
+        const catId = catIds.get(p.categoryCode)!;
 
-    // ── Status history chain ────────────────────────────────────────────
-    const chain: string[] =
-      p.lifecycle === "done"
-        ? p.finalStatus === "verified"
-          ? ["reported", "acknowledged", "in_progress", "resolved", "verified"]
-          : ["reported", "acknowledged", "in_progress", "resolved"]
-        : p.lifecycle === "in_progress"
-          ? ["reported", "acknowledged", "in_progress"]
-          : p.finalStatus === "acknowledged"
-            ? ["reported", "acknowledged"]
-            : ["reported"];
+        // ── Status history chain ────────────────────────────────────────────
+        const chain: string[] =
+          p.lifecycle === "done"
+            ? p.finalStatus === "verified"
+              ? ["reported", "acknowledged", "in_progress", "resolved", "verified"]
+              : ["reported", "acknowledged", "in_progress", "resolved"]
+            : p.lifecycle === "in_progress"
+              ? ["reported", "acknowledged", "in_progress"]
+              : p.finalStatus === "acknowledged"
+                ? ["reported", "acknowledged"]
+                : ["reported"];
 
-    const totalResolutionHours = p.resolutionHours;
-    let cursor = p.createdAt.getTime();
-    let acknowledgedAt: Date | null = null;
-    let resolvedAt: Date | null = null;
-    let verifiedAt: Date | null = null;
+        const totalResolutionHours = p.resolutionHours;
+        let cursor = p.createdAt.getTime();
+        let acknowledgedAt: Date | null = null;
+        let resolvedAt: Date | null = null;
+        let verifiedAt: Date | null = null;
 
-    for (let step = 0; step < chain.length; step++) {
-      const toStatus = chain[step];
-      const fromStatus = step === 0 ? null : chain[step - 1];
+        for (let step = 0; step < chain.length; step++) {
+          const toStatus = chain[step];
+          const fromStatus = step === 0 ? null : chain[step - 1];
 
-      if (step > 0) {
-        // Spread the department's total turnaround across the steps:
-        // acknowledge quickly, then the bulk of the time doing the work.
-        const share = toStatus === "acknowledged" ? 0.15 : toStatus === "in_progress" ? 0.25 : toStatus === "resolved" ? 0.6 : 0.2;
-        cursor += totalResolutionHours * share * 3_600_000;
-      }
-      const at = new Date(Math.min(cursor, now.getTime()));
-      const byCitizen = toStatus === "reported" || toStatus === "verified";
+          if (step > 0) {
+            // Spread the department's total turnaround across the steps:
+            // acknowledge quickly, then the bulk of the time doing the work.
+            const share =
+              toStatus === "acknowledged"
+                ? 0.15
+                : toStatus === "in_progress"
+                  ? 0.25
+                  : toStatus === "resolved"
+                    ? 0.6
+                    : 0.2;
+            cursor += totalResolutionHours * share * 3_600_000;
+          }
+          const at = new Date(Math.min(cursor, now.getTime()));
+          const byCitizen = toStatus === "reported" || toStatus === "verified";
 
-      history.push({
-        issueId,
-        fromStatus,
-        toStatus,
-        actorId: byCitizen ? p.reporterId : deptAdminId,
-        actorRole: byCitizen ? "citizen" : "dept_admin",
-        reason:
-          toStatus === "reported"
-            ? "Issue reported"
-            : toStatus === "verified"
-              ? "Citizen confirmed the resolution"
-              : `Status moved to ${toStatus}`,
-        createdAt: at,
-      });
+          history.push({
+            issueId,
+            fromStatus,
+            toStatus,
+            actorId: byCitizen ? p.reporterId : deptAdminId,
+            actorRole: byCitizen ? "citizen" : "dept_admin",
+            reason:
+              toStatus === "reported"
+                ? "Issue reported"
+                : toStatus === "verified"
+                  ? "Citizen confirmed the resolution"
+                  : `Status moved to ${toStatus}`,
+            createdAt: at,
+          });
 
-      if (toStatus === "acknowledged") acknowledgedAt = at;
-      if (toStatus === "resolved") resolvedAt = at;
-      if (toStatus === "verified") verifiedAt = at;
-    }
+          if (toStatus === "acknowledged") acknowledgedAt = at;
+          if (toStatus === "resolved") resolvedAt = at;
+          if (toStatus === "verified") verifiedAt = at;
+        }
 
-    // ── Primary citizen report + evidence photo ─────────────────────────
-    reports.push({
-      issueId,
-      reporterId: p.reporterId,
-      description: p.description,
-      isPrimary: true,
-      createdAt: p.createdAt,
-    });
-
-    media.push({
-      issueId,
-      kind: "evidence",
-      url: p.photoUrl,
-      publicId: `seed/evidence/${p.ref}`,
-      uploadedBy: p.reporterId,
-      createdAt: p.createdAt,
-    });
-
-    if (resolvedAt) {
-      media.push({
-        issueId,
-        kind: "resolution_proof",
-        url: p.photoUrl,
-        publicId: `seed/resolution/${p.ref}`,
-        uploadedBy: deptAdminId,
-        createdAt: resolvedAt,
-      });
-    }
-
-    // ── Duplicate clusters: several citizens reporting the same thing ───
-    let extraReporters: string[] = [];
-    if (clusterRefs.has(p.ref)) {
-      const others = citizenIds.filter((c) => c !== p.reporterId);
-      const n = randInt(3, 5);
-      extraReporters = others.slice(0, n);
-      for (const reporterId of extraReporters) {
+        // ── Primary citizen report + evidence photo ─────────────────────────
         reports.push({
           issueId,
-          reporterId,
-          description: "Reporting the same problem — it is still not fixed.",
-          isPrimary: false,
-          createdAt: new Date(Math.min(p.createdAt.getTime() + randInt(1, 48) * 3_600_000, now.getTime())),
+          reporterId: p.reporterId,
+          description: p.description,
+          isPrimary: true,
+          createdAt: p.createdAt,
+        });
+
+        media.push({
+          issueId,
+          kind: "evidence",
+          url: p.photoUrl,
+          publicId: `seed/evidence/${p.ref}`,
+          uploadedBy: p.reporterId,
+          createdAt: p.createdAt,
+        });
+
+        if (resolvedAt) {
+          media.push({
+            issueId,
+            kind: "resolution_proof",
+            url: p.photoUrl,
+            publicId: `seed/resolution/${p.ref}`,
+            uploadedBy: deptAdminId,
+            createdAt: resolvedAt,
+          });
+        }
+
+        // ── Duplicate clusters: several citizens reporting the same thing ───
+        let extraReporters: string[] = [];
+        if (clusterRefs.has(p.ref)) {
+          const others = citizenIds.filter((c) => c !== p.reporterId);
+          const n = randInt(3, 5);
+          extraReporters = others.slice(0, n);
+          for (const reporterId of extraReporters) {
+            reports.push({
+              issueId,
+              reporterId,
+              description: "Reporting the same problem — it is still not fixed.",
+              isPrimary: false,
+              createdAt: new Date(
+                Math.min(p.createdAt.getTime() + randInt(1, 48) * 3_600_000, now.getTime())
+              ),
+            });
+          }
+        }
+
+        // ── Work orders from the routing rules ──────────────────────────────
+        const categoryRules = rules.filter((r) => r.categoryId === catId);
+        const woStatus =
+          p.lifecycle === "done"
+            ? "done"
+            : p.lifecycle === "in_progress"
+              ? "in_progress"
+              : p.finalStatus === "acknowledged"
+                ? "acknowledged"
+                : "pending";
+        categoryRules.forEach((rule, idx) => {
+          workOrders.push({
+            issueId,
+            departmentId: rule.departmentId,
+            role: rule.role,
+            status: woStatus,
+            priority: rule.priority,
+            sequence: idx,
+            createdAt: p.createdAt,
+            completedAt: resolvedAt,
+          });
+        });
+
+        // ── Supports and verification votes ─────────────────────────────────
+        const supporterPool = citizenIds.filter((c) => c !== p.reporterId);
+        const supportCount = hotspotRefs.has(p.ref)
+          ? Math.min(supporterPool.length, randInt(8, 11))
+          : randInt(0, 4);
+        const supporters = supporterPool.slice(0, supportCount);
+        for (const userId of supporters) {
+          supports.push({
+            issueId,
+            userId,
+            createdAt: new Date(Math.min(p.createdAt.getTime() + randInt(1, 200) * 3_600_000, now.getTime())),
+          });
+        }
+
+        // Voters skew towards confirming; disputes cluster on unresolved issues.
+        const voterCount = hotspotRefs.has(p.ref) ? randInt(6, 10) : randInt(0, 5);
+        const voters = supporterPool.slice(0, Math.min(voterCount, supporterPool.length));
+        for (const userId of voters) {
+          verifications.push({ issueId, userId, vote: rand() < 0.82 });
+        }
+
+        issueUpdates.push({
+          id: issueId,
+          supportsCount: supporters.length + extraReporters.length,
+          acknowledgedAt,
+          resolvedAt,
+          verifiedAt,
+          resolutionNote: resolvedAt ? pick(RESOLUTION_NOTES[p.categoryCode]) : null,
+          resolvedById: resolvedAt ? deptAdminId : null,
         });
       }
-    }
-
-    // ── Work orders from the routing rules ──────────────────────────────
-    const categoryRules = rules.filter((r) => r.categoryId === catId);
-    const woStatus =
-      p.lifecycle === "done" ? "done" : p.lifecycle === "in_progress" ? "in_progress" : p.finalStatus === "acknowledged" ? "acknowledged" : "pending";
-    categoryRules.forEach((rule, idx) => {
-      workOrders.push({
-        issueId,
-        departmentId: rule.departmentId,
-        role: rule.role,
-        status: woStatus,
-        priority: rule.priority,
-        sequence: idx,
-        createdAt: p.createdAt,
-        completedAt: resolvedAt,
-      });
-    });
-
-    // ── Supports and verification votes ─────────────────────────────────
-    const supporterPool = citizenIds.filter((c) => c !== p.reporterId);
-    const supportCount = hotspotRefs.has(p.ref)
-      ? Math.min(supporterPool.length, randInt(8, 11))
-      : randInt(0, 4);
-    const supporters = supporterPool.slice(0, supportCount);
-    for (const userId of supporters) {
-      supports.push({
-        issueId,
-        userId,
-        createdAt: new Date(Math.min(p.createdAt.getTime() + randInt(1, 200) * 3_600_000, now.getTime())),
-      });
-    }
-
-    // Voters skew towards confirming; disputes cluster on unresolved issues.
-    const voterCount = hotspotRefs.has(p.ref) ? randInt(6, 10) : randInt(0, 5);
-    const voters = supporterPool.slice(0, Math.min(voterCount, supporterPool.length));
-    for (const userId of voters) {
-      verifications.push({ issueId, userId, vote: rand() < 0.82 });
-    }
-
-    issueUpdates.push({
-      id: issueId,
-      supportsCount: supporters.length + extraReporters.length,
-      acknowledgedAt,
-      resolvedAt,
-      verifiedAt,
-      resolutionNote: resolvedAt ? pick(RESOLUTION_NOTES[p.categoryCode]) : null,
-      resolvedById: resolvedAt ? deptAdminId : null,
-    });
-  }
 
       await tx.issueReport.createMany({ data: reports });
       await tx.issueStatusHistory.createMany({ data: history });
@@ -779,7 +914,7 @@ async function seedIssues(
         )`
       ),
       ", "
-        )}) AS v(id, supports_count, acknowledged_at, resolved_at, verified_at, resolution_note, resolved_by)
+    )}) AS v(id, supports_count, acknowledged_at, resolved_at, verified_at, resolution_note, resolved_by)
         WHERE i.id = v.id
       `);
 

@@ -8,11 +8,11 @@ import { isFeatureEnabled, FeatureFlagName } from "@/shared/config/featureFlags"
 import { adminService } from "@/features/admin/services/adminService";
 import { UserRole } from "@/shared/types/domain/UserRole";
 import { logger } from "@/shared/services/logger";
-import { 
-  Menu, 
-  X, 
-  Globe, 
-  Bell, 
+import {
+  Menu,
+  X,
+  Globe,
+  Bell,
   User,
   FileText,
   MapPin,
@@ -20,7 +20,7 @@ import {
   Shield,
   LogIn,
   LogOut,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,9 +54,24 @@ interface LandingNavItem {
 
 const landingNavItems: LandingNavItem[] = [
   { labelKey: "nav.solution", sectionId: "solution-section", labelEn: "Solution", labelHi: "समाधान" },
-  { labelKey: "nav.howItWorks", sectionId: "how-it-works-section", labelEn: "How It Works", labelHi: "यह कैसे काम करता है" },
-  { labelKey: "nav.forDepartments", sectionId: "departments-section", labelEn: "For Departments", labelHi: "विभागों के लिए" },
-  { labelKey: "nav.citizenPortal", sectionId: "citizen-portal-section", labelEn: "Citizen Portal", labelHi: "नागरिक पोर्टल" },
+  {
+    labelKey: "nav.howItWorks",
+    sectionId: "how-it-works-section",
+    labelEn: "How It Works",
+    labelHi: "यह कैसे काम करता है",
+  },
+  {
+    labelKey: "nav.forDepartments",
+    sectionId: "departments-section",
+    labelEn: "For Departments",
+    labelHi: "विभागों के लिए",
+  },
+  {
+    labelKey: "nav.citizenPortal",
+    sectionId: "citizen-portal-section",
+    labelEn: "Citizen Portal",
+    labelHi: "नागरिक पोर्टल",
+  },
 ];
 
 export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
@@ -77,7 +92,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
         window.scrollTo({
           top: offsetPosition,
-          behavior: "smooth"
+          behavior: "smooth",
         });
       }
     }
@@ -106,24 +121,33 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     if (user?.id) {
-      adminService.getUserRole(user.id).then(res => {
-        setIsAdmin(res.role === UserRole.DEPARTMENT_ADMIN || res.role === UserRole.SUPER_ADMIN);
-      }).catch(err => {
-        logger.info("Failed to retrieve user role for header navigation:", err);
-        setIsAdmin(false);
-      });
+      adminService
+        .getUserRole(user.id)
+        .then((res) => {
+          setIsAdmin(res.role === UserRole.DEPARTMENT_ADMIN || res.role === UserRole.SUPER_ADMIN);
+        })
+        .catch((err) => {
+          logger.info("Failed to retrieve user role for header navigation:", err);
+          setIsAdmin(false);
+        });
     } else {
       setIsAdmin(false);
     }
   }, [user]);
 
-  const visibleNavItems = user ? [
-    ...navItems.filter((item) => !item.flag || isFeatureEnabled(item.flag)),
-    ...(isAdmin ? [{ labelKey: "nav.queue", href: ROUTES.ADMIN, icon: Shield }] : [])
-  ] : [];
+  const visibleNavItems = user
+    ? [
+        ...navItems.filter((item) => !item.flag || isFeatureEnabled(item.flag)),
+        ...(isAdmin ? [{ labelKey: "nav.queue", href: ROUTES.ADMIN, icon: Shield }] : []),
+      ]
+    : [];
 
   return (
-    <header ref={ref} className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border" {...props}>
+    <header
+      ref={ref}
+      className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border"
+      {...props}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -139,32 +163,30 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {user ? (
-              visibleNavItems.map((item) => (
-                <Link
-                  key={item.labelKey}
-                  to={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive(item.href)
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {t(item.labelKey)}
-                </Link>
-              ))
-            ) : (
-              landingNavItems.map((item) => (
-                <button
-                  key={item.labelKey}
-                  onClick={() => handleScrollToSection(item.sectionId)}
-                  className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer bg-transparent border-0"
-                >
-                  {language === "en" ? item.labelEn : item.labelHi}
-                </button>
-              ))
-            )}
+            {user
+              ? visibleNavItems.map((item) => (
+                  <Link
+                    key={item.labelKey}
+                    to={item.href}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isActive(item.href)
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {t(item.labelKey)}
+                  </Link>
+                ))
+              : landingNavItems.map((item) => (
+                  <button
+                    key={item.labelKey}
+                    onClick={() => handleScrollToSection(item.sectionId)}
+                    className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer bg-transparent border-0"
+                  >
+                    {language === "en" ? item.labelEn : item.labelHi}
+                  </button>
+                ))}
           </nav>
 
           {/* Right Actions */}
@@ -177,69 +199,76 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
               className="hidden sm:flex items-center gap-2"
             >
               <Globe className="w-4 h-4" />
-              <span className="text-xs font-medium">
-                {language === "en" ? "English" : "हिंदी"}
-              </span>
+              <span className="text-xs font-medium">{language === "en" ? "English" : "हिंदी"}</span>
             </Button>
 
             {/* Notifications Dropdown — signed-out visitors only. Signed-in
                 users get the backend-connected NotificationBell below;
                 showing both here would render two separate, inconsistent
                 bells. */}
-            {!user && <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="iconSm" className="relative">
-                  <Bell className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-secondary text-secondary-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                      {unreadCount}
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
-                <div className="px-3 py-2 font-semibold text-sm border-b border-border flex justify-between items-center">
-                  <span>{language === "en" ? "Notifications" : "अधिसूचनाएं"}</span>
-                  {unreadCount > 0 && (
-                    <button 
-                      onClick={() => notificationService.markAllAsRead()} 
-                      className="text-xs text-primary hover:underline font-normal"
-                    >
-                      {language === "en" ? "Mark all read" : "सभी पढ़े हुए मानें"}
-                    </button>
-                  )}
-                </div>
-                {notifications.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground">
-                    {language === "en" ? "No new alerts" : "कोई नई सूचनाएं नहीं"}
+            {!user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="iconSm" className="relative">
+                    <Bell className="w-4 h-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-secondary text-secondary-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+                  <div className="px-3 py-2 font-semibold text-sm border-b border-border flex justify-between items-center">
+                    <span>{language === "en" ? "Notifications" : "अधिसूचनाएं"}</span>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={() => notificationService.markAllAsRead()}
+                        className="text-xs text-primary hover:underline font-normal"
+                      >
+                        {language === "en" ? "Mark all read" : "सभी पढ़े हुए मानें"}
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  notifications.map((n) => (
-                    <DropdownMenuItem 
-                      key={n.id} 
-                      onClick={() => notificationService.markAsRead(n.id)}
-                      className={`flex flex-col items-start p-3 gap-1 border-b border-border last:border-b-0 cursor-pointer ${
-                        !n.read ? "bg-muted/40 font-medium" : ""
-                      }`}
-                    >
-                      <div className="flex justify-between w-full text-xs">
-                        <span className={`font-bold ${
-                          n.type === 'error' ? 'text-destructive' :
-                          n.type === 'warning' ? 'text-warning' :
-                          'text-primary'
-                        }`}>
-                          {n.title}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground text-left leading-normal">{n.message}</p>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>}
+                  {notifications.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-muted-foreground">
+                      {language === "en" ? "No new alerts" : "कोई नई सूचनाएं नहीं"}
+                    </div>
+                  ) : (
+                    notifications.map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        onClick={() => notificationService.markAsRead(n.id)}
+                        className={`flex flex-col items-start p-3 gap-1 border-b border-border last:border-b-0 cursor-pointer ${
+                          !n.read ? "bg-muted/40 font-medium" : ""
+                        }`}
+                      >
+                        <div className="flex justify-between w-full text-xs">
+                          <span
+                            className={`font-bold ${
+                              n.type === "error"
+                                ? "text-destructive"
+                                : n.type === "warning"
+                                  ? "text-warning"
+                                  : "text-primary"
+                            }`}
+                          >
+                            {n.title}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(n.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-left leading-normal">{n.message}</p>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             {/* User Menu or Sign In */}
             {loading ? (
@@ -254,7 +283,10 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                 ) : (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="flex gap-2 items-center rounded-full px-3 py-1.5 h-auto hover:bg-muted border border-border select-none bg-primary/5 transition-all duration-300">
+                      <Button
+                        variant="ghost"
+                        className="flex gap-2 items-center rounded-full px-3 py-1.5 h-auto hover:bg-muted border border-border select-none bg-primary/5 transition-all duration-300"
+                      >
                         <Shield className="w-4 h-4 text-primary" />
                         <span className="text-xs font-bold text-foreground">
                           {(user.user_metadata as any)?.role === "super_admin" ? "Super" : "Officer"}
@@ -264,7 +296,10 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                         </div>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80 p-5 rounded-2xl border border-border shadow-2xl bg-card animate-in fade-in slide-in-from-top-2 duration-200 text-left">
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-80 p-5 rounded-2xl border border-border shadow-2xl bg-card animate-in fade-in slide-in-from-top-2 duration-200 text-left"
+                    >
                       {/* Header */}
                       <div className="flex items-start gap-3.5 mb-4">
                         <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -275,9 +310,13 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                             {(user.user_metadata as any)?.fullName || user.email?.split("@")[0] || "Officer"}
                           </h4>
                           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
-                            {(user.user_metadata as any)?.role === "super_admin" 
-                              ? (language === "en" ? "Super Administrator" : "मुख्य प्रशासक")
-                              : (language === "en" ? "Department Admin" : "विभाग अधिकारी")}
+                            {(user.user_metadata as any)?.role === "super_admin"
+                              ? language === "en"
+                                ? "Super Administrator"
+                                : "मुख्य प्रशासक"
+                              : language === "en"
+                                ? "Department Admin"
+                                : "विभाग अधिकारी"}
                           </p>
                         </div>
                       </div>
@@ -297,9 +336,13 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                             {language === "en" ? "Department" : "विभाग"}
                           </p>
                           <p className="text-sm font-bold text-foreground truncate">
-                            {(user.user_metadata as any)?.role === "super_admin" 
-                              ? (language === "en" ? "All Board" : "सभी बोर्ड")
-                              : (language === "en" ? "Metro Transit" : "मेट्रो ट्रांजिट")}
+                            {(user.user_metadata as any)?.role === "super_admin"
+                              ? language === "en"
+                                ? "All Board"
+                                : "सभी बोर्ड"
+                              : language === "en"
+                                ? "Metro Transit"
+                                : "मेट्रो ट्रांजिट"}
                           </p>
                         </div>
                       </div>
@@ -310,9 +353,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                           <span className="text-muted-foreground">
                             {language === "en" ? "SLA Compliance" : "एसएलए अनुपालन"}
                           </span>
-                          <span className="text-foreground font-bold text-emerald-500">
-                            94%
-                          </span>
+                          <span className="text-foreground font-bold text-emerald-500">94%</span>
                         </div>
                         <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
@@ -321,7 +362,9 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                           />
                         </div>
                         <p className="text-[9px] text-muted-foreground text-right">
-                          {language === "en" ? "Target: 24h average resolution" : "लक्ष्य: 24 घंटे औसत समाधान"}
+                          {language === "en"
+                            ? "Target: 24h average resolution"
+                            : "लक्ष्य: 24 घंटे औसत समाधान"}
                         </p>
                       </div>
 
@@ -351,7 +394,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                         >
                           {language === "en" ? "Go to Admin Queue →" : "प्रशासक कतार पर जाएं →"}
                         </Link>
-                        
+
                         <div className="flex gap-2 pt-1">
                           <Link
                             to={ROUTES.PROFILE}
@@ -398,37 +441,35 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
         {isMenuOpen && (
           <nav className="lg:hidden py-4 border-t border-border animate-slide-up">
             <div className="flex flex-col gap-1">
-              {user ? (
-                visibleNavItems.map((item) => (
-                  <Link
-                    key={item.labelKey}
-                    to={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      isActive(item.href)
-                        ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    {t(item.labelKey)}
-                  </Link>
-                ))
-              ) : (
-                landingNavItems.map((item) => (
-                  <button
-                    key={item.labelKey}
-                    onClick={() => {
-                      handleScrollToSection(item.sectionId);
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors w-full text-left cursor-pointer bg-transparent border-0"
-                  >
-                    {language === "en" ? item.labelEn : item.labelHi}
-                  </button>
-                ))
-              )}
-              
+              {user
+                ? visibleNavItems.map((item) => (
+                    <Link
+                      key={item.labelKey}
+                      to={item.href}
+                      className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                        isActive(item.href)
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      {t(item.labelKey)}
+                    </Link>
+                  ))
+                : landingNavItems.map((item) => (
+                    <button
+                      key={item.labelKey}
+                      onClick={() => {
+                        handleScrollToSection(item.sectionId);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors w-full text-left cursor-pointer bg-transparent border-0"
+                    >
+                      {language === "en" ? item.labelEn : item.labelHi}
+                    </button>
+                  ))}
+
               {/* Auth Links */}
               <div className="mt-2 pt-2 border-t border-border space-y-1">
                 {user ? (
@@ -489,13 +530,9 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                   </>
                 )}
               </div>
-              
+
               <div className="mt-2 pt-2 border-t border-border">
-                <Button
-                  variant="ghost"
-                  onClick={toggleLanguage}
-                  className="w-full justify-start gap-3"
-                >
+                <Button variant="ghost" onClick={toggleLanguage} className="w-full justify-start gap-3">
                   <Globe className="w-5 h-5" />
                   {language === "en" ? "English" : "हिंदी"}
                 </Button>

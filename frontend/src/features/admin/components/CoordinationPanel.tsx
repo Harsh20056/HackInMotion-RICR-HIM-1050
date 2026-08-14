@@ -16,8 +16,15 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { logger } from "@/shared/services/logger";
 import {
-  Link2, Lock, AlertTriangle, Clock, CheckCircle2, Loader2,
-  MessageSquare, ArrowRightLeft, ChevronRight,
+  Link2,
+  Lock,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  Loader2,
+  MessageSquare,
+  ArrowRightLeft,
+  ChevronRight,
 } from "lucide-react";
 import { getErrorMessage } from "@/shared/lib/errorMessage";
 
@@ -138,30 +145,41 @@ export function CoordinationPanel({ issueId }: { issueId: string }) {
                     <Badge variant="outline" className={`text-[10px] ${WO_STATUS_STYLE[wo.status] ?? ""}`}>
                       {wo.status.replace("_", " ")}
                     </Badge>
-                    <Badge variant="secondary" className="text-[10px]">{wo.role}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {wo.role}
+                    </Badge>
 
                     {wo.isBlocked && (
-                      <Badge variant="outline" className="text-[10px] bg-orange-500/10 text-orange-600 border-orange-500/25">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-orange-500/10 text-orange-600 border-orange-500/25"
+                      >
                         <Lock className="w-2.5 h-2.5 mr-1" />
                         {language === "en" ? "Blocked" : "अवरुद्ध"}
                       </Badge>
                     )}
                     {wo.isOverdue && (
-                      <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/25">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-red-500/10 text-red-600 border-red-500/25"
+                      >
                         <AlertTriangle className="w-2.5 h-2.5 mr-1" />
                         {language === "en" ? "SLA breached" : "एसएलए उल्लंघन"}
                       </Badge>
                     )}
                     {wo.escalationLevel > 0 && (
                       <Badge variant="destructive" className="text-[10px]">
-                        {language === "en" ? "Escalated L" : "एस्केलेशन स्तर "}{wo.escalationLevel}
+                        {language === "en" ? "Escalated L" : "एस्केलेशन स्तर "}
+                        {wo.escalationLevel}
                       </Badge>
                     )}
                   </div>
 
                   <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
                     {wo.dueAt && (
-                      <span className={`flex items-center gap-1 ${wo.isOverdue ? "text-red-500 font-semibold" : ""}`}>
+                      <span
+                        className={`flex items-center gap-1 ${wo.isOverdue ? "text-red-500 font-semibold" : ""}`}
+                      >
                         <Clock className="w-3 h-3" />
                         {formatDue(wo.dueAt, language)}
                       </span>
@@ -181,15 +199,24 @@ export function CoordinationPanel({ issueId }: { issueId: string }) {
                               : "text-orange-600 border-orange-500/20 bg-orange-500/5"
                           }`}
                         >
-                          {dep.satisfied ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <Lock className="w-3 h-3 shrink-0" />}
+                          {dep.satisfied ? (
+                            <CheckCircle2 className="w-3 h-3 shrink-0" />
+                          ) : (
+                            <Lock className="w-3 h-3 shrink-0" />
+                          )}
                           <span className="font-medium">{dep.predecessor.department.nameEn}</span>
                           <ChevronRight className="w-3 h-3 shrink-0" />
                           <span>{wo.department.nameEn}</span>
                           <span className="text-muted-foreground ml-auto">
                             {dep.type === "finish_to_start"
-                              ? language === "en" ? "must finish first" : "पहले पूरा करें"
-                              : language === "en" ? "must start first" : "पहले शुरू करें"}
-                            {" · "}{dep.predecessor.status}
+                              ? language === "en"
+                                ? "must finish first"
+                                : "पहले पूरा करें"
+                              : language === "en"
+                                ? "must start first"
+                                : "पहले शुरू करें"}
+                            {" · "}
+                            {dep.predecessor.status}
                           </span>
                         </div>
                       ))}
@@ -199,7 +226,9 @@ export function CoordinationPanel({ issueId }: { issueId: string }) {
 
                 {isStaff && (
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {busyId === wo.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                    {busyId === wo.id && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                    )}
                     {(NEXT_WO_STATUS[wo.status] ?? []).map((next) => (
                       <Button
                         key={next}
@@ -278,7 +307,11 @@ function WorkOrderThread({
       await load();
       onChanged();
     } catch (err) {
-      toast({ title: language === "en" ? "Failed" : "विफल", description: getErrorMessage(err), variant: "destructive" });
+      toast({
+        title: language === "en" ? "Failed" : "विफल",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
     }
@@ -297,7 +330,9 @@ function WorkOrderThread({
             <div key={n.id} className="text-[11px] rounded-md bg-card border border-border/60 px-2 py-1.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className="font-semibold text-foreground">{n.author.fullName}</span>
-                <Badge variant="secondary" className="text-[9px] px-1 py-0">{n.visibility}</Badge>
+                <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                  {n.visibility}
+                </Badge>
                 <span className="text-muted-foreground ml-auto">
                   {new Date(n.createdAt).toLocaleDateString()}
                 </span>
@@ -314,7 +349,9 @@ function WorkOrderThread({
           rows={2}
           value={noteBody}
           onChange={(e) => setNoteBody(e.target.value)}
-          placeholder={language === "en" ? "Add a note for the other department…" : "दूसरे विभाग के लिए टिप्पणी…"}
+          placeholder={
+            language === "en" ? "Add a note for the other department…" : "दूसरे विभाग के लिए टिप्पणी…"
+          }
           className="text-xs"
         />
         <div className="flex items-center gap-2">
@@ -325,16 +362,19 @@ function WorkOrderThread({
             <SelectContent>
               <SelectItem value="internal">{language === "en" ? "Internal" : "आंतरिक"}</SelectItem>
               <SelectItem value="inter_dept">{language === "en" ? "Inter-dept" : "अंतर-विभागीय"}</SelectItem>
-              <SelectItem value="citizen">{language === "en" ? "Visible to citizen" : "नागरिक को दृश्य"}</SelectItem>
+              <SelectItem value="citizen">
+                {language === "en" ? "Visible to citizen" : "नागरिक को दृश्य"}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Button
             size="xs"
             disabled={busy || noteBody.trim().length === 0}
             onClick={() =>
-              run(() => coordinationApi.addNote(workOrder.id, noteBody.trim(), visibility), "Note added").then(() =>
-                setNoteBody("")
-              )
+              run(
+                () => coordinationApi.addNote(workOrder.id, noteBody.trim(), visibility),
+                "Note added"
+              ).then(() => setNoteBody(""))
             }
           >
             {language === "en" ? "Post" : "पोस्ट"}
@@ -371,10 +411,23 @@ function WorkOrderThread({
             <p className="text-muted-foreground mt-0.5">{t.reason}</p>
             {t.status === "requested" && (
               <div className="flex gap-1.5 mt-1.5">
-                <Button size="xs" disabled={busy} onClick={() => run(() => coordinationApi.decideTransfer(t.id, "approved"), "Referral approved")}>
+                <Button
+                  size="xs"
+                  disabled={busy}
+                  onClick={() =>
+                    run(() => coordinationApi.decideTransfer(t.id, "approved"), "Referral approved")
+                  }
+                >
                   {language === "en" ? "Approve" : "स्वीकृत"}
                 </Button>
-                <Button size="xs" variant="outline" disabled={busy} onClick={() => run(() => coordinationApi.decideTransfer(t.id, "rejected"), "Referral rejected")}>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() =>
+                    run(() => coordinationApi.decideTransfer(t.id, "rejected"), "Referral rejected")
+                  }
+                >
                   {language === "en" ? "Reject" : "अस्वीकार"}
                 </Button>
               </div>
@@ -391,7 +444,9 @@ function WorkOrderThread({
               {departments
                 .filter((d) => d.id !== workOrder.department.id)
                 .map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.nameEn}</SelectItem>
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.nameEn}
+                  </SelectItem>
                 ))}
             </SelectContent>
           </Select>

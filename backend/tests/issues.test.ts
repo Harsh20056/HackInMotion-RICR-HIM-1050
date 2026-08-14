@@ -10,20 +10,19 @@ async function loginAs(email: string, password: string) {
 
 describe("issue dedup + routing pipeline", () => {
   it("creates a new issue and its work order when no nearby duplicate exists (dedup miss)", async () => {
-    const { category, department } = await seedCategoryWithDepartment({ categoryCode: `roads-${Date.now()}` });
+    const { category, department } = await seedCategoryWithDepartment({
+      categoryCode: `roads-${Date.now()}`,
+    });
     const { email, password } = await createTestUser("citizen");
     const token = await loginAs(email, password);
 
-    const res = await request(app)
-      .post("/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Pothole near market",
-        description: "Deep pothole causing traffic issues",
-        categoryCode: category.code,
-        latitude: 22.7196,
-        longitude: 75.8577,
-      });
+    const res = await request(app).post("/issues").set("Authorization", `Bearer ${token}`).send({
+      title: "Pothole near market",
+      description: "Deep pothole causing traffic issues",
+      categoryCode: category.code,
+      latitude: 22.7196,
+      longitude: 75.8577,
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.issue).toBeTruthy();
@@ -36,7 +35,10 @@ describe("issue dedup + routing pipeline", () => {
   });
 
   it("returns a duplicateCandidate instead of creating a new issue when one is nearby (dedup hit)", async () => {
-    const { category } = await seedCategoryWithDepartment({ categoryCode: `sanitation-${Date.now()}`, radiusM: 200 });
+    const { category } = await seedCategoryWithDepartment({
+      categoryCode: `sanitation-${Date.now()}`,
+      radiusM: 200,
+    });
     const { user, email, password } = await createTestUser("citizen");
     const token = await loginAs(email, password);
 
@@ -49,16 +51,13 @@ describe("issue dedup + routing pipeline", () => {
     });
 
     // Report the "same" issue ~50m away — well within the 200m radius.
-    const res = await request(app)
-      .post("/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Garbage pile nearby",
-        description: "Same overflowing bin, different angle",
-        categoryCode: category.code,
-        latitude: 22.7205,
-        longitude: 75.8605,
-      });
+    const res = await request(app).post("/issues").set("Authorization", `Bearer ${token}`).send({
+      title: "Garbage pile nearby",
+      description: "Same overflowing bin, different angle",
+      categoryCode: category.code,
+      latitude: 22.7205,
+      longitude: 75.8605,
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.duplicateCandidate).toBeTruthy();
@@ -69,23 +68,23 @@ describe("issue dedup + routing pipeline", () => {
   });
 
   it("does NOT dedup a report far outside the category's radius", async () => {
-    const { category } = await seedCategoryWithDepartment({ categoryCode: `elec-${Date.now()}`, radiusM: 50 });
+    const { category } = await seedCategoryWithDepartment({
+      categoryCode: `elec-${Date.now()}`,
+      radiusM: 50,
+    });
     const { user, email, password } = await createTestUser("citizen");
     const token = await loginAs(email, password);
 
     await insertRawIssue({ categoryId: category.id, reportedBy: user.id, latitude: 22.72, longitude: 75.86 });
 
     // ~1km away — outside a 50m dedup radius.
-    const res = await request(app)
-      .post("/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Unrelated outage",
-        description: "Different location entirely",
-        categoryCode: category.code,
-        latitude: 22.73,
-        longitude: 75.86,
-      });
+    const res = await request(app).post("/issues").set("Authorization", `Bearer ${token}`).send({
+      title: "Unrelated outage",
+      description: "Different location entirely",
+      categoryCode: category.code,
+      latitude: 22.73,
+      longitude: 75.86,
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.issue).toBeTruthy();
@@ -94,14 +93,19 @@ describe("issue dedup + routing pipeline", () => {
 
 describe("work order status transitions", () => {
   it("rejects an invalid transition (pending -> done, skipping acknowledged/in_progress)", async () => {
-    const { category, department } = await seedCategoryWithDepartment({ categoryCode: `buildings-${Date.now()}` });
+    const { category, department } = await seedCategoryWithDepartment({
+      categoryCode: `buildings-${Date.now()}`,
+    });
     const { email: citizenEmail, password: citizenPassword } = await createTestUser("citizen");
     const citizenToken = await loginAs(citizenEmail, citizenPassword);
 
-    const create = await request(app)
-      .post("/issues")
-      .set("Authorization", `Bearer ${citizenToken}`)
-      .send({ title: "Cracked wall", description: "Visible crack", categoryCode: category.code, latitude: 23.2599, longitude: 77.4126 });
+    const create = await request(app).post("/issues").set("Authorization", `Bearer ${citizenToken}`).send({
+      title: "Cracked wall",
+      description: "Visible crack",
+      categoryCode: category.code,
+      latitude: 23.2599,
+      longitude: 77.4126,
+    });
 
     const workOrder = await prisma.workOrder.findFirstOrThrow({ where: { issueId: create.body.issue.id } });
 
@@ -120,14 +124,19 @@ describe("work order status transitions", () => {
   });
 
   it("accepts a valid transition and propagates status to the parent issue for a primary work order", async () => {
-    const { category, department } = await seedCategoryWithDepartment({ categoryCode: `parks-${Date.now()}` });
+    const { category, department } = await seedCategoryWithDepartment({
+      categoryCode: `parks-${Date.now()}`,
+    });
     const { email: citizenEmail, password: citizenPassword } = await createTestUser("citizen");
     const citizenToken = await loginAs(citizenEmail, citizenPassword);
 
-    const create = await request(app)
-      .post("/issues")
-      .set("Authorization", `Bearer ${citizenToken}`)
-      .send({ title: "Broken swing", description: "Unsafe for kids", categoryCode: category.code, latitude: 23.2599, longitude: 77.4126 });
+    const create = await request(app).post("/issues").set("Authorization", `Bearer ${citizenToken}`).send({
+      title: "Broken swing",
+      description: "Unsafe for kids",
+      categoryCode: category.code,
+      latitude: 23.2599,
+      longitude: 77.4126,
+    });
 
     const workOrder = await prisma.workOrder.findFirstOrThrow({ where: { issueId: create.body.issue.id } });
 

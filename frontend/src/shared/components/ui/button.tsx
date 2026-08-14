@@ -9,20 +9,26 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg hover:-translate-y-0.5",
+        default:
+          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg hover:-translate-y-0.5",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-primary-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-md hover:shadow-lg hover:-translate-y-0.5",
+        outline:
+          "border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-primary-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-md hover:shadow-lg hover:-translate-y-0.5",
         ghost: "hover:bg-muted hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         // Hero variants
         hero: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl hover:-translate-y-1 text-base px-8 py-6",
-        heroSecondary: "bg-card text-foreground border-2 border-border hover:border-primary hover:bg-muted shadow-md hover:shadow-lg hover:-translate-y-0.5 text-base px-8 py-6",
+        heroSecondary:
+          "bg-card text-foreground border-2 border-border hover:border-primary hover:bg-muted shadow-md hover:shadow-lg hover:-translate-y-0.5 text-base px-8 py-6",
         // Civic action variants
         civic: "civic-gradient text-primary-foreground shadow-lg hover:shadow-xl hover:-translate-y-0.5",
-        saffron: "saffron-gradient text-secondary-foreground shadow-lg hover:shadow-xl hover:-translate-y-0.5",
+        saffron:
+          "saffron-gradient text-secondary-foreground shadow-lg hover:shadow-xl hover:-translate-y-0.5",
         // Voice/Accessibility variant
-        voice: "bg-secondary/15 text-secondary border-2 border-secondary hover:bg-secondary hover:text-secondary-foreground voice-pulse",
+        voice:
+          "bg-secondary/15 text-secondary border-2 border-secondary hover:bg-secondary hover:text-secondary-foreground voice-pulse",
         // Glass variant
         glass: "glass-card text-foreground hover:bg-card/90",
       },
@@ -45,21 +51,14 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
+    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
   }
 );
 Button.displayName = "Button";

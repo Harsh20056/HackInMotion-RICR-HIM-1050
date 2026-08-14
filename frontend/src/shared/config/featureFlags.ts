@@ -1,11 +1,10 @@
-
 export const FEATURE_FLAGS = {
   AI_ASSISTANT: true,
-  FORM_ANALYZER: true,    // Enabled in both dev & prod
-  DOCUMENT_LOCKER: true,  // Enabled in both dev & prod
-  SCHEMES_ENGINE: true,   // Enabled in both dev & prod
+  FORM_ANALYZER: true, // Enabled in both dev & prod
+  DOCUMENT_LOCKER: true, // Enabled in both dev & prod
+  SCHEMES_ENGINE: true, // Enabled in both dev & prod
   NOTIFICATIONS: true,
-  CIVIC_MAP: true,       // Interactive Leaflet civic map
+  CIVIC_MAP: true, // Interactive Leaflet civic map
 } as const;
 
 export type FeatureFlagName = keyof typeof FEATURE_FLAGS;

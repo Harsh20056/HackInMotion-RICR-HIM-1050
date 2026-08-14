@@ -28,7 +28,8 @@ export function RoleGuard({
     }
 
     setChecking(true);
-    adminService.getUserRole(user.id)
+    adminService
+      .getUserRole(user.id)
       .then((res) => {
         setUserRole(res.role as UserRole);
         setChecking(false);

@@ -9,19 +9,19 @@ import { authService } from "../services/authService";
 import { loginSchema } from "../validation/loginSchema";
 import { signupSchema } from "../validation/signupSchema";
 import { ROUTES } from "@/shared/config/routes";
-import { 
-  Shield, 
-  Mail, 
-  Lock, 
-  User, 
-  Eye, 
+import {
+  Shield,
+  Mail,
+  Lock,
+  User,
+  Eye,
   EyeOff,
   Loader2,
   ArrowLeft,
   Globe,
   MapPin,
   Building,
-  Key
+  Key,
 } from "lucide-react";
 import { logger } from "@/shared/services/logger";
 import { getErrorMessage } from "@/shared/lib/errorMessage";
@@ -44,15 +44,78 @@ const DEMO_CITY = "Bhopal";
 const DEMO_STATE = "Madhya Pradesh";
 
 const DEMO_CREDENTIALS: DemoCredential[] = [
-  { email: "admin@samadhan.gov", password: "admin123", fullName: "Super Admin", roleLabel: "Super Admin", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.water@samadhan.gov", password: "dept123", fullName: "Jal Board Admin", roleLabel: "Water Supply", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.sanitation@samadhan.gov", password: "dept123", fullName: "Sanitation Admin", roleLabel: "Sanitation", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.electricity@samadhan.gov", password: "dept123", fullName: "Electricity Admin", roleLabel: "Electricity", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.pwd@samadhan.gov", password: "dept123", fullName: "PWD Admin", roleLabel: "Roads (PWD)", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.parks@samadhan.gov", password: "dept123", fullName: "Parks Admin", roleLabel: "Parks & Gardens", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.buildings@samadhan.gov", password: "dept123", fullName: "Buildings Admin", roleLabel: "Buildings", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "dept.metro@samadhan.gov", password: "dept123", fullName: "Bhopal Metro Admin", roleLabel: "Metro & Transit", city: DEMO_CITY, state: DEMO_STATE },
-  { email: "citizen@samadhan.gov", password: "citizen123", fullName: "Citizen User", roleLabel: "Citizen", city: DEMO_CITY, state: DEMO_STATE },
+  {
+    email: "admin@samadhan.gov",
+    password: "admin123",
+    fullName: "Super Admin",
+    roleLabel: "Super Admin",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.water@samadhan.gov",
+    password: "dept123",
+    fullName: "Jal Board Admin",
+    roleLabel: "Water Supply",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.sanitation@samadhan.gov",
+    password: "dept123",
+    fullName: "Sanitation Admin",
+    roleLabel: "Sanitation",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.electricity@samadhan.gov",
+    password: "dept123",
+    fullName: "Electricity Admin",
+    roleLabel: "Electricity",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.pwd@samadhan.gov",
+    password: "dept123",
+    fullName: "PWD Admin",
+    roleLabel: "Roads (PWD)",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.parks@samadhan.gov",
+    password: "dept123",
+    fullName: "Parks Admin",
+    roleLabel: "Parks & Gardens",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.buildings@samadhan.gov",
+    password: "dept123",
+    fullName: "Buildings Admin",
+    roleLabel: "Buildings",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "dept.metro@samadhan.gov",
+    password: "dept123",
+    fullName: "Bhopal Metro Admin",
+    roleLabel: "Metro & Transit",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
+  {
+    email: "citizen@samadhan.gov",
+    password: "citizen123",
+    fullName: "Citizen User",
+    roleLabel: "Citizen",
+    city: DEMO_CITY,
+    state: DEMO_STATE,
+  },
 ];
 
 export function AuthForm() {
@@ -61,9 +124,9 @@ export function AuthForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
-  
+
   const demoCredentialsRef = useRef<HTMLDivElement>(null);
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -134,9 +197,10 @@ export function AuthForm() {
 
         toast({
           title: language === "en" ? "Account created!" : "खाता बन गया!",
-          description: language === "en" 
-            ? "Welcome to Samadhan. You can now sign in." 
-            : "समाधान में आपका स्वागत है। अब आप साइन इन कर सकते हैं।",
+          description:
+            language === "en"
+              ? "Welcome to Samadhan. You can now sign in."
+              : "समाधान में आपका स्वागत है। अब आप साइन इन कर सकते हैं।",
         });
         navigate(ROUTES.SIGN_IN);
       } else {
@@ -171,9 +235,8 @@ export function AuthForm() {
 
         toast({
           title: language === "en" ? "Welcome back!" : "वापस स्वागत है!",
-          description: language === "en" 
-            ? "You have successfully signed in." 
-            : "आपने सफलतापूर्वक साइन इन कर लिया है।",
+          description:
+            language === "en" ? "You have successfully signed in." : "आपने सफलतापूर्वक साइन इन कर लिया है।",
         });
 
         if (isAdmin) {
@@ -201,11 +264,14 @@ export function AuthForm() {
         {/* Left Panel - Branding */}
         <div className="hidden lg:flex lg:w-1/2 civic-gradient relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23fff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }} />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23fff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }}
+            />
           </div>
-          
+
           <div className="relative z-10 flex flex-col justify-center px-12 text-primary-foreground">
             <Link to={ROUTES.LANDING} className="flex items-center gap-3 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center shadow-lg">
@@ -216,10 +282,10 @@ export function AuthForm() {
                 <p className="text-sm text-primary-foreground/70">समाधान</p>
               </div>
             </Link>
-            
+
             <h2 className="text-4xl font-bold mb-6 leading-tight">
-              {language === "en" 
-                ? "Empowering Citizens Through Technology" 
+              {language === "en"
+                ? "Empowering Citizens Through Technology"
                 : "प्रौद्योगिकी के माध्यम से नागरिकों को सशक्त बनाना"}
             </h2>
             <p className="text-lg text-primary-foreground/80 mb-8">
@@ -227,7 +293,7 @@ export function AuthForm() {
                 ? "Report issues, access schemes, and get AI assistance—all in one place."
                 : "समस्याओं की रिपोर्ट करें, योजनाओं तक पहुंचें, और AI सहायता प्राप्त करें—सब एक जगह।"}
             </p>
-            
+
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <p className="text-3xl font-bold">50K+</p>
@@ -246,7 +312,10 @@ export function AuthForm() {
         <div className="flex-1 flex flex-col min-h-screen justify-between">
           {/* Top Bar */}
           <div className="flex items-center justify-between p-4 sm:p-6">
-            <Link to={ROUTES.LANDING} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              to={ROUTES.LANDING}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm">{language === "en" ? "Back to Home" : "होम पर वापस"}</span>
             </Link>
@@ -410,8 +479,8 @@ export function AuthForm() {
 
               <p className="text-center text-sm text-muted-foreground mt-6">
                 {isSignUp ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
-                <Link 
-                  to={isSignUp ? ROUTES.SIGN_IN : ROUTES.SIGN_UP} 
+                <Link
+                  to={isSignUp ? ROUTES.SIGN_IN : ROUTES.SIGN_UP}
                   className="text-primary font-medium hover:underline"
                 >
                   {isSignUp ? t("auth.signIn") : t("auth.signUp")}
@@ -427,7 +496,10 @@ export function AuthForm() {
 
       {/* ── DEMO ACCESS CREDENTIALS CARD - SEEN AFTER SCROLL ── */}
       {!isLoading && (
-        <div ref={demoCredentialsRef} className="w-full bg-[#f8fafc] dark:bg-muted/10 border-t border-border/60 p-6 text-center space-y-3 shadow-inner">
+        <div
+          ref={demoCredentialsRef}
+          className="w-full bg-[#f8fafc] dark:bg-muted/10 border-t border-border/60 p-6 text-center space-y-3 shadow-inner"
+        >
           <div className="max-w-4xl mx-auto">
             <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">
               {language === "en" ? "DEMO ACCESS CREDENTIALS" : "डेमो लॉगिन क्रेडेंशियल्स"}
@@ -446,8 +518,8 @@ export function AuthForm() {
               ))}
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">
-              {language === "en" 
-                ? "Click credentials to auto-fill details (Bhopal, Madhya Pradesh)" 
+              {language === "en"
+                ? "Click credentials to auto-fill details (Bhopal, Madhya Pradesh)"
                 : "विवरण भरने के लिए क्रेडेंशियल्स पर क्लिक करें (भोपाल, मध्य प्रदेश)"}
             </p>
           </div>

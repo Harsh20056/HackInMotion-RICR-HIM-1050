@@ -36,7 +36,9 @@ export const documentRepository = {
   /**
    * Inserts the document metadata record into the mock store.
    */
-  async insertDocumentRecord(record: Omit<UserDocument, "id" | "created_at" | "updated_at">): Promise<UserDocument> {
+  async insertDocumentRecord(
+    record: Omit<UserDocument, "id" | "created_at" | "updated_at">
+  ): Promise<UserDocument> {
     const now = new Date().toISOString();
     const row: UserDocument = {
       ...record,
@@ -64,5 +66,5 @@ export const documentRepository = {
    */
   async getDocumentSignedUrl(filePath: string): Promise<string> {
     return filePath;
-  }
+  },
 };

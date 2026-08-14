@@ -5,7 +5,7 @@ export const STATUSES = {
   REJECTED: "rejected",
 } as const;
 
-export type StatusType = typeof STATUSES[keyof typeof STATUSES];
+export type StatusType = (typeof STATUSES)[keyof typeof STATUSES];
 
 export const STATUS_LABELS = {
   [STATUSES.REPORTED]: { en: "Reported", hi: "रिपोर्ट की गई" },

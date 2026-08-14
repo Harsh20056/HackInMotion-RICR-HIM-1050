@@ -27,7 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Check current session
-    authService.getSession()
+    authService
+      .getSession()
       .then((session) => {
         setSession(session);
         setUser(session?.user ?? null);
@@ -66,11 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, session, loading, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

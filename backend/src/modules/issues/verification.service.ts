@@ -15,7 +15,11 @@ export interface VerificationState {
 const VERIFIED_MIN_CONFIRMATIONS = 3;
 const VERIFIED_MIN_CONFIDENCE = 60;
 
-function summarise(confirmations: number, disagreements: number, userVote: boolean | null): VerificationState {
+function summarise(
+  confirmations: number,
+  disagreements: number,
+  userVote: boolean | null
+): VerificationState {
   const total = confirmations + disagreements;
   const confidence = total === 0 ? 0 : Math.round((confirmations / total) * 100);
   return {
@@ -106,7 +110,11 @@ export const verificationService = {
       issueId,
       departmentIds: issue.workOrders.map((wo) => wo.departmentId),
       city: issue.city,
-      payload: { confirmations: state.confirmations, disagreements: state.disagreements, confidence: state.confidence },
+      payload: {
+        confirmations: state.confirmations,
+        disagreements: state.disagreements,
+        confidence: state.confidence,
+      },
       at: new Date().toISOString(),
     });
 
@@ -154,7 +162,9 @@ export const verificationService = {
       prisma.issue.count({ where: { reportedBy: userId } }),
       prisma.issueSupport.count({ where: { userId } }),
       prisma.citizenVerification.count({ where: { userId } }),
-      prisma.issue.count({ where: { reportedBy: userId, status: { in: ["resolved", "verified", "closed"] } } }),
+      prisma.issue.count({
+        where: { reportedBy: userId, status: { in: ["resolved", "verified", "closed"] } },
+      }),
     ]);
     const reportDates = await prisma.issue.findMany({
       where: { reportedBy: userId },

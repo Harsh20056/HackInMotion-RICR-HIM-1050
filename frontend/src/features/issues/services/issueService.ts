@@ -37,7 +37,14 @@ export const issueService = {
 
   async reportNewIssue(
     userId: string,
-    input: { title: string; description: string; category: string; location: string; latitude?: number | null; longitude?: number | null },
+    input: {
+      title: string;
+      description: string;
+      category: string;
+      location: string;
+      latitude?: number | null;
+      longitude?: number | null;
+    },
     imageFile: File | null,
     activeLanguage: "en" | "hi",
     force = false

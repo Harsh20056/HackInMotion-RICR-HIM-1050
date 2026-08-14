@@ -20,24 +20,23 @@ async function loginAs(email: string, password: string) {
 
 /** Reports an issue and returns its id, bypassing the dedup check. */
 async function reportIssue(token: string, categoryCode: string) {
-  const res = await request(app)
-    .post("/issues")
-    .set("Authorization", `Bearer ${token}`)
-    .send({
-      title: "Lifecycle fixture issue",
-      description: "Created by the lifecycle test suite.",
-      categoryCode,
-      latitude: 23.2599,
-      longitude: 77.4126,
-      force: true,
-    });
+  const res = await request(app).post("/issues").set("Authorization", `Bearer ${token}`).send({
+    title: "Lifecycle fixture issue",
+    description: "Created by the lifecycle test suite.",
+    categoryCode,
+    latitude: 23.2599,
+    longitude: 77.4126,
+    force: true,
+  });
   expect(res.status).toBe(201);
   return res.body.issue.id as string;
 }
 
 describe("issue lifecycle state machine", () => {
   it("rejects an illegal transition with 422 and reports what was allowed", async () => {
-    const { category, department } = await seedCategoryWithDepartment({ categoryCode: `lc-illegal-${Date.now()}` });
+    const { category, department } = await seedCategoryWithDepartment({
+      categoryCode: `lc-illegal-${Date.now()}`,
+    });
     const citizen = await createTestUser("citizen");
     const admin = await createTestUser("dept_admin", department.id);
 
@@ -49,7 +48,11 @@ describe("issue lifecycle state machine", () => {
     const res = await request(app)
       .patch(`/issues/${issueId}/status`)
       .set("Authorization", `Bearer ${adminToken}`)
-      .send({ status: "resolved", resolutionNote: "Trying to skip ahead", proofUrl: "https://example.com/p.jpg" });
+      .send({
+        status: "resolved",
+        resolutionNote: "Trying to skip ahead",
+        proofUrl: "https://example.com/p.jpg",
+      });
 
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe("ILLEGAL_TRANSITION");
@@ -61,7 +64,9 @@ describe("issue lifecycle state machine", () => {
   });
 
   it("refuses to resolve without a resolution note (422)", async () => {
-    const { category, department } = await seedCategoryWithDepartment({ categoryCode: `lc-note-${Date.now()}` });
+    const { category, department } = await seedCategoryWithDepartment({
+      categoryCode: `lc-note-${Date.now()}`,
+    });
     const citizen = await createTestUser("citizen");
     const admin = await createTestUser("dept_admin", department.id);
 

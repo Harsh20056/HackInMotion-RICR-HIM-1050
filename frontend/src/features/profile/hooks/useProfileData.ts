@@ -12,7 +12,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi") {
   const { toast } = useToast();
-  
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [supportedIssues, setSupportedIssues] = useState<Issue[]>([]);
@@ -29,13 +29,13 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
-    
+
     try {
       const [profResult, issuesResult, supportedResult, notifsResult] = await Promise.allSettled([
         profileService.getProfile(user.id, user),
         issueRepository.fetchUserIssues(user.id),
         issueRepository.fetchUserSupportedIssues(user.id),
-        profileService.getNotificationPreferences(user.id)
+        profileService.getNotificationPreferences(user.id),
       ]);
 
       if (profResult.status === "fulfilled") {
@@ -119,18 +119,21 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
     if (!user || !notifications) return;
 
     // Optimistic UI update
-    setNotifications((prev) => (prev ? { ...prev, [key]: value } as NotificationPreferences : null));
+    setNotifications((prev) => (prev ? ({ ...prev, [key]: value } as NotificationPreferences) : null));
 
     try {
       await profileService.updateNotificationPreferences(user.id, key, value);
       toast({
         title: activeLanguage === "en" ? "Preferences Updated" : "प्राथमिकताएं अपडेट",
-        description: activeLanguage === "en" ? "Your notification preferences have been saved." : "आपकी अधिसूचना प्राथमिकताएं सहेजी गईं।",
+        description:
+          activeLanguage === "en"
+            ? "Your notification preferences have been saved."
+            : "आपकी अधिसूचना प्राथमिकताएं सहेजी गईं।",
       });
     } catch (error) {
       logger.error("Failed to update notification preferences:", error);
       // Rollback
-      setNotifications((prev) => (prev ? { ...prev, [key]: !value } as NotificationPreferences : null));
+      setNotifications((prev) => (prev ? ({ ...prev, [key]: !value } as NotificationPreferences) : null));
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
         description: getErrorMessage(error, "Failed to update settings."),
