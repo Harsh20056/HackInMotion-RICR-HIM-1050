@@ -1,10 +1,13 @@
 # Samadhan: Smart City Issue Intelligence and Resolution Platform
 
-[![HackInMotion 2026](https://img.shields.io/badge/HackInMotion%202026-Smart%20Cities%20%26%20Civic%20Tech-blue.svg)](https://github.com/)
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20PostGIS-336791.svg)](https://www.postgresql.org/)
-[![Node.js](https://img.shields.io/badge/Backend-Express%205%20%7C%20TypeScript-green.svg)](https://expressjs.com/)
-[![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%208%20%7C%20TailwindCSS-61dafb.svg)](https://react.dev/)
-[![Prisma](https://img.shields.io/badge/ORM-Prisma%20v5-2D3748.svg)](https://www.prisma.io/)
+[![HackInMotion 2026](https://img.shields.io/badge/HackInMotion%202026-Smart%20Cities%20%26%20Civic%20Tech-blue.svg)](https://github.com/Harsh20056/HackInMotion-RICR-HIM-1050)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Harsh20056%2FSamadhan--RICR-181717.svg?logo=github)](https://github.com/Harsh20056/HackInMotion-RICR-HIM-1050)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20PostGIS-336791.svg?logo=postgresql)](https://www.postgresql.org/)
+[![Node.js](https://img.shields.io/badge/Backend-Express%205%20%7C%20TypeScript-339933.svg?logo=nodedotjs)](https://expressjs.com/)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%208%20%7C%20TailwindCSS-61dafb.svg?logo=react)](https://react.dev/)
+[![Prisma](https://img.shields.io/badge/ORM-Prisma%20v5-2D3748.svg?logo=prisma)](https://www.prisma.io/)
+[![Cloudinary](https://img.shields.io/badge/Media%20Storage-Cloudinary%20Signed%20Direct-3448C5.svg?logo=cloudinary)](https://cloudinary.com/)
+[![Leaflet](https://img.shields.io/badge/Mapping-Leaflet%20%2B%20OpenStreetMap-199900.svg?logo=leaflet)](https://leafletjs.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > A production-grade, full-stack civic intelligence platform that transforms municipal complaint management into an accountable, spatially deduplicated, multi-department resolution pipeline.
@@ -40,7 +43,7 @@
 
 ## Executive Summary
 
-Civic grievance redressal systems frequently suffer from structural bottlenecks: opaque ticketing lifecycles, duplicate report accumulation, manual departmental routing, lack of cross-departmental coordination, and zero verifiable proof of resolution. 
+Civic grievance redressal systems frequently suffer from structural bottlenecks: opaque ticketing lifecycles, duplicate report accumulation, manual departmental routing, lack of cross-departmental coordination, and zero verifiable proof of resolution.
 
 **Samadhan** bridges citizens and urban local bodies (ULBs) through an enterprise-grade civic lifecycle management platform. By combining **PostGIS spatial indexing**, **dynamic DAG-based departmental routing**, **background SLA escalation workers**, and an **open public accountability scorecard**, Samadhan transitions municipal administration from passive complaint handling to proactive, data-driven governance.
 
@@ -62,31 +65,40 @@ Urban governance infrastructure faces critical systemic issues across citizen re
 
 ## User Experience and Platform Interface
 
-The platform provides dedicated, responsive interfaces for citizens, departmental officers, and municipal executives.
+The platform provides purpose-built, responsive interfaces for citizens, departmental officers, and municipal executives.
 
 ### Citizen Portal and Public Reporting Interface
 
-The citizen interface facilitates effortless map-based issue pin-pointing, automated reverse geocoding, multi-file evidence upload, and live status tracking.
+The citizen interface facilitates effortless map-based issue pinpointing, automated reverse geocoding, multi-file evidence upload via Cloudinary, and live status tracking.
 
-![Citizen Landing Page and Issue Submission](assets/hero-landing-page.png)
+<p align="center">
+  <img src="assets/hero-landing-page.png" alt="Citizen Landing Page and Issue Submission" width="95%" />
+</p>
+
 *Figure 1: Citizen portal overview showing responsive reporting interface, tracking entry points, and public civic statistics.*
 
 ---
 
 ### Interactive Civic Map and Spatial Issue Tracking
 
-Citizens and administrative staff can visualize city-wide civic incidents with status filtering, cluster breakdowns, and geographical boundary identification.
+Citizens and administrative staff can visualize city-wide civic incidents rendered through Leaflet and OpenStreetMap, with real-time category filtering, cluster breakdowns, and geographic boundary identification.
 
-![Interactive Civic Map](assets/civic-map.png)
+<p align="center">
+  <img src="assets/civic-map.png" alt="Interactive Civic Map" width="95%" />
+</p>
+
 *Figure 2: Interactive map rendering real-time civic incidents, category-coded markers, and detailed status cards.*
 
 ---
 
 ### Municipal Administration and Department Analytics Dashboard
 
-Department administrators access operational queues, departmental SLA metrics, workload distribution, and resolution performance analytics calculated directly from database records.
+Department administrators access operational queues, departmental SLA metrics, workload distribution, and resolution performance analytics powered by Recharts directly from live database records.
 
-![Municipal Analytics and Administration Dashboard](assets/dashboard-analytics.png)
+<p align="center">
+  <img src="assets/dashboard-analytics.png" alt="Municipal Analytics and Administration Dashboard" width="95%" />
+</p>
+
 *Figure 3: Administrative analytics dashboard featuring issue distribution, resolution velocity, departmental SLA compliance, and geographical hotspot metrics.*
 
 ---
@@ -218,33 +230,43 @@ Samadhan integrates multimodal AI as an advisory verification layer:
 
 ### Backend Infrastructure
 
-| Component | Technology | Version / Tool | Rationale |
-|---|---|---|---|
-| **Runtime Environment** | Node.js | v20 LTS | Stable enterprise JavaScript runtime with native ES module support. |
-| **Application Framework** | Express | v5.1 | Lightweight, minimal-overhead REST API framework with native async error routing. |
-| **Language** | TypeScript | v5.4 | End-to-end type safety across domain entities and API boundaries. |
-| **Database Engine** | PostgreSQL + PostGIS | 15+ / 3.4+ | Relational integrity paired with native spherical spatial indexing (`GiST`). |
-| **ORM & Migrations** | Prisma | v5.14 | Typed schema definitions, automated migrations, and raw query flexibility. |
-| **Job Queue & Scheduling** | pg-boss | v9.0 | Transactional background job queue hosted directly inside PostgreSQL. |
-| **Schema Validation** | Zod | v3.23 | Strict runtime payload verification at controller boundaries. |
-| **Authentication** | JWT + bcrypt | Short-lived Access (15m) / Refresh (30d) | Stateless authentication with bcrypt cryptographic hashing. |
-| **Asset Storage** | Cloudinary | Direct Signed Uploads | Zero server-transit image ingestion with automated thumbnail transformations. |
-| **Email Delivery** | Resend | REST API | Transactional notification dispatcher with developer domain routing overrides. |
-| **Logging** | Pino | Structured JSON | Low-overhead JSON structured logging for production observability. |
+| Domain | Technology / Library | Version / Rationale |
+|---|---|---|
+| **Runtime Environment** | Node.js | v20 LTS — High-performance asynchronous execution. |
+| **API Framework** | Express | v5.1 — Modern REST API framework with native async error handling. |
+| **Language** | TypeScript | v5.4 — Strict typing across API contracts, domain entities, and queries. |
+| **Database Engine** | PostgreSQL + PostGIS | 15+ / 3.4+ — Relational persistence paired with native spherical spatial indexing (`GiST`). |
+| **ORM & Migrations** | Prisma | v5.14 — Type-safe client with native PostGIS raw SQL integration. |
+| **Job Queue & Scheduling** | pg-boss | v9.0 — Transactional background job queue hosted directly inside PostgreSQL. |
+| **Schema Validation** | Zod | v3.23 — Edge payload validation with inferred TypeScript types. |
+| **Authentication & Tokens** | JWT + bcrypt | Short-lived Access (15m) / Long-lived Refresh (30d) + bcrypt hashing. |
+| **Structured Logging** | Pino | Structured JSON logging with request tracing and audit correlation. |
 
 ---
 
 ### Frontend Architecture
 
-| Component | Technology | Rationale |
+| Domain | Technology / Library | Version / Rationale |
 |---|---|---|
-| **Framework** | React 18 + TypeScript | Component-driven declarative UI with strict interface typing. |
-| **Build Tooling** | Vite 8 + SWC | Rapid Hot Module Replacement (HMR) and optimized route chunk splitting. |
-| **Styling & Design System** | Tailwind CSS + Radix UI | Accessible headless primitives with custom design tokens. |
-| **Geospatial Mapping** | Leaflet + React-Leaflet | Open-source OpenStreetMap integration with zero per-load licensing costs. |
+| **Framework** | React 18 + TypeScript | Component-driven UI architecture with strict type safety. |
+| **Build Tooling & Bundler** | Vite 8 + SWC | Lightning-fast development server with dynamic chunk splitting. |
+| **Styling & UI Tokens** | Tailwind CSS + Radix UI | Headless accessible components customized into responsive design tokens. |
+| **Routing** | React Router v6 | Lazy-loaded client routing with role-based authentication guards. |
+| **Geospatial Mapping** | Leaflet + React-Leaflet | Open-source interactive map rendering via OpenStreetMap tiles. |
 | **Data Visualization** | Recharts | Isolated charting bundle loaded dynamically via `IntersectionObserver`. |
-| **Routing** | React Router v6 | Client-side routing with route-level code splitting and authentication guards. |
-| **Testing** | Vitest + Testing Library | High-speed unit and integration test runner sharing the Vite transform pipeline. |
+| **Document Processing** | pdfjs-dist | Client-side document generation and inspection. |
+| **Testing Suite** | Vitest + Testing Library | High-speed unit and integration testing sharing the Vite transform pipeline. |
+
+---
+
+### Cloud Services and External Integrations
+
+| Domain | Service / Provider | Purpose and Implementation Details |
+|---|---|---|
+| **Media & Image Storage** | Cloudinary | Signed direct-from-browser uploads (zero server bandwidth transit) with automated responsive thumbnail delivery. |
+| **Geocoding & Spatial Tiles** | OpenStreetMap / Nominatim | Spatial map tile provider and reverse geocoding for human-readable addresses. |
+| **Transactional Email** | Resend | Departmental SLA breach alerts and citizen status notification emails. |
+| **Multimodal AI Engine** | Google Gemini API | Automated categorization, priority suggestion, and pre/post visual proof matching. |
 
 ---
 
@@ -513,9 +535,9 @@ Developed for **HackInMotion 2026** under the **Smart Cities & Civic Tech** trac
 
 ### Development Team
 
-- **Divyanshu Kubde** — Full-Stack Development & Frontend Architecture
-- **Muiz Khan** — Backend Systems & Workflow Engineering
-- **Harsh Shrivastava** — Geospatial Engineering & Database Architecture
+- **Muiz Khan** — AI / Machine Learning & Autonomous Workflow Intelligence
+- **Harsh Shrivastava** — Frontend Architecture, Interactive Map UI & Client Performance
+- **Divyanshu Kubde** — Backend Systems, PostgreSQL/PostGIS Spatial Engine & API Architecture
 
 ---
 
