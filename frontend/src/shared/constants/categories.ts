@@ -5,6 +5,7 @@ export const CATEGORIES = {
   ROADS: "roads",
   PARKS: "parks",
   BUILDINGS: "buildings",
+  METRO: "metro",
 } as const;
 
 export type CategoryType = typeof CATEGORIES[keyof typeof CATEGORIES];
@@ -16,4 +17,5 @@ export const CATEGORY_LABELS = {
   [CATEGORIES.ROADS]: { en: "Roads", hi: "सड़कें" },
   [CATEGORIES.PARKS]: { en: "Parks & Gardens", hi: "पार्क और बगीचे" },
   [CATEGORIES.BUILDINGS]: { en: "Buildings", hi: "भवन" },
+  [CATEGORIES.METRO]: { en: "Metro & Transit", hi: "मेट्रो और ट्रांजिट" },
 } as const;

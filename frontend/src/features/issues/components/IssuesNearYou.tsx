@@ -17,7 +17,8 @@ import {
   Loader2,
   TreePine,
   Building2,
-  Timer
+  Timer,
+  Train
 } from "lucide-react";
 
 type IssueStatus = "reported" | "in-progress" | "resolved";
@@ -101,6 +102,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   "Sanitation": <Trash2 className="w-4 h-4" />,
   "Electricity": <Zap className="w-4 h-4" />,
   "Roads": <Construction className="w-4 h-4" />,
+  "Metro & Transit": <Train className="w-4 h-4" />,
 };
 
 export function IssuesNearYou() {

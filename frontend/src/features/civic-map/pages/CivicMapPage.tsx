@@ -24,6 +24,7 @@ function getCategoryCode(category: string): string {
   if (normalized.includes("road")) return "roads";
   if (normalized.includes("park") || normalized.includes("garden")) return "parks";
   if (normalized.includes("building")) return "buildings";
+  if (normalized.includes("metro") || normalized.includes("station") || normalized.includes("train") || normalized.includes("transit")) return "metro";
   return normalized;
 }
 
@@ -51,6 +52,7 @@ import {
   ChevronRight,
   Activity,
   Search,
+  Train,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -107,10 +109,12 @@ const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; hi: 
   "पार्क और बगीचे": { icon: <TreePine className="w-3.5 h-3.5" />,  color: "#22c55e", hi: "पार्क और बगीचे" },
   "Buildings":       { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
   "भवन":            { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
+  "Metro & Transit": { icon: <Train className="w-3.5 h-3.5" />,     color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
+  "मेट्रो और ट्रांजिट": { icon: <Train className="w-3.5 h-3.5" />,     color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
 };
 
 const CATEGORY_DISPLAY_NAMES = [
-  "Water Supply", "Sanitation", "Electricity", "Roads", "Parks & Gardens", "Buildings",
+  "Water Supply", "Sanitation", "Electricity", "Roads", "Parks & Gardens", "Buildings", "Metro & Transit",
 ];
 const STATUS_DISPLAY = [IssueStatus.REPORTED, IssueStatus.IN_PROGRESS, IssueStatus.RESOLVED];
 
@@ -142,12 +146,18 @@ const CANONICAL_CATEGORIES: Record<string, string> = {
   "gardens": "Parks & Gardens",
   "parks & gardens": "Parks & Gardens",
   "parks and gardens": "Parks & Gardens",
+  "metro": "Metro & Transit",
+  "transit": "Metro & Transit",
+  "station": "Metro & Transit",
+  "train": "Metro & Transit",
+  "metro & transit": "Metro & Transit",
   "जल आपूर्ति": "Water Supply",
   "स्वच्छता": "Sanitation",
   "बिजली": "Electricity",
   "सड़कें": "Roads",
   "पार्क और बगीचे": "Parks & Gardens",
-  "भवन": "Buildings"
+  "भवन": "Buildings",
+  "मेट्रो और ट्रांजिट": "Metro & Transit"
 };
 
 function normalizeCategory(cat: string): string {
@@ -722,6 +732,88 @@ export default function CivicMapPage() {
     }).slice(0, 6);
   }, [allIssues, searchQuery]);
 
+  const [placeResults, setPlaceResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
+  const [isSearchingPlaces, setIsSearchingPlaces] = useState(false);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setPlaceResults([]);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    
+    // 1. Quick Local Match on CITY_COORDS
+    const localMatches: { name: string; lat: number; lng: number }[] = [];
+    Object.keys(CITY_COORDS).forEach((cityKey) => {
+      if (cityKey.includes(query) || query.includes(cityKey)) {
+        const coords = CITY_COORDS[cityKey];
+        const cityName = cityKey.charAt(0).toUpperCase() + cityKey.slice(1);
+        localMatches.push({ name: `${cityName}, India`, lat: coords[0], lng: coords[1] });
+      }
+    });
+
+    // 2. Fetch Nominatim places with debounce
+    const timer = setTimeout(async () => {
+      setIsSearchingPlaces(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=4`,
+          {
+            headers: {
+              "Accept-Language": language === "en" ? "en" : "hi",
+              "User-Agent": "Samadhan-Civic-App"
+            }
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const fetchedPlaces = data.map((item: any) => ({
+            name: item.display_name,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon)
+          }));
+          
+          const merged = [...localMatches];
+          fetchedPlaces.forEach((fp: any) => {
+            if (!merged.some(m => Math.abs(m.lat - fp.lat) < 0.001 && Math.abs(m.lng - fp.lng) < 0.001)) {
+              merged.push(fp);
+            }
+          });
+          
+          setPlaceResults(merged);
+        }
+      } catch (err) {
+        setPlaceResults(localMatches);
+      } finally {
+        setIsSearchingPlaces(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, language]);
+
+  const handleSelectPlaceResult = (place: { name: string; lat: number; lng: number }) => {
+    if (!mapInstance) return;
+    
+    mapInstance.invalidateSize();
+    mapInstance.flyTo([place.lat, place.lng], 15, { animate: true, duration: 1.5 });
+    
+    const tempCircle = L.circle([place.lat, place.lng], {
+      color: "#3b82f6",
+      fillColor: "#3b82f6",
+      fillOpacity: 0.2,
+      radius: 150
+    }).addTo(mapInstance);
+    
+    setTimeout(() => {
+      tempCircle.remove();
+    }, 3000);
+
+    setShowSearchDropdown(false);
+    setSearchQuery("");
+  };
+
   const handleSelectSearchResult = (issue: Issue) => {
     if (!mapInstance) return;
 
@@ -1265,22 +1357,54 @@ export default function CivicMapPage() {
               </div>
 
               {/* Search Results Dropdown List */}
-              {showSearchDropdown && searchQuery && searchResults.length > 0 && (
-                <div className="absolute top-full left-3 right-3 mt-1 bg-card border border-border rounded-xl shadow-2xl z-[1000] max-h-60 overflow-y-auto p-1 divide-y divide-border/40">
-                  {searchResults.map((issue) => (
-                    <button
-                      key={issue.id}
-                      onClick={() => handleSelectSearchResult(issue)}
-                      className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors flex flex-col gap-0.5 rounded-lg text-xs"
-                    >
-                      <span className="font-semibold text-foreground truncate">{issue.title}</span>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span className="font-medium text-primary/80">{issue.category}</span>
-                        <span>•</span>
-                        <span>{extractCity(issue.location)}</span>
+              {showSearchDropdown && searchQuery && (searchResults.length > 0 || placeResults.length > 0) && (
+                <div className="absolute top-full left-3 right-3 mt-1 bg-card border border-border rounded-xl shadow-2xl z-[1000] max-h-72 overflow-y-auto p-2 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {/* Local Issues Section */}
+                  {searchResults.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="px-2.5 py-1 text-[9px] font-bold text-muted-foreground uppercase tracking-wider text-left">
+                        {language === "en" ? "Issues & Reports" : "शिकायतें एवं रिपोर्ट"}
                       </div>
-                    </button>
-                  ))}
+                      <div className="flex flex-col gap-1">
+                        {searchResults.map((issue) => (
+                          <button
+                            key={issue.id}
+                            onClick={() => handleSelectSearchResult(issue)}
+                            className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors flex flex-col gap-0.5 rounded-lg text-xs cursor-pointer bg-transparent border-0"
+                          >
+                            <span className="font-semibold text-foreground truncate">{issue.title}</span>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <span className="font-medium text-primary/80">{issue.category}</span>
+                              <span>•</span>
+                              <span>{extractCity(issue.location)}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Places & Locations Section */}
+                  {placeResults.length > 0 && (
+                    <div className="space-y-1 border-t border-border/40 pt-1.5 first:border-t-0 first:pt-0">
+                      <div className="px-2.5 py-1 text-[9px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 text-left">
+                        <span>{language === "en" ? "Places & Locations" : "स्थान एवं शहर"}</span>
+                        {isSearchingPlaces && <Loader2 className="w-2.5 h-2.5 animate-spin text-primary" />}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {placeResults.map((place, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSelectPlaceResult(place)}
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/60 transition-colors rounded-lg text-xs cursor-pointer bg-transparent border-0 text-left text-foreground"
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate w-full font-medium">{place.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

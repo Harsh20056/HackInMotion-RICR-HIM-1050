@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient, Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { randomUUID } from "crypto";
 
 /**
  * Demo-grade seed.
@@ -63,6 +64,7 @@ const DEPARTMENTS = [
   { code: "electricity", nameEn: "State Electricity Board / DISCOM", nameHi: "राज्य विद्युत बोर्ड", adminCity: "Indore" },
   { code: "parks", nameEn: "Horticulture Department", nameHi: "उद्यान विभाग", adminCity: "Indore" },
   { code: "buildings", nameEn: "Building & Construction Department", nameHi: "भवन एवं निर्माण विभाग", adminCity: "Indore" },
+  { code: "metro", nameEn: "Metro Transit Authority (Bhopal Metro)", nameHi: "मेट्रो ट्रांजिट अथॉरिटी (भोपाल मेट्रो)", adminCity: "Bhopal" },
 ];
 
 const CATEGORIES = [
@@ -72,6 +74,7 @@ const CATEGORIES = [
   { code: "roads", nameEn: "Roads", nameHi: "सड़कें", dept: "roads", priority: 3, radius: 50, window: 168 },
   { code: "parks", nameEn: "Parks & Gardens", nameHi: "पार्क और बगीचे", dept: "parks", priority: 4, radius: 75, window: 168 },
   { code: "buildings", nameEn: "Buildings", nameHi: "भवन", dept: "buildings", priority: 2, radius: 50, window: 168 },
+  { code: "metro", nameEn: "Metro Transit & Stations", nameHi: "मेट्रो ट्रांजिट और स्टेशन", dept: "metro", priority: 2, radius: 100, window: 48 },
 ];
 
 // Demonstrates multi-department routing via data, not code: sanitation
@@ -115,6 +118,7 @@ const CATEGORY_MIX: { code: string; count: number }[] = [
   { code: "electricity", count: 14 },
   { code: "parks", count: 10 },
   { code: "buildings", count: 6 },
+  { code: "metro", count: 12 },
 ];
 
 /**
@@ -130,6 +134,7 @@ const RESOLUTION_HOURS: Record<string, { min: number; max: number }> = {
   parks: { min: 60, max: 220 },
   roads: { min: 100, max: 400 },
   buildings: { min: 220, max: 800 },
+  metro: { min: 2, max: 24 },
 };
 
 /** Existing civic photos in frontend/public, cycled per category. */
@@ -138,12 +143,14 @@ const PHOTO_POOL = [
   "/hospital%20waste.webp",
   "/water.webp",
   "/electricity.webp",
+  "/metro.jpg",
 ];
 const CATEGORY_PHOTO: Record<string, string> = {
   roads: "/broken%20road.webp",
   sanitation: "/hospital%20waste.webp",
   water: "/water.webp",
   electricity: "/electricity.webp",
+  metro: "/metro.jpg",
 };
 
 const TITLES: Record<string, string[]> = {
@@ -187,6 +194,14 @@ const TITLES: Record<string, string[]> = {
     "Unsafe staircase railing at the ward office",
     "Water seepage in the community hall",
   ],
+  metro: [
+    "Escalator not working at metro station",
+    "Ticket vending machine malfunctioning",
+    "Litter on the metro platform",
+    "Metro coach air conditioning failing",
+    "Smart card reader gate error",
+    "Broken display board at platform",
+  ],
 };
 
 const DESCRIPTIONS: Record<string, string[]> = {
@@ -220,6 +235,12 @@ const DESCRIPTIONS: Record<string, string[]> = {
     "The railing is loose and moves when held; someone will fall from it eventually.",
     "Damp has spread across the ceiling and plaster is coming away in pieces.",
   ],
+  metro: [
+    "The escalator at Platform 2 is completely stopped, causing heavy congestion during peak hours.",
+    "The machine is accepting cash but not dispensing tickets or smart cards.",
+    "Multiple plastic cups and trash are scattered across the platform seating area.",
+    "The AC in coach C3 is not working and it is extremely suffocating inside.",
+  ],
 };
 
 const CITIZEN_NAMES = [
@@ -235,6 +256,7 @@ const RESOLUTION_NOTES: Record<string, string[]> = {
   roads: ["Pothole filled with hot mix and compacted.", "Carriageway patched and the surface levelled."],
   parks: ["Grass cut, track cleared and debris removed.", "Play equipment repaired and safety-checked."],
   buildings: ["Crack grouted and the wall re-plastered.", "Railing re-anchored and load-tested."],
+  metro: ["Escalator technician repaired the motor and tested operations.", "Ticket machine sensor cleaned and calibrated.", "Cleanliness team dispatched, platform cleared.", "AC unit serviced and refrigerant recharged."],
 };
 
 const now = new Date();
@@ -408,6 +430,7 @@ async function upsertUsers(deptIds: Map<string, string>) {
 }
 
 type PlannedIssue = {
+  id: string;
   ref: string;
   categoryCode: string;
   dept: string;
@@ -460,6 +483,7 @@ function planIssues(citizenIds: string[]): PlannedIssue[] {
         const profile = RESOLUTION_HOURS[cat.dept];
 
         planned.push({
+          id: randomUUID(),
           resolutionHours: profile.min + rand() * (profile.max - profile.min),
           ref: `SAM-SEED-${String(refCounter++).padStart(4, "0")}`,
           categoryCode: code,
@@ -539,7 +563,7 @@ async function seedIssues(
   // Single multi-row insert — geography columns need raw SQL.
   const values = todo.map(
     (p) => Prisma.sql`(
-      ${p.ref}, ${p.title}, ${p.description}, ${catIds.get(p.categoryCode)!}::uuid,
+      ${p.id}::uuid, ${p.ref}, ${p.title}, ${p.description}, ${catIds.get(p.categoryCode)!}::uuid,
       ${p.finalStatus}::"IssueStatus",
       ${CATEGORIES.find((c) => c.code === p.categoryCode)!.priority},
       ${p.reporterId}::uuid, ${p.address}, ${p.city},
@@ -554,7 +578,7 @@ async function seedIssues(
   return prisma.$transaction(
     async (tx) => {
       const inserted = await tx.$queryRaw<{ id: string; public_ref: string }[]>(Prisma.sql`
-        INSERT INTO issues (public_ref, title, description, category_id, status, priority, reported_by, address, city, location, created_at)
+        INSERT INTO issues (id, public_ref, title, description, category_id, status, priority, reported_by, address, city, location, created_at)
         VALUES ${Prisma.join(values, ", ")}
         RETURNING id, public_ref
       `);

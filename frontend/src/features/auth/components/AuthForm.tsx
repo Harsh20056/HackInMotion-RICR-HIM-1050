@@ -50,6 +50,7 @@ const DEMO_CREDENTIALS: DemoCredential[] = [
   { email: "dept.pwd@samadhan.gov", password: "dept123", fullName: "PWD Admin", roleLabel: "Roads (PWD)", city: DEMO_CITY, state: DEMO_STATE },
   { email: "dept.parks@samadhan.gov", password: "dept123", fullName: "Parks Admin", roleLabel: "Parks & Gardens", city: DEMO_CITY, state: DEMO_STATE },
   { email: "dept.buildings@samadhan.gov", password: "dept123", fullName: "Buildings Admin", roleLabel: "Buildings", city: DEMO_CITY, state: DEMO_STATE },
+  { email: "dept.metro@samadhan.gov", password: "dept123", fullName: "Bhopal Metro Admin", roleLabel: "Metro & Transit", city: DEMO_CITY, state: DEMO_STATE },
   { email: "citizen@samadhan.gov", password: "citizen123", fullName: "Citizen User", roleLabel: "Citizen", city: DEMO_CITY, state: DEMO_STATE },
 ];
 

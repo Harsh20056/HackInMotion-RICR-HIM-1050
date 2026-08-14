@@ -5,4 +5,5 @@ export enum IssueCategory {
   ROADS = "roads",
   PARKS = "parks",
   BUILDINGS = "buildings",
+  METRO = "metro",
 }
