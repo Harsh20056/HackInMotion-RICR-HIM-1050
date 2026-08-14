@@ -163,6 +163,7 @@ model User {
   statusHistoryEntries IssueStatusHistory[]
   auditLogEntries    AuditLog[]
   verifications      CitizenVerification[]
+  coordinationOverrides CoordinationPlan[]
   createdDependencies WorkOrderDependency[]
   workOrderNotes     WorkOrderNote[]
   transfersRequested WorkOrderTransfer[] @relation("TransferRequestedBy")
@@ -204,6 +205,10 @@ model Issue {
   resolvedById    String?     @map("resolved_by") @db.Uuid
   resolvedByUser  User?       @relation("IssueResolvedBy", fields: [resolvedById], references: [id])
   reopenCount     Int         @default(0) @map("reopen_count")
+  /// What the model suggested at report time, kept beside what the citizen chose
+  aiSuggestedCategory String? @map("ai_suggested_category")
+  aiSuggestedPriority Int?    @map("ai_suggested_priority")
+  aiSuggestionConfidence Float? @map("ai_suggestion_confidence")
   createdAt       DateTime    @default(now()) @map("created_at")
   acknowledgedAt  DateTime?   @map("acknowledged_at")
   resolvedAt      DateTime?   @map("resolved_at")
@@ -216,6 +221,7 @@ model Issue {
   statusHistory  IssueStatusHistory[]
   supports       IssueSupport[]
   verifications  CitizenVerification[]
+  coordinationPlans CoordinationPlan[]
 
   @@index([categoryId, status, createdAt])
   @@index([city, status, createdAt])
@@ -282,6 +288,8 @@ model IssueMedia {
   publicId   String    @map("public_id")
   uploadedBy String    @map("uploaded_by") @db.Uuid
   uploader   User      @relation(fields: [uploadedBy], references: [id])
+  /// { match, confidence, detectedLabel, reason, promptVersion } — advisory only
+  aiVerification Json?  @map("ai_verification")
   createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([issueId])
@@ -492,4 +500,54 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@map("audit_log")
+}
+
+// ── AI layer ───────────────────────────────────────────────────────────────
+
+/// Every model call, for cost/latency reporting and for auditing what the
+/// platform asked and what came back. Written whether the call succeeded,
+/// failed over, or failed outright.
+model AiCall {
+  id           String   @id @default(uuid()) @db.Uuid
+  kind         String
+  provider     String
+  model        String
+  promptVersion String  @map("prompt_version")
+  entityType   String?  @map("entity_type")
+  entityId     String?  @map("entity_id") @db.Uuid
+  latencyMs    Int      @map("latency_ms")
+  promptTokens Int?     @map("prompt_tokens")
+  outputTokens Int?     @map("output_tokens")
+  ok           Boolean  @default(true)
+  error        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([kind, createdAt])
+  @@map("ai_calls")
+}
+
+/// The immutable reasoning behind an automated multi-department plan.
+/// This is the RTI / accountability artifact: it records what the model was
+/// asked, what it proposed, and whether a human overrode it.
+model CoordinationPlan {
+  id            String   @id @default(uuid()) @db.Uuid
+  issueId       String   @map("issue_id") @db.Uuid
+  issue         Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  provider      String
+  model         String
+  promptVersion String   @map("prompt_version")
+  /// Ordered subtasks + dependencies exactly as the model returned them.
+  plan          Json
+  rationale     String
+  confidence    Float
+  /// applied = work orders created, suggested = below threshold, awaiting a human
+  status        String   @default("suggested")
+  appliedAt     DateTime? @map("applied_at")
+  overriddenById String? @map("overridden_by") @db.Uuid
+  overriddenBy  User?    @relation(fields: [overriddenById], references: [id])
+  overrideNote  String?  @map("override_note")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([issueId])
+  @@map("coordination_plans")
 }

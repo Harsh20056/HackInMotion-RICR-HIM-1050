@@ -58,7 +58,33 @@ export interface WorkOrderTransfer {
   approvedBy: { id: string; fullName: string } | null;
 }
 
+export interface CoordinationPlan {
+  id: string;
+  provider: string;
+  model: string;
+  promptVersion: string;
+  plan: { isCompound: boolean; subtasks: { order: number; department: string; summary: string; dependsOn: number[] }[] };
+  rationale: string;
+  confidence: number;
+  status: "applied" | "suggested" | "rejected";
+  appliedAt: string | null;
+  overriddenBy: { id: string; fullName: string } | null;
+  overrideNote: string | null;
+  createdAt: string;
+}
+
 export const coordinationApi = {
+  coordinationPlans: (issueId: string) =>
+    apiRequest<{ items: CoordinationPlan[] }>(`/ai/issues/${issueId}/coordination-plan`, {
+      auth: false,
+    }).then((r) => r.items),
+
+  overridePlan: (planId: string, action: "apply" | "reject", note?: string) =>
+    apiRequest(`/ai/coordination-plans/${planId}/override`, {
+      method: "POST",
+      body: { action, note },
+    }),
+
   workOrdersForIssue: (issueId: string) =>
     apiRequest<{ items: CoordWorkOrder[] }>(`/issues/${issueId}/work-orders`, { auth: false }).then((r) => r.items),
 

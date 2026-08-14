@@ -14,6 +14,7 @@ import { usersRouter } from "./modules/users/users.controller.js";
 import { analyticsRouter } from "./modules/analytics/analytics.controller.js";
 import { notificationsRouter } from "./modules/notifications/notifications.controller.js";
 import { publicRouter } from "./modules/publicTransparency/publicTransparency.controller.js";
+import { aiRouter } from "./modules/ai/ai.controller.js";
 
 export function createApp() {
   const app = express();
@@ -35,6 +36,7 @@ export function createApp() {
   app.use("/notifications", notificationsRouter);
   // Open, unauthenticated transparency scorecard.
   app.use("/public", publicRouter);
+  app.use("/ai", aiRouter);
 
   app.use(errorHandler);
 

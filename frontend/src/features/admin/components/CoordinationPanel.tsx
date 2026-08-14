@@ -6,6 +6,7 @@ import {
   WorkOrderTransfer,
 } from "../services/coordinationApi";
 import { adminService } from "../services/adminService";
+import { CoordinationPlanCard } from "./CoordinationPlanCard";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { useAuth } from "@/features/auth";
 import { useToast } from "@/shared/hooks/use-toast";
@@ -120,6 +121,9 @@ export function CoordinationPanel({ issueId }: { issueId: string }) {
           {workOrders.length} {language === "en" ? "work orders" : "कार्य आदेश"}
         </Badge>
       </div>
+
+      {/* The recorded reasoning behind this routing, if a plan produced it. */}
+      <CoordinationPlanCard issueId={issueId} isStaff={isStaff} />
 
       <div className="space-y-2">
         {workOrders.map((wo, idx) => (

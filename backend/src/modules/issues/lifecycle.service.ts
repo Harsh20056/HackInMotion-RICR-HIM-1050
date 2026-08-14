@@ -6,6 +6,7 @@ import { AccessTokenClaims } from "../../shared/lib/jwt.js";
 import { assertCityAccess } from "../../shared/middleware/rbac.js";
 import { isTransitionAllowed, actorMayTransition, timestampFieldFor, ALLOWED_ISSUE_TRANSITIONS } from "./lifecycle.js";
 import { notificationsService } from "../notifications/notifications.service.js";
+import { enqueueAi } from "../../jobs/scheduler.js";
 
 /** 422 — the request was well-formed but the state change isn't legal. */
 class UnprocessableError extends AppError {
@@ -197,6 +198,9 @@ export const lifecycleService = {
     });
 
     await notifyOnTransition(issue, to, input.reason ?? null, actor);
+
+    // Advisory only, and after the fact: the resolution is already recorded.
+    if (to === "resolved") void enqueueAi({ type: "issue.resolved", issueId });
 
     return updated;
   },

@@ -7,6 +7,7 @@ import { CreateIssueInput, ListIssuesQuery, ConfirmDuplicateInput } from "./issu
 import { cityFromLocation } from "../../shared/lib/cityFromLocation.js";
 import { slaService } from "../sla/sla.service.js";
 import { notificationsService } from "../notifications/notifications.service.js";
+import { enqueueAi } from "../../jobs/scheduler.js";
 
 function toApiIssue(row: IssueRow) {
   return {
@@ -200,6 +201,13 @@ export const issuesService = {
       payload: { issue: apiIssue },
       at: new Date().toISOString(),
     });
+
+    // AI runs off the request path. The report is already saved and routed;
+    // anything below only adds fields to it.
+    void enqueueAi({ type: "issue.created", issueId: issue.id });
+    for (const m of apiIssue.media ?? []) {
+      if (m.kind === "evidence") void enqueueAi({ type: "media.evidence", mediaId: m.id });
+    }
 
     return { issue: apiIssue };
   },

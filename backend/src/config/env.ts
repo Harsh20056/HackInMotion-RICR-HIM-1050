@@ -27,6 +27,17 @@ const envSchema = z.object({
   // Above this many alerts for one recipient in a single sweep, send one
   // digest instead of flooding their bell with near-identical rows.
   SLA_DIGEST_THRESHOLD: z.coerce.number().int().min(1).default(3),
+  // AI layer. Both optional: with neither key set every AI field stays null
+  // and the platform behaves exactly as it did before Phase 5.
+  GEMINI_API_KEY: z.string().optional().default(""),
+  GROQ_API_KEY: z.string().optional().default(""),
+  AI_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
+  // Model ids are env-overridable: providers retire model names on their own
+  // schedule and that should not require a code change.
+  GEMINI_MODEL: z.string().default("gemini-3.7-flash"),
+  GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
+  /// Below this, a coordination plan is suggested rather than auto-applied.
+  AI_PLAN_CONFIDENCE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.7),
   // Escape hatch for running the API without background workers.
   DISABLE_JOBS: z
     .string()

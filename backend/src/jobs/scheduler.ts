@@ -3,6 +3,7 @@ import { env } from "../config/env.js";
 import { logger } from "../shared/lib/logger.js";
 import { runSlaSweep } from "./slaMonitor.js";
 import { runNotificationDispatch } from "./notificationWorker.js";
+import { runAiJob, AiJob } from "./aiWorker.js";
 
 /**
  * pg-boss owns the schedule, using the same Postgres instance as the app —
@@ -11,6 +12,7 @@ import { runNotificationDispatch } from "./notificationWorker.js";
 
 const SLA_QUEUE = "sla-sweep";
 const NOTIFY_QUEUE = "notification-dispatch";
+const AI_QUEUE = "ai-tasks";
 
 let boss: PgBoss | null = null;
 
@@ -28,12 +30,18 @@ export async function startScheduler(): Promise<PgBoss | null> {
 
   await boss.createQueue(SLA_QUEUE);
   await boss.createQueue(NOTIFY_QUEUE);
+  await boss.createQueue(AI_QUEUE);
 
   await boss.work(SLA_QUEUE, async () => {
     await runSlaSweep();
   });
   await boss.work(NOTIFY_QUEUE, async () => {
     await runNotificationDispatch();
+  });
+  // On demand, not scheduled: enqueued by the request path so the caller
+  // never waits on a model.
+  await boss.work<AiJob>(AI_QUEUE, async ([job]) => {
+    await runAiJob(job.data);
   });
 
   // Detect SLA breaches every 5 minutes; drain the notification queue every
@@ -47,6 +55,19 @@ export async function startScheduler(): Promise<PgBoss | null> {
 
   logger.info("Scheduler started: SLA sweep every 5m, notification dispatch every 1m");
   return boss;
+}
+
+/**
+ * Queues an AI task. Deliberately fire-and-forget: if the queue is
+ * unavailable the caller carries on and the issue simply has no AI fields.
+ */
+export async function enqueueAi(job: AiJob): Promise<void> {
+  if (!boss) return;
+  try {
+    await boss.send(AI_QUEUE, job as unknown as object);
+  } catch (err) {
+    logger.warn({ err, job }, "Could not enqueue AI job");
+  }
 }
 
 export async function stopScheduler(): Promise<void> {
