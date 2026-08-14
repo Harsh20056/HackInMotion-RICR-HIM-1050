@@ -9,6 +9,7 @@ import {
   transitionStatusSchema,
   reopenSchema,
   verifyIssueSchema,
+  bulkVerificationQuerySchema,
   ListIssuesQuery,
 } from "./issues.schemas.js";
 import { validate } from "../../shared/middleware/validate.js";
@@ -41,6 +42,24 @@ issuesRouter.get("/", optionalAuthenticate, validate(listIssuesQuerySchema, "que
     next(err);
   }
 });
+
+/**
+ * Bulk verification state. Must stay above `GET /:id`, or Express matches
+ * "verifications" as an issue id and the uuid validator rejects it.
+ */
+issuesRouter.get(
+  "/verifications",
+  optionalAuthenticate,
+  validate(bulkVerificationQuerySchema, "query"),
+  async (req, res, next) => {
+    try {
+      const { ids } = req.validatedQuery as { ids: string[] };
+      res.json({ states: await verificationService.getStates(ids, req.auth?.sub) });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 issuesRouter.get("/:id", optionalAuthenticate, validate(uuidParam("id"), "params"), async (req, res, next) => {
   try {

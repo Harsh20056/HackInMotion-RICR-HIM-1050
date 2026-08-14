@@ -21,6 +21,12 @@ const envSchema = z.object({
   // will reject sends to it. In non-production, set this to a real address
   // you've verified with Resend and every outbound email redirects there.
   DEV_EMAIL_OVERRIDE: z.string().optional().default(""),
+  // A deadline passing by seconds is not worth paging anyone over — the
+  // sweep ignores work orders until they are this far past due.
+  SLA_GRACE_MINUTES: z.coerce.number().int().min(0).default(15),
+  // Above this many alerts for one recipient in a single sweep, send one
+  // digest instead of flooding their bell with near-identical rows.
+  SLA_DIGEST_THRESHOLD: z.coerce.number().int().min(1).default(3),
   // Escape hatch for running the API without background workers.
   DISABLE_JOBS: z
     .string()
