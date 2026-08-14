@@ -31,12 +31,21 @@ export async function seedCategoryWithDepartment(opts: {
   return { department, category };
 }
 
-export async function createTestUser(role: "citizen" | "dept_admin" | "super_admin" = "citizen", departmentId?: string) {
+/**
+ * City-scoping fails closed: a dept_admin with no city resolves to the ""
+ * sentinel and is refused every issue, so a staff fixture must carry one.
+ * Defaults to Bhopal, which is the city the test coordinates fall in.
+ */
+export async function createTestUser(
+  role: "citizen" | "dept_admin" | "super_admin" = "citizen",
+  departmentId?: string,
+  city: string | null = "Bhopal"
+) {
   const email = `test-${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.samadhan`;
   const password = "TestPass123!";
   const passwordHash = await bcrypt.hash(password, 4);
   const user = await prisma.user.create({
-    data: { email, passwordHash, fullName: "Test User", role, departmentId },
+    data: { email, passwordHash, fullName: "Test User", role, departmentId, city },
   });
   return { user, email, password };
 }
