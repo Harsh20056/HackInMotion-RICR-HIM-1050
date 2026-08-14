@@ -1,9 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
 import { Button } from "@/shared/components/ui/button";
 import { PageMeta } from "@/shared/components/PageMeta";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   MapPin,
   FileText,
@@ -72,6 +74,41 @@ export default function Landing() {
   const location = useLocation();
 
   const isHi = language === "hi";
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: [23.2330, 77.4340],
+        zoom: 15,
+        zoomControl: false,
+        dragging: false,
+        touchZoom: false,
+        doubleClickZoom: false,
+        scrollWheelZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        attributionControl: false
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19
+      }).addTo(map);
+
+      mapInstanceRef.current = map;
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (location.state && (location.state as any).scrollToSection) {
@@ -346,10 +383,16 @@ export default function Landing() {
                   </div>
 
                   {/* Mock Radar Grid Visual */}
-                  <div className="relative h-56 sm:h-64 w-full rounded-2xl bg-muted/20 border border-border/60 overflow-hidden flex items-center justify-center">
+                  <div className="relative h-56 sm:h-64 w-full rounded-2xl border border-border/60 overflow-hidden flex items-center justify-center">
+                    {/* Leaflet Map base */}
+                    <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0" />
+                    
+                    {/* Subtle Overlay to blend the map and grid/pins */}
+                    <div className="absolute inset-0 bg-[#f8fafc]/10 dark:bg-slate-950/20 pointer-events-none z-10" />
+
                     {/* Grid Pattern Lines */}
                     <div
-                      className="absolute inset-0 opacity-25"
+                      className="absolute inset-0 opacity-15 pointer-events-none z-15"
                       style={{
                         backgroundImage: `linear-gradient(to right, #888 1px, transparent 1px), linear-gradient(to bottom, #888 1px, transparent 1px)`,
                         backgroundSize: "28px 28px",
@@ -357,32 +400,32 @@ export default function Landing() {
                     />
 
                     {/* Concentric Radar Rings */}
-                    <div className="absolute w-44 h-44 rounded-full border border-primary/20 animate-ping opacity-20" />
-                    <div className="absolute w-36 h-36 rounded-full border border-primary/30" />
-                    <div className="absolute w-20 h-20 rounded-full border border-primary/40 bg-primary/5" />
+                    <div className="absolute w-44 h-44 rounded-full border border-primary/20 animate-ping opacity-25 z-20 pointer-events-none" />
+                    <div className="absolute w-36 h-36 rounded-full border border-primary/35 z-20 pointer-events-none" />
+                    <div className="absolute w-20 h-20 rounded-full border border-primary/45 bg-primary/5 z-20 pointer-events-none" />
 
                     {/* Center Pin */}
-                    <div className="relative z-10 w-7 h-7 rounded-full bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
+                    <div className="relative z-30 w-7 h-7 rounded-full bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
                       <div className="w-2 rounded-full bg-rose-500" />
                     </div>
 
                     {/* Surrounding Issue Nodes */}
-                    <div className="absolute top-10 left-10 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold">
+                    <div className="absolute top-10 left-10 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold z-35">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       <span>{isHi ? "रोड लाइट हल" : "Light Fixed"}</span>
                     </div>
 
-                    <div className="absolute bottom-10 left-12 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold">
+                    <div className="absolute bottom-10 left-12 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold z-35">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       <span>{isHi ? "जल पाइपलाइन" : "Water Pipe"}</span>
                     </div>
 
-                    <div className="absolute top-12 right-8 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold">
+                    <div className="absolute top-12 right-8 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold z-35">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                       <span>{isHi ? "गड्ढा मरम्मत" : "Pothole"}</span>
                     </div>
 
-                    <div className="absolute bottom-5 right-6 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold">
+                    <div className="absolute bottom-5 right-6 flex items-center gap-1 px-2 py-0.5 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-sm text-[10px] font-bold z-35">
                       <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                       <span>{isHi ? "सफाई कार्य" : "Sanitation"}</span>
                     </div>
