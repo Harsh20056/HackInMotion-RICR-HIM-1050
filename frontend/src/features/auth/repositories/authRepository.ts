@@ -6,6 +6,7 @@ import { LoginInput } from "../validation/loginSchema";
 import { SignupInput } from "../validation/signupSchema";
 import { AuthError } from "@/shared/errors/errors";
 import { profileRepository } from "@/features/profile/repositories/profileRepository";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 const AUTH_EVENT = "samadhan_auth_change";
 
@@ -41,8 +42,8 @@ export const authRepository = {
       });
       profileRepository.seedProfileFromAuth(data.user.id, data.user.fullName, data.user.phone, input.city, input.state);
       return { user: toAuthUser(data.user), access_token: data.accessToken };
-    } catch (error: any) {
-      throw new AuthError(error.message, error);
+    } catch (error) {
+      throw new AuthError(getErrorMessage(error), error);
     }
   },
 
@@ -58,8 +59,8 @@ export const authRepository = {
       const session: AuthSession = { user: toAuthUser(data.user), access_token: data.accessToken };
       emitAuthChange("SIGNED_IN", session);
       return session;
-    } catch (error: any) {
-      throw new AuthError(error.message, error);
+    } catch (error) {
+      throw new AuthError(getErrorMessage(error), error);
     }
   },
 

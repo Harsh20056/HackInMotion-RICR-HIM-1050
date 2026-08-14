@@ -48,7 +48,7 @@ export async function runNotificationDispatch(batchSize = 50): Promise<{ sent: n
       continue;
     }
 
-    const copy = renderTemplate(n.template as NotificationTemplate, (n.payload ?? {}) as Record<string, any>);
+    const copy = renderTemplate(n.template as NotificationTemplate, (n.payload ?? {}) as Record<string, unknown>);
     let to = n.recipient.email;
     if (env.NODE_ENV !== "production" && env.DEV_EMAIL_OVERRIDE) {
       logger.info(
@@ -69,11 +69,11 @@ export async function runNotificationDispatch(batchSize = 50): Promise<{ sent: n
         data: { status: "sent", sentAt: new Date() },
       });
       sent++;
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error({ err, notificationId: n.id }, "Email delivery failed");
       await prisma.notification.update({
         where: { id: n.id },
-        data: { status: "failed", error: String(err?.message ?? err).slice(0, 500) },
+        data: { status: "failed", error: (err instanceof Error ? err.message : String(err)).slice(0, 500) },
       });
       failed++;
     }

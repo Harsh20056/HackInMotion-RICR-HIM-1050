@@ -3,6 +3,7 @@ import { prisma } from "../../src/shared/lib/prisma.js";
 import bcrypt from "bcrypt";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+import { cityFromLocation } from "../../src/shared/lib/cityFromLocation.js";
 
 export const app = createApp();
 
@@ -58,13 +59,19 @@ export async function insertRawIssue(opts: {
   longitude: number;
   title?: string;
 }) {
+  // city is derived from the coordinates in production, and staff access is
+  // scoped by it — a fixture that leaves it null is invisible to every
+  // dept_admin, so derive it the same way the service does.
+  const city = cityFromLocation(opts.latitude, opts.longitude);
+
   const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    INSERT INTO issues (id, public_ref, title, description, category_id, reported_by, location)
+    INSERT INTO issues (id, public_ref, title, description, category_id, reported_by, location, city)
     VALUES (
       ${randomUUID()}::uuid,
       ${"SAM-TEST-" + Math.random().toString(36).slice(2, 8).toUpperCase()},
       ${opts.title ?? "Test issue"}, 'Test issue description', ${opts.categoryId}::uuid, ${opts.reportedBy}::uuid,
-      ST_SetSRID(ST_MakePoint(${opts.longitude}, ${opts.latitude}), 4326)::geography
+      ST_SetSRID(ST_MakePoint(${opts.longitude}, ${opts.latitude}), 4326)::geography,
+      ${city}
     )
     RETURNING id
   `);

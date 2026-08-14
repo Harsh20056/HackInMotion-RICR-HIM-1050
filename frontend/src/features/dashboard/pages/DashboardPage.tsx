@@ -10,8 +10,7 @@ import { useDashboardIssues } from "../hooks/useDashboardIssues";
 import { Issue } from "@/shared/types/domain/Issue";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 import { ROUTES } from "@/shared/config/routes";
-import { STATUS_LABELS, STATUSES } from "@/shared/constants/statuses";
-import { CATEGORY_LABELS } from "@/shared/constants/categories";
+import { STATUS_LABELS } from "@/shared/constants/statuses";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { 
@@ -19,8 +18,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription,
-  DialogFooter
+  DialogDescription
 } from "@/shared/components/ui/dialog";
 import { profileService } from "@/features/profile/services/profileService";
 import { issueService } from "@/features/issues/services/issueService";
@@ -47,7 +45,6 @@ import {
   Calendar,
   BarChart3,
   Map,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   Shield,
@@ -259,6 +256,7 @@ function DeptAreaBreakdownCard({ issues, language }: { issues: Issue[], language
 }
 
 import { getTimeAgo as getTimeAgoUtil } from "@/shared/utils/time";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export default function DashboardPage() {
   const { language, t } = useLanguage();
@@ -347,10 +345,10 @@ export default function DashboardPage() {
         title: language === "en" ? "Location Saved!" : "स्थान सहेजा गया!",
         description: language === "en" ? "Welcome to your Samadhan Dashboard." : "समाधान डैशबोर्ड में आपका स्वागत है।",
       });
-    } catch (err: any) {
+    } catch (err) {
       toast({
         title: language === "en" ? "Error" : "त्रुटि",
-        description: err.message || "Failed to update profile location.",
+        description: getErrorMessage(err, "Failed to update profile location."),
         variant: "destructive",
       });
     } finally {
@@ -366,7 +364,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener("issue_verifications_changed", handleSync);
   }, []);
 
-  const handleVote = async (issueId: string, vote: "confirm" | "disagree", title?: string) => {
+  const handleVote = async (issueId: string, vote: "confirm" | "disagree", _title?: string) => {
     await issueVerificationService.voteOnIssue(issueId, vote);
     toast({
       title: language === "en" ? "Vote Registered" : "मत दर्ज किया गया",
@@ -392,12 +390,12 @@ export default function DashboardPage() {
 
   const {
     issues,
-    allIssues,
+    allIssues: _allIssues,
     supportedIssues,
     loading,
     supportingId,
     handleSupport,
-    isNearbyMode,
+    isNearbyMode: _isNearbyMode,
     refetch,
   } = useDashboardIssues(user, language, userCoords);
 
@@ -1267,11 +1265,11 @@ function IssueCard({
   getTimeAgo: (date: Date) => string;
   activeLanguage: "en" | "hi";
 }) {
-  const config = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
+  const _config = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
   const categoryIcon = categoryIcons[issue.category] || <AlertTriangle className="w-4 h-4" />;
   const localizedStatusLabel = STATUS_LABELS[issue.status]?.[activeLanguage] || issue.status;
 
-  const [verificationState, setVerificationState] = useState(() => 
+  const [_verificationState, setVerificationState] = useState(() => 
     issueVerificationService.getComputedState(issue.id)
   );
 

@@ -6,6 +6,7 @@ import { useLanguage } from "@/app/providers/LanguageProvider";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
 import { coordinationApi, CoordinationPlan } from "../services/coordinationApi";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 /**
  * Why this issue was split across departments.
@@ -44,8 +45,8 @@ export function CoordinationPlanCard({ issueId, isStaff }: { issueId: string; is
             : language === "en" ? "Plan rejected" : "योजना अस्वीकृत",
       });
       load();
-    } catch (err: any) {
-      toast({ title: err?.message ?? "Could not update the plan", variant: "destructive" });
+    } catch (err) {
+      toast({ title: getErrorMessage(err, "Could not update the plan"), variant: "destructive" });
     } finally {
       setActing(null);
     }

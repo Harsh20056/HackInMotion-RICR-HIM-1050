@@ -17,9 +17,7 @@ import {
   FileText,
   MapPin,
   Map,
-  MessageSquare,
   Shield,
-  FolderLock,
   LogIn,
   LogOut,
   Loader2
@@ -28,7 +26,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import { notificationService, AppNotification } from "@/shared/services/notificationService";

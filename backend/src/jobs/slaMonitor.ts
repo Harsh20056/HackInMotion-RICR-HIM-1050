@@ -112,9 +112,9 @@ export async function runSlaSweep(now = new Date()): Promise<{ breached: number;
             notifiedUserId: recipients[0] ?? null,
           },
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         // P2002 = this level already recorded by an earlier sweep.
-        if (err?.code === "P2002") continue;
+        if (typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002") continue;
         throw err;
       }
 

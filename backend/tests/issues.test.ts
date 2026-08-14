@@ -95,13 +95,13 @@ describe("issue dedup + routing pipeline", () => {
 describe("work order status transitions", () => {
   it("rejects an invalid transition (pending -> done, skipping acknowledged/in_progress)", async () => {
     const { category, department } = await seedCategoryWithDepartment({ categoryCode: `buildings-${Date.now()}` });
-    const { user: citizen, email: citizenEmail, password: citizenPassword } = await createTestUser("citizen");
+    const { email: citizenEmail, password: citizenPassword } = await createTestUser("citizen");
     const citizenToken = await loginAs(citizenEmail, citizenPassword);
 
     const create = await request(app)
       .post("/issues")
       .set("Authorization", `Bearer ${citizenToken}`)
-      .send({ title: "Cracked wall", description: "Visible crack", categoryCode: category.code, latitude: 20, longitude: 78 });
+      .send({ title: "Cracked wall", description: "Visible crack", categoryCode: category.code, latitude: 23.2599, longitude: 77.4126 });
 
     const workOrder = await prisma.workOrder.findFirstOrThrow({ where: { issueId: create.body.issue.id } });
 
@@ -127,7 +127,7 @@ describe("work order status transitions", () => {
     const create = await request(app)
       .post("/issues")
       .set("Authorization", `Bearer ${citizenToken}`)
-      .send({ title: "Broken swing", description: "Unsafe for kids", categoryCode: category.code, latitude: 20, longitude: 78 });
+      .send({ title: "Broken swing", description: "Unsafe for kids", categoryCode: category.code, latitude: 23.2599, longitude: 77.4126 });
 
     const workOrder = await prisma.workOrder.findFirstOrThrow({ where: { issueId: create.body.issue.id } });
 

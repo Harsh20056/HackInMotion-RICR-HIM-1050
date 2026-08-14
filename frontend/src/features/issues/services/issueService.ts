@@ -2,7 +2,7 @@ import { issueRepository } from "../repositories/issueRepository";
 import { Issue } from "@/shared/types/domain/Issue";
 import { IssueResponse } from "@/shared/contracts/IssueResponse";
 import { IssueStatus } from "@/shared/types/domain/IssueStatus";
-import { CATEGORIES, CATEGORY_LABELS } from "@/shared/constants/categories";
+import { CATEGORY_LABELS } from "@/shared/constants/categories";
 import { STATUSES } from "@/shared/constants/statuses";
 
 export const issueService = {

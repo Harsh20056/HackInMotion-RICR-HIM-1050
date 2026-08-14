@@ -17,13 +17,14 @@ import { AIInsightPanel } from "@/features/issues/components/AIInsightPanel";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
 import { 
-  ArrowLeft, Calendar, MapPin, ThumbsUp, User, Shield, 
-  Clock, CheckCircle2, AlertTriangle, Timer, X, Loader2,
+  ArrowLeft, Calendar, MapPin, User, Shield, 
+  Clock, Loader2,
   RotateCcw, Map
 } from "lucide-react";
 import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { profileService } from "@/features/profile/services/profileService";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 // Standard default leaflet icons fix
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -109,7 +110,7 @@ export default function IssueDetailPage() {
           setReporterProfile({ fullName: language === "en" ? "Citizen" : "नागरिक" });
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to load issue:", err);
       toast({
         title: language === "en" ? "Error" : "त्रुटि",
@@ -215,11 +216,11 @@ export default function IssueDetailPage() {
       await adminService.updateIssueStatus(issue.id, status as IssueStatus);
       toast({ title: language === "en" ? "Status updated" : "स्थिति अपडेट की गई" });
       await loadIssue();
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to update status:", err);
       toast({
         title: language === "en" ? "Could not update status" : "स्थिति अपडेट नहीं हुई",
-        description: err?.message || "Please try again.",
+        description: getErrorMessage(err, "Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -238,11 +239,11 @@ export default function IssueDetailPage() {
       setResolvingItem(null);
       await loadIssue();
       return true;
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to resolve issue:", err);
       toast({
         title: language === "en" ? "Could not update status" : "स्थिति अपडेट नहीं हुई",
-        description: err?.message || "Please try again.",
+        description: getErrorMessage(err, "Please try again."),
         variant: "destructive",
       });
       return false;

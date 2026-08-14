@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { AuthUser } from "@/shared/types/domain/AuthUser";
 import { gamificationService } from "../../profile/services/gamificationService";
 import { issueRepository, issueService } from "@/features/issues";
@@ -6,9 +6,9 @@ import { issueVerificationService } from "@/features/issues/services/issueVerifi
 import { Issue } from "@/shared/types/domain/Issue";
 import { useToast } from "@/shared/hooks/use-toast";
 import { logger } from "@/shared/services/logger";
-import { APIError } from "@/shared/errors/errors";
 import { adminService } from "@/features/admin/services/adminService";
 import { UserRole } from "@/shared/types/domain/UserRole";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 function getCategoryCode(category: string): string {
   if (!category) return "";
@@ -249,7 +249,7 @@ export function useDashboardIssues(
       await issueService.toggleSupport(issueId, user.id, isSupported);
       gamificationService.dispatchGamificationUpdate();
       if (!isSupported) {
-        const title = allIssues.find((i) => i.id === issueId)?.title;
+        const _title = allIssues.find((i) => i.id === issueId)?.title;
         await issueVerificationService.voteOnIssue(issueId, "confirm");
 
         toast({
@@ -260,7 +260,7 @@ export function useDashboardIssues(
               : "इस सामुदायिक समस्या का समर्थन करने के लिए धन्यवाद।",
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to toggle support:", err);
       // Rollback optimistic state
       setSupportedIssues((prev) => {
@@ -292,7 +292,7 @@ export function useDashboardIssues(
 
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: err.message || "Failed to process support request.",
+        description: getErrorMessage(err, "Failed to process support request."),
         variant: "destructive",
       });
     } finally {

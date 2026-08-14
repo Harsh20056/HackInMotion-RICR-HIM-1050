@@ -20,7 +20,6 @@ export interface EscalationStep {
 
 const BUSINESS_START_HOUR = 9;
 const BUSINESS_END_HOUR = 18;
-const BUSINESS_MINUTES_PER_DAY = (BUSINESS_END_HOUR - BUSINESS_START_HOUR) * 60;
 
 /**
  * Adds working minutes to a timestamp, skipping nights and weekends.

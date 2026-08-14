@@ -24,6 +24,7 @@ import {
   Key
 } from "lucide-react";
 import { logger } from "@/shared/services/logger";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 /**
  * Autofill shortcuts for the seeded demo accounts. Display-only — these
@@ -181,11 +182,11 @@ export function AuthForm() {
           navigate(ROUTES.DASHBOARD);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Authentication action failed:", error);
       toast({
         title: language === "en" ? "Error" : "त्रुटि",
-        description: error.message || "An authentication error occurred.",
+        description: getErrorMessage(error, "An authentication error occurred."),
         variant: "destructive",
       });
     } finally {

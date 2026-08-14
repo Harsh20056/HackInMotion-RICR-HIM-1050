@@ -11,6 +11,7 @@ import { ROUTES } from "@/shared/config/routes";
 import { validateFileSignature } from "@/shared/validation/magicBytes";
 import { voiceService } from "@/shared/services/voiceService";
 import { DuplicateIssueError } from "@/shared/errors/errors";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 const detectionToCategory = (cls: string): string | null => {
   const c = cls.toLowerCase();
@@ -71,7 +72,7 @@ const extractFrameFromVideo = async (file: File, seekTimeSeconds: number = 1.5):
     };
 
     video.onerror = () => {
-      reject(new Error("Error loading video: " + (video.error?.message || "Unknown error")));
+      reject(new Error("Error loading video: " + (video.error?.message ?? "Unknown error")));
       URL.revokeObjectURL(objectUrl);
       video.src = "";
       video.load();
@@ -133,7 +134,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       setDetecting(true);
       try {
         processedFile = await extractFrameFromVideo(file);
-      } catch (err: any) {
+      } catch (err) {
         logger.error("Video frame extraction failed:", err);
         toast({
           title: activeLanguage === "en" ? "Video analysis failed" : "वीडियो विश्लेषण विफल",
@@ -205,11 +206,11 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
             description: activeLanguage === "en" ? "Please select a category manually." : "कृपया श्रेणी मैन्युअल रूप से चुनें।",
           });
         }
-      } catch (err: any) {
+      } catch (err) {
         logger.error("Detection failed:", err);
         toast({
           title: activeLanguage === "en" ? "Detection failed" : "पहचान विफल",
-          description: err.message || "An error occurred during AI analysis.",
+          description: getErrorMessage(err, "An error occurred during AI analysis."),
           variant: "destructive",
         });
       } finally {
@@ -306,7 +307,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       const fieldErrors: Record<string, string> = {};
       validationResult.error.errors.forEach((err) => {
         if (err.path[0]) {
-          fieldErrors[err.path[0] as string] = err.message;
+          fieldErrors[err.path[0] as string] = getErrorMessage(err);
         }
       });
       setErrors(fieldErrors);
@@ -329,7 +330,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       );
 
       reportSuccess();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof DuplicateIssueError) {
         // Don't insert and don't error out — let the citizen decide.
         setDuplicateCandidate(error.candidate);
@@ -339,7 +340,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       logger.error("Failed to report issue:", error);
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to submit issue report.",
+        description: getErrorMessage(error, "Failed to submit issue report."),
         variant: "destructive",
       });
     } finally {
@@ -366,11 +367,11 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       await issueService.confirmDuplicateIssue(duplicateCandidate.id, description);
       setDuplicateCandidate(null);
       reportSuccess();
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to confirm duplicate issue:", error);
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to confirm the report.",
+        description: getErrorMessage(error, "Failed to confirm the report."),
         variant: "destructive",
       });
     } finally {
@@ -392,11 +393,11 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       );
       setDuplicateCandidate(null);
       reportSuccess();
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to report issue (forced):", error);
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to submit issue report.",
+        description: getErrorMessage(error, "Failed to submit issue report."),
         variant: "destructive",
       });
     } finally {

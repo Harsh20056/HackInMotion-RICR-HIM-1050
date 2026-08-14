@@ -71,7 +71,7 @@ async function fetchBundle(months: number, user: { id?: string } | null): Promis
         analyticsApi.trends(months),
       ]);
 
-      let scopedOverview = { ...overview };
+      const scopedOverview = { ...overview };
       let scopedDepartments = [...departmentsData.items];
       let scopedHotspots = [...hotspotsData.items];
       let scopedTrends = [...trendsData.items];

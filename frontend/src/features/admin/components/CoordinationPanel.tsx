@@ -19,6 +19,7 @@ import {
   Link2, Lock, AlertTriangle, Clock, CheckCircle2, Loader2,
   MessageSquare, ArrowRightLeft, ChevronRight,
 } from "lucide-react";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 const WO_STATUS_STYLE: Record<string, string> = {
   pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
@@ -87,11 +88,11 @@ export function CoordinationPanel({ issueId }: { issueId: string }) {
       await coordinationApi.updateStatus(wo.id, status);
       toast({ title: language === "en" ? "Work order updated" : "कार्य आदेश अपडेट" });
       await load();
-    } catch (err: any) {
+    } catch (err) {
       // A blocked start comes back as 422 naming the blocker — show it verbatim.
       toast({
         title: language === "en" ? "Cannot update" : "अपडेट नहीं हो सका",
-        description: err?.message,
+        description: getErrorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -276,8 +277,8 @@ function WorkOrderThread({
       toast({ title: successTitle });
       await load();
       onChanged();
-    } catch (err: any) {
-      toast({ title: language === "en" ? "Failed" : "विफल", description: err?.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: language === "en" ? "Failed" : "विफल", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setBusy(false);
     }

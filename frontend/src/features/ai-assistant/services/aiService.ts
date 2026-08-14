@@ -12,9 +12,9 @@ export const aiService = {
    * reports an explicit unavailable state instead of pretending to work.
    */
   async streamChat({
-    messages,
-    onDelta,
-    onDone,
+    messages: _messages,
+    onDelta: _onDelta,
+    onDone: _onDone,
     onError,
   }: {
     messages: ChatMessage[];
@@ -72,7 +72,7 @@ export interface FormAnalysisResult {
 
 export async function analyzeFormDirect(
   file: File,
-  userQuery?: string
+  _userQuery?: string
 ): Promise<FormAnalysisResult> {
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {

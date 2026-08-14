@@ -9,8 +9,8 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import {
-  Shield, Loader2, ShieldAlert, LayoutDashboard, MapPin, ChevronLeft, ChevronRight,
-  Wifi, WifiOff, AlertTriangle, ThumbsUp, RotateCcw,
+  Shield, ShieldAlert, LayoutDashboard, MapPin, ChevronLeft, ChevronRight,
+  Wifi, WifiOff, AlertTriangle, ThumbsUp,
 } from "lucide-react";
 import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
@@ -126,7 +126,7 @@ export default function AdminPage() {
   const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
   const activeDept = departments.find((d) => d.id === activeDepartmentId);
 
-  const handleTransition = async (item: QueueItem, status: string) => {
+  const _handleTransition = async (item: QueueItem, status: string) => {
     if (status === IssueStatus.RESOLVED) {
       setResolving(item);
       return;
@@ -380,8 +380,8 @@ export default function AdminPage() {
         <div className="space-y-3">
           {items.map((item) => {
             const issue = item.issue;
-            const nextStatuses = NEXT_ADMIN_STATUSES[issue.status] ?? [];
-            const isBusy = updatingId === issue.id;
+            const _nextStatuses = NEXT_ADMIN_STATUSES[issue.status] ?? [];
+            const _isBusy = updatingId === issue.id;
 
             return (
               <div

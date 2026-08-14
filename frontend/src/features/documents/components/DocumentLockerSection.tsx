@@ -38,6 +38,7 @@ import {
   Building,
   FileCheck
 } from "lucide-react";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export function DocumentLockerSection() {
   const { t, language } = useLanguage();
@@ -279,10 +280,10 @@ export function DocumentLockerSection() {
         title: "Document Saved",
         description: "Your document was uploaded and successfully analyzed by Gemini AI.",
       });
-    } catch (err: any) {
+    } catch (err) {
       toast({
         title: "Upload Failed",
-        description: err.message || "Failed to process and upload the document.",
+        description: getErrorMessage(err, "Failed to process and upload the document."),
         variant: "destructive",
       });
     } finally {
@@ -297,7 +298,7 @@ export function DocumentLockerSection() {
     try {
       const url = await getDownloadUrl(doc.file_path);
       setPreviewUrl(url);
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: "Preview Error",
         description: "Could not retrieve secure download link.",
@@ -323,7 +324,7 @@ export function DocumentLockerSection() {
         setPreviewDoc(null);
         setPreviewUrl(null);
       }
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: "Deletion Error",
         description: "Failed to remove the document.",

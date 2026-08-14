@@ -27,6 +27,7 @@ import { UserRole } from "@/shared/types/domain/UserRole";
 import { logger } from "@/shared/services/logger";
 import { ROUTES } from "@/shared/config/routes";
 import { useEventStream } from "@/shared/hooks/useEventStream";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export interface AdminDepartment {
   id: string;
@@ -125,9 +126,9 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
       setItems(result.items);
       setTotal(result.total);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to load department queue:", err);
-      setError(err?.message || "Failed to load the department queue.");
+      setError(getErrorMessage(err, "Failed to load the department queue."));
     } finally {
       setLoading(false);
     }
@@ -177,11 +178,11 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
       toast({ title: activeLanguage === "en" ? "Status updated" : "स्थिति अपडेट की गई" });
       await loadQueue();
       return true;
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to update status:", err);
       toast({
         title: activeLanguage === "en" ? "Could not update status" : "स्थिति अपडेट नहीं हुई",
-        description: err?.message || "Please try again.",
+        description: getErrorMessage(err, "Please try again."),
         variant: "destructive",
       });
       return false;
