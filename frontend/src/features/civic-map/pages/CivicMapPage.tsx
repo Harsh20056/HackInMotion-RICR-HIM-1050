@@ -24,6 +24,7 @@ function getCategoryCode(category: string): string {
   if (normalized.includes("road")) return "roads";
   if (normalized.includes("park") || normalized.includes("garden")) return "parks";
   if (normalized.includes("building")) return "buildings";
+  if (normalized.includes("metro") || normalized.includes("station") || normalized.includes("train") || normalized.includes("transit")) return "metro";
   return normalized;
 }
 
@@ -51,6 +52,7 @@ import {
   ChevronRight,
   Activity,
   Search,
+  Train,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -107,10 +109,12 @@ const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; hi: 
   "पार्क और बगीचे": { icon: <TreePine className="w-3.5 h-3.5" />,  color: "#22c55e", hi: "पार्क और बगीचे" },
   "Buildings":       { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
   "भवन":            { icon: <Building2 className="w-3.5 h-3.5" />, color: "#8b5cf6", hi: "भवन" },
+  "Metro & Transit": { icon: <Train className="w-3.5 h-3.5" />,     color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
+  "मेट्रो और ट्रांजिट": { icon: <Train className="w-3.5 h-3.5" />,     color: "#ec4899", hi: "मेट्रो और ट्रांजिट" },
 };
 
 const CATEGORY_DISPLAY_NAMES = [
-  "Water Supply", "Sanitation", "Electricity", "Roads", "Parks & Gardens", "Buildings",
+  "Water Supply", "Sanitation", "Electricity", "Roads", "Parks & Gardens", "Buildings", "Metro & Transit",
 ];
 const STATUS_DISPLAY = [IssueStatus.REPORTED, IssueStatus.IN_PROGRESS, IssueStatus.RESOLVED];
 
@@ -142,12 +146,18 @@ const CANONICAL_CATEGORIES: Record<string, string> = {
   "gardens": "Parks & Gardens",
   "parks & gardens": "Parks & Gardens",
   "parks and gardens": "Parks & Gardens",
+  "metro": "Metro & Transit",
+  "transit": "Metro & Transit",
+  "station": "Metro & Transit",
+  "train": "Metro & Transit",
+  "metro & transit": "Metro & Transit",
   "जल आपूर्ति": "Water Supply",
   "स्वच्छता": "Sanitation",
   "बिजली": "Electricity",
   "सड़कें": "Roads",
   "पार्क और बगीचे": "Parks & Gardens",
-  "भवन": "Buildings"
+  "भवन": "Buildings",
+  "मेट्रो और ट्रांजिट": "Metro & Transit"
 };
 
 function normalizeCategory(cat: string): string {

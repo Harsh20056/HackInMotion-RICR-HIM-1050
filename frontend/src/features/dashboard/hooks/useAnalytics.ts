@@ -32,6 +32,7 @@ function getCategoryCode(category: string): string {
   if (normalized.includes("road")) return "roads";
   if (normalized.includes("park") || normalized.includes("garden")) return "parks";
   if (normalized.includes("building")) return "buildings";
+  if (normalized.includes("metro") || normalized.includes("station") || normalized.includes("train") || normalized.includes("transit")) return "metro";
   return normalized;
 }
 

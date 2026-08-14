@@ -18,7 +18,8 @@ import {
   TreePine,
   Building2,
   Send,
-  Loader2
+  Loader2,
+  Train
 } from "lucide-react";
 
 const categories = [
@@ -28,6 +29,7 @@ const categories = [
   { id: "roads", icon: Construction, labelEn: "Roads", labelHi: "सड़कें" },
   { id: "parks", icon: TreePine, labelEn: "Parks & Gardens", labelHi: "पार्क और बगीचे" },
   { id: "buildings", icon: Building2, labelEn: "Buildings", labelHi: "भवन" },
+  { id: "metro", icon: Train, labelEn: "Metro & Transit", labelHi: "मेट्रो और ट्रांजिट" },
 ];
 
 export default function ReportIssuePage() {

@@ -52,6 +52,7 @@ import {
   ChevronUp,
   Shield,
   X,
+  Train,
 } from "lucide-react";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { formatResolutionTime } from "../services/dashboardService";
@@ -131,6 +132,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
   "पार्क और बगीचे": <TreePine className="w-4 h-4" />,
   "Buildings": <Building2 className="w-4 h-4" />,
   "भवन": <Building2 className="w-4 h-4" />,
+  "Metro & Transit": <Train className="w-4 h-4" />,
+  "मेट्रो और ट्रांजिट": <Train className="w-4 h-4" />,
 };
 
 const statusConfig: Record<string, { class: string; icon: React.ReactNode }> = {

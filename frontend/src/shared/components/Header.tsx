@@ -252,7 +252,129 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
             ) : user ? (
               <>
                 <NotificationBell />
-                <CommunityHeroWidget />
+                {(user.user_metadata as any)?.role === "citizen" ? (
+                  <CommunityHeroWidget />
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="flex gap-2 items-center rounded-full px-3 py-1.5 h-auto hover:bg-muted border border-border select-none bg-primary/5 transition-all duration-300">
+                        <Shield className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-bold text-foreground">
+                          {(user.user_metadata as any)?.role === "super_admin" ? "Super" : "Officer"}
+                        </span>
+                        <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center overflow-hidden">
+                          <User className="w-3.5 h-3.5" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80 p-5 rounded-2xl border border-border shadow-2xl bg-card animate-in fade-in slide-in-from-top-2 duration-200 text-left">
+                      {/* Header */}
+                      <div className="flex items-start gap-3.5 mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <Shield className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-foreground truncate text-sm">
+                            {(user.user_metadata as any)?.fullName || user.email?.split("@")[0] || "Officer"}
+                          </h4>
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
+                            {(user.user_metadata as any)?.role === "super_admin" 
+                              ? (language === "en" ? "Super Administrator" : "मुख्य प्रशासक")
+                              : (language === "en" ? "Department Admin" : "विभाग अधिकारी")}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quick Stats Grid */}
+                      <div className="grid grid-cols-2 gap-2.5 mb-4 text-xs">
+                        <div className="bg-muted/30 p-2 rounded-xl border border-border/20">
+                          <p className="text-muted-foreground text-[9px] uppercase font-bold tracking-wider">
+                            {language === "en" ? "Jurisdiction" : "अधिकार क्षेत्र"}
+                          </p>
+                          <p className="text-sm font-bold text-foreground truncate">
+                            {(user.user_metadata as any)?.city || "Bhopal"}
+                          </p>
+                        </div>
+                        <div className="bg-muted/30 p-2 rounded-xl border border-border/20">
+                          <p className="text-muted-foreground text-[9px] uppercase font-bold tracking-wider">
+                            {language === "en" ? "Department" : "विभाग"}
+                          </p>
+                          <p className="text-sm font-bold text-foreground truncate">
+                            {(user.user_metadata as any)?.role === "super_admin" 
+                              ? (language === "en" ? "All Board" : "सभी बोर्ड")
+                              : (language === "en" ? "Metro Transit" : "मेट्रो ट्रांजिट")}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* SLA Progress Bar */}
+                      <div className="space-y-1.5 mb-4">
+                        <div className="flex items-center justify-between text-[10px] font-semibold">
+                          <span className="text-muted-foreground">
+                            {language === "en" ? "SLA Compliance" : "एसएलए अनुपालन"}
+                          </span>
+                          <span className="text-foreground font-bold text-emerald-500">
+                            94%
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: "94%" }}
+                          />
+                        </div>
+                        <p className="text-[9px] text-muted-foreground text-right">
+                          {language === "en" ? "Target: 24h average resolution" : "लक्ष्य: 24 घंटे औसत समाधान"}
+                        </p>
+                      </div>
+
+                      {/* Contribution Breakdown */}
+                      <div className="border-t border-border/40 py-3 flex items-center justify-between text-[10px] text-muted-foreground mb-4">
+                        <div className="text-center">
+                          <p className="font-bold text-foreground text-xs">12</p>
+                          <p>{language === "en" ? "Assigned" : "सौंपा गया"}</p>
+                        </div>
+                        <div className="h-6 w-px bg-border/40" />
+                        <div className="text-center">
+                          <p className="font-bold text-foreground text-xs">94</p>
+                          <p>{language === "en" ? "Resolved" : "हल"}</p>
+                        </div>
+                        <div className="h-6 w-px bg-border/40" />
+                        <div className="text-center">
+                          <p className="font-bold text-foreground text-xs">0</p>
+                          <p>{language === "en" ? "Overdue" : "विलंबित"}</p>
+                        </div>
+                      </div>
+
+                      {/* CTA Links */}
+                      <div className="space-y-2">
+                        <Link
+                          to={ROUTES.ADMIN}
+                          className="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:bg-primary/95 transition-all shadow-md"
+                        >
+                          {language === "en" ? "Go to Admin Queue →" : "प्रशासक कतार पर जाएं →"}
+                        </Link>
+                        
+                        <div className="flex gap-2 pt-1">
+                          <Link
+                            to={ROUTES.PROFILE}
+                            className="flex-1 inline-flex items-center justify-center px-3 py-1.5 border border-border text-foreground hover:bg-muted text-[11px] font-medium rounded-lg transition-all"
+                          >
+                            <User className="w-3.5 h-3.5 mr-1.5" />
+                            {language === "en" ? "My Profile" : "मेरी प्रोफ़ाइल"}
+                          </Link>
+                          <button
+                            onClick={handleSignOut}
+                            className="flex-1 inline-flex items-center justify-center px-3 py-1.5 border border-destructive/20 text-destructive hover:bg-destructive/5 text-[11px] font-medium rounded-lg transition-all"
+                          >
+                            <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                            {language === "en" ? "Sign Out" : "साइन आउट"}
+                          </button>
+                        </div>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </>
             ) : (
               <Link to={ROUTES.SIGN_IN}>

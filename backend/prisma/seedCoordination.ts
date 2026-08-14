@@ -23,6 +23,7 @@ const SLA_BY_CATEGORY: Record<string, { ack: number; resolve: number; businessHo
   roads: { ack: 8 * 60, resolve: 10 * 24 * 60, businessHoursOnly: true },
   parks: { ack: 12 * 60, resolve: 7 * 24 * 60, businessHoursOnly: true },
   buildings: { ack: 24 * 60, resolve: 21 * 24 * 60, businessHoursOnly: true },
+  metro: { ack: 60, resolve: 24 * 60, businessHoursOnly: false },
 };
 
 const ESCALATION_CHAIN = [
