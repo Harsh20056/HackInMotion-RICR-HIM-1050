@@ -6,6 +6,7 @@ import { authenticate, optionalAuthenticate } from "../../shared/middleware/auth
 import { uuidParam } from "../../shared/schemas/common.js";
 import { writeAuditLog } from "../../shared/lib/auditLog.js";
 import { ForbiddenError } from "../../shared/errors/AppError.js";
+import { isAdministrator } from "../../shared/middleware/rbac.js";
 import { decompositionService } from "./decomposition.service.js";
 import { categoriseService } from "./categorise.service.js";
 import { hotspotsService } from "./hotspots.service.js";
@@ -88,7 +89,7 @@ aiRouter.post("/suggest-category", authenticate, validate(suggestSchema), async 
 /** Suggestion-vs-citizen agreement, plus per-kind call stats for the demo. */
 aiRouter.get("/metrics", authenticate, async (req, res, next) => {
   try {
-    if (req.auth!.role !== "super_admin" && req.auth!.role !== "dept_admin") {
+    if (!isAdministrator(req.auth!.role)) {
       throw new ForbiddenError("Staff only.");
     }
     const [accuracy, calls] = await Promise.all([

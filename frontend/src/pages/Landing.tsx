@@ -306,7 +306,7 @@ export default function Landing() {
                   </>
                 ) : (
                   <>
-                    One City. <br />
+
                     One Platform. <br />
                     <span className="text-[#0B3B60] dark:text-sky-400 font-extrabold">One Plan.</span>
                   </>

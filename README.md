@@ -354,10 +354,16 @@ All endpoints are versioned and structured around RESTful resource conventions. 
 
 ## Security and Access Control Architecture
 
-1. **Role-Based Access Control (RBAC):** Backend middleware strictly enforces permissions across three tiers:
-   - `citizen`: Can create issues, view own reports, support issues, and vote on resolution verifications.
-   - `dept_admin`: Scoped strictly to tickets assigned to their departmental jurisdiction and municipality.
-   - `super_admin`: Full system-wide visibility, routing rule configuration, and department management.
+1. **Role-Based Access Control (RBAC) — Two-Role Model:** Samadhan defines exactly **two user roles**:
+
+   | Role | Implementation scopes | What they can do |
+   |---|---|---|
+   | **Citizen** | `citizen` | Report issues, track own reports, support others' issues, vote on resolution verifications. |
+   | **Administrator** | `dept_admin` *(departmental scope)* | Act on issues routed to their department and city only. Cannot reach another department's or city's data. |
+   | | `super_admin` *(city-wide scope)* | Full system-wide visibility, routing rule configuration, department management, escalation review. |
+
+   `dept_admin` and `super_admin` are **scope labels** within the single Administrator role — not separate roles. The scope boundary is enforced by `requireDepartmentAccess`, `resolveCityScope`, and `assertCityAccess` middleware rather than being baked into each handler.
+
 2. **Input Validation and Sanitization:** All request payloads are parsed through Zod schemas before reaching business logic. Malformed inputs are rejected with 400 Bad Request error matrices.
 3. **Audit Trail Immutability:** Sensitive operational changes (`IssueStatusHistory`, `AuditLog`, `CitizenVerification`) are strictly append-only.
 4. **Credential Safety:** Passwords are encrypted using `bcrypt` with work factors calibrated for production defense. Signed upload URLs prevent unauthenticated media delivery.
