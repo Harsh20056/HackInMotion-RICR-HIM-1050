@@ -29,6 +29,9 @@ jobs:
       TEST_DATABASE_URL: "postgresql://samadhan:samadhan@localhost:5432/samadhan_test?schema=public"
       # Runtime env — harmless values; tests swap DATABASE_URL for TEST_DATABASE_URL.
       DATABASE_URL: "postgresql://samadhan:samadhan@localhost:5432/samadhan_test?schema=public"
+      # schema.prisma declares directUrl; prisma migrate deploy fails without it.
+      # In CI there is no connection pooler, so DIRECT_URL == DATABASE_URL.
+      DIRECT_URL: "postgresql://samadhan:samadhan@localhost:5432/samadhan_test?schema=public"
       JWT_ACCESS_SECRET: ci-access-secret-not-used-outside-tests
       JWT_REFRESH_SECRET: ci-refresh-secret-not-used-outside-tests
       NODE_ENV: test
