@@ -49,9 +49,7 @@ const MIME = {
 function findChrome() {
   const found = CHROME_CANDIDATES.find((p) => existsSync(p));
   if (!found) {
-    throw new Error(
-      `No Chrome binary found. Set PRERENDER_CHROME to its path. Looked in:\n  ${CHROME_CANDIDATES.join("\n  ")}`
-    );
+    return null;
   }
   return found;
 }
@@ -90,8 +88,15 @@ const shell = await readFile(path.join(DIST, "index.html"), "utf8");
 const server = serveDist(shell);
 await new Promise((resolve) => server.listen(PORT, resolve));
 
+const chromePath = findChrome();
+if (!chromePath) {
+  console.warn("WARNING: No Chrome binary found. Skipping prerender phase. The app will build as a standard client-side SPA.");
+  server.close();
+  process.exit(0);
+}
+
 const browser = await puppeteer.launch({
-  executablePath: findChrome(),
+  executablePath: chromePath,
   headless: "new",
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
