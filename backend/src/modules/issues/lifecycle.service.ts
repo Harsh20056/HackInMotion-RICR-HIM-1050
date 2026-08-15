@@ -3,7 +3,7 @@ import { prisma } from "../../shared/lib/prisma.js";
 import { eventBus } from "../../shared/lib/eventBus.js";
 import { AppError, ForbiddenError, NotFoundError } from "../../shared/errors/AppError.js";
 import { AccessTokenClaims } from "../../shared/lib/jwt.js";
-import { assertCityAccess } from "../../shared/middleware/rbac.js";
+import { assertCityAccess, isAdministrator } from "../../shared/middleware/rbac.js";
 import {
   isTransitionAllowed,
   actorMayTransition,
@@ -61,7 +61,7 @@ async function notifyOnTransition(
   reason: string | null,
   actor: AccessTokenClaims
 ) {
-  const actorIsStaff = actor.role === "dept_admin" || actor.role === "super_admin";
+  const actorIsStaff = isAdministrator(actor.role);
   const actorIsReporter = actor.sub === issue.reportedBy;
 
   if (actorIsStaff && !actorIsReporter) {

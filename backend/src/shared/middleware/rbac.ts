@@ -2,6 +2,36 @@ import { RequestHandler } from "express";
 import { AuthError, ForbiddenError } from "../errors/AppError.js";
 import { AccessTokenClaims } from "../lib/jwt.js";
 
+// ---------------------------------------------------------------------------
+// Two-role access model
+// ---------------------------------------------------------------------------
+// Samadhan exposes exactly TWO user roles to the product:
+//
+//   Citizen       — the public. Can report issues, track own reports, verify
+//                   resolutions, and support others' reports.
+//
+//   Administrator — municipal staff. Split into two SCOPES:
+//                     • dept_admin  – departmental scope: one department + one city.
+//                     • super_admin – city-wide scope: all departments + all cities.
+//
+// "dept_admin" and "super_admin" are implementation-level scope labels carried
+// inside the JWT. They are NOT a third role — they are how the single
+// Administrator role is partitioned by jurisdiction.
+//
+// Use `isAdministrator(role)` wherever the code only cares whether the actor
+// is staff (either scope). Use `requireDepartmentAccess` to enforce the scope
+// boundary, and `resolveCityScope` / `assertCityAccess` to enforce geography.
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true for any Administrator-role actor (dept_admin OR super_admin).
+ * Use this instead of an inline `role === 'dept_admin' || role === 'super_admin'`
+ * check so scope changes stay in one place.
+ */
+export function isAdministrator(role: AccessTokenClaims["role"]): boolean {
+  return role === "dept_admin" || role === "super_admin";
+}
+
 /** Restricts a route to the given roles. Must run after `authenticate`. */
 export function requireRole(...roles: AccessTokenClaims["role"][]): RequestHandler {
   return (req, _res, next) => {
