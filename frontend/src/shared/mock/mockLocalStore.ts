@@ -62,7 +62,7 @@ export const mockTable = {
     }
   },
 
-  insert<T extends Record<string, any>>(table: string, row: T): T {
+  insert<T extends object>(table: string, row: T): T {
     const rows = readTable<T>(table);
     rows.push(row);
     writeTable(table, rows);
@@ -70,12 +70,7 @@ export const mockTable = {
     return row;
   },
 
-  update<T extends Record<string, any>>(
-    table: string,
-    idKey: keyof T,
-    id: unknown,
-    patch: Partial<T>
-  ): T | null {
+  update<T extends object>(table: string, idKey: keyof T, id: unknown, patch: Partial<T>): T | null {
     const rows = readTable<T>(table);
     const idx = rows.findIndex((r) => r[idKey] === id);
     if (idx === -1) return null;
@@ -86,7 +81,7 @@ export const mockTable = {
     return updated;
   },
 
-  remove<T extends Record<string, any>>(table: string, idKey: keyof T, id: unknown): T | null {
+  remove<T extends object>(table: string, idKey: keyof T, id: unknown): T | null {
     const rows = readTable<T>(table);
     const idx = rows.findIndex((r) => r[idKey] === id);
     if (idx === -1) return null;

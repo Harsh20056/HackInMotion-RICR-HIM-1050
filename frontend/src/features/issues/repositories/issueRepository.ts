@@ -3,7 +3,7 @@
 // the backend has no websocket/SSE channel yet (Phase 3).
 
 import { apiRequest } from "@/shared/lib/apiClient";
-import { subscribeToTable, mockTable } from "@/shared/mock/mockLocalStore";
+import { subscribeToTable, mockTable, MockChangeEvent } from "@/shared/mock/mockLocalStore";
 import { IssueResponse } from "@/shared/contracts/IssueResponse";
 import { SupportResponse } from "@/shared/contracts/SupportResponse";
 import { CATEGORY_LABELS } from "@/shared/constants/categories";
@@ -208,7 +208,7 @@ export const issueRepository = {
     await apiRequest<void>(`/issues/${issueId}/support`, { method: "DELETE" });
   },
 
-  subscribeToIssuesChange(onChange: (payload: any) => void): () => void {
-    return subscribeToTable(REALTIME_TABLE, onChange);
+  subscribeToIssuesChange(onChange: (payload: MockChangeEvent<IssueResponse>) => void): () => void {
+    return subscribeToTable<IssueResponse>(REALTIME_TABLE, onChange);
   },
 };

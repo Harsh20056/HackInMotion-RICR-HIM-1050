@@ -278,7 +278,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
             ) : user ? (
               <>
                 <NotificationBell />
-                {(user.user_metadata as any)?.role === "citizen" ? (
+                {user.user_metadata?.role === "citizen" ? (
                   <CommunityHeroWidget />
                 ) : (
                   <DropdownMenu>
@@ -289,7 +289,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                       >
                         <Shield className="w-4 h-4 text-primary" />
                         <span className="text-xs font-bold text-foreground">
-                          {(user.user_metadata as any)?.role === "super_admin" ? "Super" : "Officer"}
+                          {user.user_metadata?.role === "super_admin" ? "Super" : "Officer"}
                         </span>
                         <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center overflow-hidden">
                           <User className="w-3.5 h-3.5" />
@@ -307,10 +307,10 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                         </div>
                         <div className="min-w-0">
                           <h4 className="font-bold text-foreground truncate text-sm">
-                            {(user.user_metadata as any)?.fullName || user.email?.split("@")[0] || "Officer"}
+                            {user.user_metadata?.fullName || user.email?.split("@")[0] || "Officer"}
                           </h4>
                           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
-                            {(user.user_metadata as any)?.role === "super_admin"
+                            {user.user_metadata?.role === "super_admin"
                               ? language === "en"
                                 ? "Super Administrator"
                                 : "मुख्य प्रशासक"
@@ -328,7 +328,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                             {language === "en" ? "Jurisdiction" : "अधिकार क्षेत्र"}
                           </p>
                           <p className="text-sm font-bold text-foreground truncate">
-                            {(user.user_metadata as any)?.city || "Bhopal"}
+                            {user.user_metadata?.city || "Bhopal"}
                           </p>
                         </div>
                         <div className="bg-muted/30 p-2 rounded-xl border border-border/20">
@@ -336,7 +336,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                             {language === "en" ? "Department" : "विभाग"}
                           </p>
                           <p className="text-sm font-bold text-foreground truncate">
-                            {(user.user_metadata as any)?.role === "super_admin"
+                            {user.user_metadata?.role === "super_admin"
                               ? language === "en"
                                 ? "All Board"
                                 : "सभी बोर्ड"

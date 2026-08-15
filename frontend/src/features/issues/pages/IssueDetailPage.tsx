@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -21,9 +21,13 @@ import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { profileService } from "@/features/profile/services/profileService";
 import { getErrorMessage } from "@/shared/lib/errorMessage";
+import { categoryLabelOf } from "@/shared/types/domain/categoryRef";
 
 // Standard default leaflet icons fix
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Leaflet resolves its default marker icons from bundler-relative paths that
+// Vite rewrites. Deleting this private getter forces the explicit URLs set
+// below to win. Narrowed to the single field rather than casting to any.
+delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
@@ -81,7 +85,6 @@ export default function IssueDetailPage() {
   const [resolvingItem, setResolvingItem] = useState<QueueItem | null>(null);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
   // 1. Fetch user role details to verify admin access
   useEffect(() => {
@@ -94,7 +97,11 @@ export default function IssueDetailPage() {
   }, [user]);
 
   // 2. Fetch issue details
-  const loadIssue = async () => {
+  // Run-once guard for the map effect; a ref so storing the instance does not
+  // re-trigger the effect and rebuild the map.
+  const mapInitialisedRef = useRef(false);
+
+  const loadIssue = useCallback(async () => {
     if (!id) return;
     try {
       setLoading(true);
@@ -121,15 +128,17 @@ export default function IssueDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, language, navigate, toast]);
 
   useEffect(() => {
     void loadIssue();
-  }, [id]);
+  }, [loadIssue]);
 
   // 3. Initialize Leaflet Map
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstance || !issue?.latitude || !issue?.longitude) return;
+    if (!mapContainerRef.current || mapInitialisedRef.current || !issue?.latitude || !issue?.longitude)
+      return;
+    mapInitialisedRef.current = true;
 
     const center: L.LatLngExpression = [issue.latitude, issue.longitude];
     const map = L.map(mapContainerRef.current, {
@@ -146,8 +155,6 @@ export default function IssueDetailPage() {
 
     L.marker(center).addTo(map);
 
-    setMapInstance(map);
-
     // Force resize calculation because container might load hidden or layout shifts
     setTimeout(() => {
       map.invalidateSize();
@@ -155,7 +162,7 @@ export default function IssueDetailPage() {
 
     return () => {
       map.remove();
-      setMapInstance(null);
+      mapInitialisedRef.current = false;
     };
   }, [issue, loading]);
 
@@ -258,12 +265,7 @@ export default function IssueDetailPage() {
     }
   };
 
-  const categoryName =
-    issue.category && typeof issue.category === "object"
-      ? language === "en"
-        ? (issue.category as any).nameEn
-        : (issue.category as any).nameHi
-      : issue.category || "";
+  const categoryName = categoryLabelOf(issue.category, language);
 
   const timelineSteps = [
     { key: "reported", labelEn: "Reported", labelHi: "दर्ज की गई", complete: true },

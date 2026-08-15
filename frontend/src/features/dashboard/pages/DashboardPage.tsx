@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -490,6 +490,34 @@ export default function DashboardPage() {
 
   const getTimeAgo = (date: Date) => getTimeAgoUtil(date, language);
 
+  const fetchReporterProfile = useCallback(
+    async (reporterUserId: string) => {
+      if (!user) {
+        setSelectedIssueProfile({ fullName: language === "en" ? "Citizen" : "नागरिक" });
+        return;
+      }
+
+      if (reporterUserId === user.id) {
+        try {
+          const prof = await profileService.getProfile(user.id);
+          setSelectedIssueProfile({ fullName: prof.fullName || (language === "en" ? "You" : "आप") });
+        } catch {
+          setSelectedIssueProfile({ fullName: language === "en" ? "You" : "आप" });
+        }
+        return;
+      }
+
+      try {
+        const prof = await profileService.getProfile(reporterUserId);
+        setSelectedIssueProfile({ fullName: prof.fullName || (language === "en" ? "Citizen" : "नागरिक") });
+      } catch {
+        setSelectedIssueProfile({ fullName: language === "en" ? "Citizen" : "नागरिक" });
+      }
+    },
+    [language, user]
+  );
+
+  // Declared after fetchReporterProfile so its identity exists first.
   useEffect(() => {
     if (!selectedIssueId) {
       setSelectedIssue(null);
@@ -523,31 +551,7 @@ export default function DashboardPage() {
           setLoadingSelected(false);
         });
     }
-  }, [selectedIssueId, issues]);
-
-  const fetchReporterProfile = async (reporterUserId: string) => {
-    if (!user) {
-      setSelectedIssueProfile({ fullName: language === "en" ? "Citizen" : "नागरिक" });
-      return;
-    }
-
-    if (reporterUserId === user.id) {
-      try {
-        const prof = await profileService.getProfile(user.id);
-        setSelectedIssueProfile({ fullName: prof.fullName || (language === "en" ? "You" : "आप") });
-      } catch {
-        setSelectedIssueProfile({ fullName: language === "en" ? "You" : "आप" });
-      }
-      return;
-    }
-
-    try {
-      const prof = await profileService.getProfile(reporterUserId);
-      setSelectedIssueProfile({ fullName: prof.fullName || (language === "en" ? "Citizen" : "नागरिक") });
-    } catch {
-      setSelectedIssueProfile({ fullName: language === "en" ? "Citizen" : "नागरिक" });
-    }
-  };
+  }, [selectedIssueId, issues, fetchReporterProfile, language, searchParams, setSearchParams, toast]);
 
   const handleViewDetails = (issueId: string) => {
     navigate(ROUTES.ISSUE_DETAIL.replace(":id", issueId));

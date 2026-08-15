@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { documentService } from "../services/documentService";
 import { DocumentLockerDetails } from "@/shared/types/domain/Document";
-import { UploadProgressStep } from "../types";
+import { UploadProgressStep, UserDocument } from "../types";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { subscribeToTable } from "@/shared/mock/mockLocalStore";
 import { logger } from "@/shared/services/logger";
@@ -42,7 +42,7 @@ export function useDocuments() {
     setLoading(true);
     fetchLockerDetails();
 
-    const unsubscribe = subscribeToTable("user_documents", (event: any) => {
+    const unsubscribe = subscribeToTable<UserDocument>("user_documents", (event) => {
       if (event?.new?.user_id === user.id || event?.old?.user_id === user.id) {
         fetchLockerDetails();
       }
@@ -51,7 +51,7 @@ export function useDocuments() {
     return () => {
       unsubscribe();
     };
-  }, [user?.id, fetchLockerDetails]);
+  }, [user, fetchLockerDetails]);
 
   // Trigger notification generation when locker details change
   useEffect(() => {
@@ -62,7 +62,7 @@ export function useDocuments() {
 
   // Simulated upload progress percent for UI feedback
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (uploadStep === "uploading") {
       setUploadProgress(10);
       interval = setInterval(() => {

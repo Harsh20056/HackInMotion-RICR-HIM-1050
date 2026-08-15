@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AuthUser } from "@/shared/types/domain/AuthUser";
 import { useToast } from "@/shared/hooks/use-toast";
 import { profileSchema } from "../validation/profileSchema";
@@ -20,13 +20,7 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
@@ -68,7 +62,13 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
     }
 
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      void fetchData();
+    }
+  }, [user, fetchData]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();

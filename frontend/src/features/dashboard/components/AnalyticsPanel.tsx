@@ -19,16 +19,19 @@ import { ROUTES } from "@/shared/config/routes";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { BarChart3, TrendingUp, PieChart as PieIcon, Sparkles, AlertTriangle } from "lucide-react";
 
+import type { TooltipProps } from "recharts";
+import type { ValueType, NameType } from "recharts/types/component/DefaultTooltipContent";
+
 const TICK = { fill: "#9ca3af", fontSize: 11 };
 
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label }: TooltipProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card/95 backdrop-blur-md border border-border rounded-xl p-2.5 shadow-2xl text-xs font-sans">
       {label && (
         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">{label}</p>
       )}
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2 font-medium text-foreground mt-0.5">
           <span
             className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
@@ -150,7 +153,11 @@ export function AnalyticsPanel() {
               <Bar
                 dataKey="count"
                 radius={[0, 6, 6, 0]}
-                onClick={!isDeptAdmin ? (d: any) => handleCategoryClick(d.name) : undefined}
+                onClick={
+                  !isDeptAdmin
+                    ? (d: { name?: string }) => handleCategoryClick(String(d.name ?? ""))
+                    : undefined
+                }
               >
                 {chartData.map((entry, idx) => (
                   <Cell key={idx} fill={entry.color} className={!isDeptAdmin ? "cursor-pointer" : ""} />

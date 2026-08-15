@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AuthUser } from "@/shared/types/domain/AuthUser";
 import { gamificationService } from "../../profile/services/gamificationService";
 import { issueRepository, issueService } from "@/features/issues";
@@ -9,6 +9,7 @@ import { logger } from "@/shared/services/logger";
 import { adminService } from "@/features/admin/services/adminService";
 import { UserRole } from "@/shared/types/domain/UserRole";
 import { getErrorMessage } from "@/shared/lib/errorMessage";
+import { categoryCodeOf } from "@/shared/types/domain/categoryRef";
 
 function getCategoryCode(category: string): string {
   if (!category) return "";
@@ -65,15 +66,6 @@ export function useDashboardIssues(
   const [supportingId, setSupportingId] = useState<string | null>(null);
   const [isNearbyMode, setIsNearbyMode] = useState(false);
 
-  useEffect(() => {
-    fetchIssues();
-    if (user) {
-      fetchUserSupports();
-    } else {
-      setSupportedIssues(new Set());
-    }
-  }, [user, userCoords]);
-
   // Dashboard counters come from /analytics/overview (see useAnalytics) —
   // recomputing them here would only ever describe the loaded page of
   // issues, not the whole dataset.
@@ -83,11 +75,11 @@ export function useDashboardIssues(
     const unsubscribe = issueRepository.subscribeToIssuesChange((payload) => {
       logger.info("Realtime reported_issues change received:", payload);
       if (payload.eventType === "INSERT") {
-        const newIssue = issueService.mapResponseToDomain(payload.new as any);
+        const newIssue = issueService.mapResponseToDomain(payload.new!);
         setAllIssues((prev) => [newIssue, ...prev]);
         setIssues((prev) => [newIssue, ...prev]);
       } else if (payload.eventType === "UPDATE") {
-        const updatedIssue = issueService.mapResponseToDomain(payload.new as any);
+        const updatedIssue = issueService.mapResponseToDomain(payload.new!);
         setAllIssues((prev) => prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue)));
         setIssues((prev) => prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue)));
       } else if (payload.eventType === "DELETE") {
@@ -101,7 +93,7 @@ export function useDashboardIssues(
     };
   }, []);
 
-  const fetchIssues = async () => {
+  const fetchIssues = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -139,12 +131,7 @@ export function useDashboardIssues(
           ) {
             return false;
           }
-          const categoryObj: any = issue.category;
-          const issueCategoryCode = categoryObj
-            ? typeof categoryObj === "object"
-              ? categoryObj.code
-              : categoryObj
-            : "";
+          const issueCategoryCode = categoryCodeOf(issue.category);
           if (userDeptCode && !doesCategoryBelongToDepartment(issueCategoryCode, userDeptCode)) {
             return false;
           }
@@ -193,9 +180,9 @@ export function useDashboardIssues(
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userCoords, activeLanguage, toast]);
 
-  const fetchUserSupports = async () => {
+  const fetchUserSupports = useCallback(async () => {
     if (!user) return;
     try {
       const supports = await issueRepository.fetchUserSupports(user.id);
@@ -203,7 +190,17 @@ export function useDashboardIssues(
     } catch (err) {
       logger.error("Failed to load user supports:", err);
     }
-  };
+  }, [user]);
+
+  // Declared after both callbacks so their identities exist first.
+  useEffect(() => {
+    fetchIssues();
+    if (user) {
+      fetchUserSupports();
+    } else {
+      setSupportedIssues(new Set());
+    }
+  }, [user, userCoords, fetchIssues, fetchUserSupports]);
 
   const handleSupport = async (issueId: string) => {
     if (!user) {

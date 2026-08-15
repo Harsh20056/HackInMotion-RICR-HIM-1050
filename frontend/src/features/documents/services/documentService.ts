@@ -4,6 +4,7 @@ import { UserDocument, UploadProgressStep } from "../types";
 import { pdfFirstPageToJpeg } from "@/features/ai-assistant/services/aiService";
 import { mockAiAdapter } from "@/shared/mock/mockAiAdapter";
 import { logger } from "@/shared/services/logger";
+import { DocumentMetadata } from "@/shared/types/domain/Document";
 
 export const documentService = {
   /**
@@ -148,10 +149,30 @@ function fileToBase64(file: File): Promise<string> {
  * hasn't been rebuilt yet, so this reports an explicit unsupported/pending
  * state instead of calling out to a network endpoint that doesn't exist.
  */
+/**
+ * Shape the document-analysis endpoint returns once it exists. The mock only
+ * ever produces the rejection half, but callers already read the metadata
+ * half, so both are declared.
+ */
+interface DocumentAnalysisResult {
+  supported: boolean;
+  rejection_reason?: string;
+  document_type?: string;
+  status?: "verified" | "expires_soon" | "uploaded";
+  ocr_text?: string;
+  /**
+   * The endpoint names the person holder_name; DocumentMetadata stores it as
+   * full_name, so this is the wire shape rather than the domain one.
+   */
+  metadata?: Omit<DocumentMetadata, "full_name"> & { holder_name?: string | null };
+  extracted_text?: string;
+  ai_summary?: string;
+}
+
 async function callAnalyzeDocumentEdgeFunction(
   _fileBase64: string,
   _mimeType: string,
   _filename: string
-): Promise<any> {
+): Promise<DocumentAnalysisResult> {
   return mockAiAdapter.analyzeDocument();
 }

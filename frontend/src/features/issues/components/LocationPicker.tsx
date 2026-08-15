@@ -6,9 +6,13 @@ import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import { MapPin, Search, Loader2, Compass, AlertTriangle, X } from "lucide-react";
 import { logger } from "@/shared/services/logger";
+import { NominatimPlace } from "@/shared/types/nominatim";
 
 // Standard default leaflet icons fix
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Leaflet resolves its default marker icons from bundler-relative paths that
+// Vite rewrites. Deleting this private getter forces the explicit URLs set
+// below to win. Narrowed to the single field rather than casting to any.
+delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
@@ -16,7 +20,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Module-level caches to survive component remounts
-const geocodeCache: Record<string, any[]> = {};
+const geocodeCache: Record<string, NominatimPlace[]> = {};
 const reverseGeocodeCache: Record<string, string> = {};
 
 function makeBounceIcon(color: string): L.DivIcon {
@@ -60,11 +64,22 @@ export default function LocationPicker({
 }: LocationPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [markerInstance, setMarkerInstance] = useState<L.Marker | null>(null);
+
+  // The Leaflet click listener is bound once at map creation. Rebinding it on
+  // every render would mean tearing the map down, so the listener calls
+  // through a ref that always holds the latest closure.
+  const handleMapClickRef = useRef<(lat: number, lng: number) => Promise<void>>(async () => {});
+  // Marker identity mirrored into a ref: the sync effect both reads and sets
+  // it, so depending on the state value would re-run the effect on its own
+  // update.
+  const markerInstanceRef = useRef<L.Marker | null>(null);
+  const mapInitialisedRef = useRef(false);
+  // Coordinates as they were at mount, used only to choose the initial view.
+  const initialViewRef = useRef({ latitude, longitude });
 
   // Search autocomplete states
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<NominatimPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -90,11 +105,13 @@ export default function LocationPicker({
 
   // -- Initialize Map Instance --
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstance) return;
+    if (!mapContainerRef.current || mapInitialisedRef.current) return;
+    mapInitialisedRef.current = true;
+    const { latitude: initialLat, longitude: initialLng } = initialViewRef.current;
 
     const initialCenter: L.LatLngExpression =
-      latitude !== null && longitude !== null ? [latitude, longitude] : [20.5937, 78.9629]; // default to India center
-    const initialZoom = latitude !== null && longitude !== null ? 15 : 5;
+      initialLat !== null && initialLng !== null ? [initialLat, initialLng] : [20.5937, 78.9629]; // default to India center
+    const initialZoom = initialLat !== null && initialLng !== null ? 15 : 5;
 
     const map = L.map(mapContainerRef.current, {
       center: initialCenter,
@@ -112,7 +129,7 @@ export default function LocationPicker({
     // Click map to place/move marker
     map.on("click", async (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
-      await handleMapClick(lat, lng);
+      await handleMapClickRef.current(lat, lng);
     });
 
     // Toggle center crosshair overlay during movement
@@ -122,6 +139,7 @@ export default function LocationPicker({
     return () => {
       map.remove();
       setMapInstance(null);
+      mapInitialisedRef.current = false;
     };
   }, []);
 
@@ -132,8 +150,8 @@ export default function LocationPicker({
     if (latitude !== null && longitude !== null) {
       const pos: L.LatLngExpression = [latitude, longitude];
 
-      if (markerInstance) {
-        markerInstance.setLatLng(pos);
+      if (markerInstanceRef.current) {
+        markerInstanceRef.current.setLatLng(pos);
       } else {
         const marker = L.marker(pos, {
           draggable: true,
@@ -143,16 +161,16 @@ export default function LocationPicker({
         // Listen to marker drag events
         marker.on("dragend", async (e) => {
           const latlng = e.target.getLatLng();
-          await handleMapClick(latlng.lat, latlng.lng);
+          await handleMapClickRef.current(latlng.lat, latlng.lng);
         });
 
         marker.addTo(mapInstance);
-        setMarkerInstance(marker);
+        markerInstanceRef.current = marker;
       }
     } else {
-      if (markerInstance) {
-        mapInstance.removeLayer(markerInstance);
-        setMarkerInstance(null);
+      if (markerInstanceRef.current) {
+        mapInstance.removeLayer(markerInstanceRef.current);
+        markerInstanceRef.current = null;
       }
     }
   }, [latitude, longitude, mapInstance]);
@@ -241,7 +259,12 @@ export default function LocationPicker({
     }
   };
 
-  const handleSelectSuggestion = async (item: any) => {
+  // Keep the click-handler ref current without re-creating the map.
+  useEffect(() => {
+    handleMapClickRef.current = handleMapClick;
+  });
+
+  const handleSelectSuggestion = async (item: NominatimPlace) => {
     const lat = parseFloat(item.lat);
     const lon = parseFloat(item.lon);
     const address = item.display_name;

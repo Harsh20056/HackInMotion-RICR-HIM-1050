@@ -79,7 +79,7 @@ export function AnalyzerAndAssistant() {
   const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   /* ---------------- SPEECH RECOGNITION ---------------- */
   const isSpeechSupported =
@@ -87,17 +87,18 @@ export function AnalyzerAndAssistant() {
 
   useEffect(() => {
     if (!isSpeechSupported) return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) return;
+    recognitionRef.current = new Recognition();
     recognitionRef.current.lang = language === "hi" ? "hi-IN" : "en-IN";
-    recognitionRef.current.onresult = (event: any) => {
+    recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = Array.from(event.results)
-        .map((r: any) => r[0].transcript)
+        .map((r) => r[0].transcript)
         .join("");
       setInputValue(transcript);
     };
     recognitionRef.current.onend = () => setIsListening(false);
-  }, [language]);
+  }, [language, isSpeechSupported]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) return;
@@ -177,7 +178,7 @@ export function AnalyzerAndAssistant() {
 
   // Smooth progress simulator
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (status === "converting") {
       setProgressPercent(5);
       setProgressText(language === "hi" ? "PDF को छवि में बदला जा रहा है..." : "Converting PDF to image...");

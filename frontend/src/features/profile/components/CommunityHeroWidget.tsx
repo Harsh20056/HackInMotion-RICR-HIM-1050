@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Award, Flame, Sparkles, User, Trophy, Compass, ShieldAlert, BadgeCheck } from "lucide-react";
 import { useAuth } from "@/features/auth";
@@ -11,6 +11,8 @@ import { userStatsService } from "@/features/profile/services/userStatsService";
 import { gamificationService } from "@/features/profile/services/gamificationService";
 import { Issue } from "@/shared/types/domain/Issue";
 import { ROUTES } from "@/shared/config/routes";
+import { Profile } from "@/shared/types/domain/Profile";
+import { GamificationState } from "../types/gamification";
 
 // Map badge icons to Lucide components
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -44,7 +46,7 @@ export function CommunityHeroWidget() {
   const { toast } = useToast();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [supportedIssues, setSupportedIssues] = useState<Issue[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
 
   const [shouldPulse, setShouldPulse] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -52,7 +54,7 @@ export function CommunityHeroWidget() {
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [verificationsCount, setVerificationsCount] = useState(0);
 
-  const prevProgressRef = useRef<any>(null);
+  const prevProgressRef = useRef<GamificationState | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +63,7 @@ export function CommunityHeroWidget() {
   // is meaningless — and the three stat calls behind it are pure waste.
   const isCitizen = user?.user_metadata?.role === "citizen";
 
-  const refreshStats = async () => {
+  const refreshStats = useCallback(async () => {
     if (!user) return;
     try {
       const rawIssues = await issueRepository.fetchUserIssues(user.id);
@@ -83,7 +85,7 @@ export function CommunityHeroWidget() {
     } catch {
       // Widget stats are best-effort — leave defaults on failure.
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user && isCitizen) {
@@ -98,7 +100,7 @@ export function CommunityHeroWidget() {
       setUserProfile(null);
       setStatsLoaded(false);
     }
-  }, [user, isCitizen]);
+  }, [user, isCitizen, refreshStats]);
 
   const progress = gamificationService.computeProgress(issues, supportedIssues, verificationsCount);
 
@@ -130,7 +132,7 @@ export function CommunityHeroWidget() {
 
     // 2. Achievements toast & pulse
     const newlyUnlocked = progress.achievements.filter(
-      (ach) => ach.unlocked && !prev.achievements.find((p: any) => p.id === ach.id)
+      (ach) => ach.unlocked && !prev.achievements.find((p) => p.id === ach.id)
     );
 
     if (newlyUnlocked.length > 0) {

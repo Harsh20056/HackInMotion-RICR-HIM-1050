@@ -62,7 +62,7 @@ const statusConfig: Record<string, { class: string; icon: React.ReactNode }> = {
   },
 };
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Flag,
   Heart,
   Construction,

@@ -8,50 +8,8 @@
  * Task 1.1 — Multimodal Intake & Speech Integration (ImplementationPlan.md)
  */
 
-// --------------------------------------------------------------------------
-// Web Speech API type declarations (not in standard DOM lib)
-// --------------------------------------------------------------------------
-
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean;
-  readonly length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
-}
-
-interface SpeechRecognitionResultList {
-  readonly length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  readonly resultIndex: number;
-  readonly results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  readonly error: string;
-  readonly message: string;
-}
-
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
+// Web Speech API types live in src/shared/types/speech.d.ts — declared once,
+// globally, because FormAnalyzerSection needs the same shapes.
 
 // --------------------------------------------------------------------------
 // Types
@@ -85,7 +43,7 @@ const LANGUAGE_MAP: Record<VoiceLanguage, string> = {
 /** Resolve the SpeechRecognition constructor across browser vendors */
 function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
   if (typeof window === "undefined") return null;
-  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
 // --------------------------------------------------------------------------

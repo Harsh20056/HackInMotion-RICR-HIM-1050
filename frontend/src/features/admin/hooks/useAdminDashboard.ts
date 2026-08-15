@@ -27,6 +27,20 @@ import { UserRole } from "@/shared/types/domain/UserRole";
 import { logger } from "@/shared/services/logger";
 import { ROUTES } from "@/shared/config/routes";
 import { useEventStream } from "@/shared/hooks/useEventStream";
+
+/**
+ * StreamEvent.payload is Record<string, unknown> by design — the bus carries
+ * several event shapes. This narrows the one field the toast needs without
+ * pretending to know the rest.
+ */
+function issueTitleFrom(payload: Record<string, unknown>): string {
+  const issue = payload.issue;
+  if (typeof issue === "object" && issue !== null) {
+    const title = (issue as { title?: unknown }).title;
+    if (typeof title === "string") return title;
+  }
+  return "";
+}
 import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export interface AdminDepartment {
@@ -149,7 +163,7 @@ export function useAdminDashboard(user: AuthUser | null, authLoading: boolean, a
         if (event.type === "issue.created") {
           toast({
             title: activeLanguage === "en" ? "New issue reported" : "नई समस्या दर्ज",
-            description: String((event.payload as any)?.issue?.title ?? ""),
+            description: issueTitleFrom(event.payload),
           });
         }
         // The queue projection joins several tables; refetching is cheaper to

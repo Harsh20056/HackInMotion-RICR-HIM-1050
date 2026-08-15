@@ -7,6 +7,8 @@ import {
   TrendPoint,
 } from "../services/analyticsApi";
 import { logger } from "@/shared/services/logger";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
+import { categoryCodeOf } from "@/shared/types/domain/categoryRef";
 import { useAuth } from "@/features/auth";
 import { adminService } from "@/features/admin/services/adminService";
 import { UserRole } from "@/shared/types/domain/UserRole";
@@ -106,12 +108,7 @@ async function fetchBundle(months: number, user: { id?: string } | null): Promis
             ) {
               return false;
             }
-            const categoryObj: any = issue.category;
-            const issueCategoryCode = categoryObj
-              ? typeof categoryObj === "object"
-                ? categoryObj.code
-                : categoryObj
-              : "";
+            const issueCategoryCode = categoryCodeOf(issue.category);
             if (!doesCategoryBelongToDepartment(issueCategoryCode, myDeptCode)) {
               return false;
             }
@@ -290,9 +287,9 @@ export function useAnalytics(months = 6) {
           setData(bundle);
           setError(null);
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           logger.error("Failed to load analytics:", err);
-          setError(err?.message || "Could not load analytics.");
+          setError(getErrorMessage(err, "Could not load analytics."));
         })
         .finally(() => setLoading(false));
     },

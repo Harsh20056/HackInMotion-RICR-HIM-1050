@@ -9,6 +9,7 @@ import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
+import { NominatimPlace } from "@/shared/types/nominatim";
 import { useMapFiltersFromUrl } from "../hooks/useMapFiltersFromUrl";
 import { imageUrl } from "@/shared/lib/imageUrl";
 import { useAuth } from "@/features/auth";
@@ -59,11 +60,15 @@ import {
   Search,
   Train,
 } from "lucide-react";
+import { categoryCodeOf } from "@/shared/types/domain/categoryRef";
 
 // ---------------------------------------------------------------------------
 // Fix Leaflet's broken default icon paths when bundled with Vite
 // ---------------------------------------------------------------------------
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Leaflet resolves its default marker icons from bundler-relative paths that
+// Vite rewrites. Deleting this private getter forces the explicit URLs set
+// below to win. Narrowed to the single field rather than casting to any.
+delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
@@ -505,9 +510,15 @@ export default function CivicMapPage() {
     };
   }, [searchQuery]);
 
+  // Run-once guard for the map effect. A ref rather than the mapInstance
+  // state, so the effect does not re-run (and tear the map down) when the
+  // instance is stored.
+  const mapInitialisedRef = useRef(false);
+
   // -- Initialise Leaflet map (once) ----------------------------------------
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstance) return;
+    if (!mapContainerRef.current || mapInitialisedRef.current) return;
+    mapInitialisedRef.current = true;
 
     const map = L.map(mapContainerRef.current, {
       center: [20.5937, 78.9629], // India default
@@ -528,6 +539,7 @@ export default function CivicMapPage() {
       map.remove();
       setMapInstance(null);
       markersRef.current = null;
+      mapInitialisedRef.current = false;
     };
   }, []);
 
@@ -568,12 +580,7 @@ export default function CivicMapPage() {
             ) {
               return false;
             }
-            const categoryObj: any = issue.category;
-            const issueCategoryCode = categoryObj
-              ? typeof categoryObj === "object"
-                ? categoryObj.code
-                : categoryObj
-              : "";
+            const issueCategoryCode = categoryCodeOf(issue.category);
             if (userDeptCode && !doesCategoryBelongToDepartment(issueCategoryCode, userDeptCode)) {
               return false;
             }
@@ -839,15 +846,15 @@ export default function CivicMapPage() {
           }
         );
         if (res.ok) {
-          const data = await res.json();
-          const fetchedPlaces = data.map((item: any) => ({
+          const data: NominatimPlace[] = await res.json();
+          const fetchedPlaces = data.map((item) => ({
             name: item.display_name,
             lat: parseFloat(item.lat),
             lng: parseFloat(item.lon),
           }));
 
           const merged = [...localMatches];
-          fetchedPlaces.forEach((fp: any) => {
+          fetchedPlaces.forEach((fp) => {
             if (!merged.some((m) => Math.abs(m.lat - fp.lat) < 0.001 && Math.abs(m.lng - fp.lng) < 0.001)) {
               merged.push(fp);
             }

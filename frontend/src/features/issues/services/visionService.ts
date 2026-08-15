@@ -1,3 +1,4 @@
+import { z } from "zod";
 /**
  * visionService.ts
  * ----------------
@@ -89,6 +90,18 @@ function severityLabel(score: number): VisionDetectionResult["severityLabel"] {
 // Service
 // --------------------------------------------------------------------------
 
+/**
+ * The vision endpoint is external and unversioned, so its payload is parsed
+ * rather than trusted. A response that does not match yields the empty
+ * result instead of throwing into the report flow.
+ */
+const visionResponseSchema = z.object({
+  classes: z.array(z.string()).default([]),
+  confidences: z.record(z.string(), z.number()).default({}),
+  annotatedImage: z.string().nullish(),
+  annotated_image: z.string().nullish(),
+});
+
 export const visionService = {
   /**
    * Analyses a civic-issue image via the AI vision endpoint.
@@ -110,7 +123,7 @@ export const visionService = {
     // ── Build the request ────────────────────────────────────────────────
     // Only attempts a call when a vision endpoint has been explicitly
     // configured. No such endpoint exists until the Phase 2 backend lands.
-    const endpointUrl = (import.meta as any).env?.VITE_VISION_API_URL;
+    const endpointUrl = import.meta.env.VITE_VISION_API_URL;
     if (!endpointUrl) {
       return emptyResult;
     }
@@ -138,7 +151,7 @@ export const visionService = {
     }
 
     // ── Parse and normalise response ─────────────────────────────────────
-    let raw: any;
+    let raw: unknown;
     try {
       raw = await response.json();
     } catch {
@@ -148,9 +161,14 @@ export const visionService = {
 
     // The vision analysis endpoint is expected to return:
     //   { classes: string[], annotatedImage?: string, confidences?: Record<string, number> }
-    const rawClasses: string[] = Array.isArray(raw?.classes) ? raw.classes : [];
-    const confidences: Record<string, number> = raw?.confidences ?? {};
-    const annotatedImage: string | null = raw?.annotatedImage ?? raw?.annotated_image ?? null;
+    const parsed = visionResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.warn("[visionService] Vision response did not match the expected shape");
+      return emptyResult;
+    }
+    const rawClasses = parsed.data.classes;
+    const confidences = parsed.data.confidences;
+    const annotatedImage = parsed.data.annotatedImage ?? parsed.data.annotated_image ?? null;
 
     // Normalise class names using the civic map
     const normalisedClasses = rawClasses.map((cls) => CIVIC_CLASS_MAP[cls.toLowerCase()] ?? cls);

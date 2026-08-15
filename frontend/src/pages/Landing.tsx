@@ -53,6 +53,18 @@ const LANDING_JSON_LD = {
   audience: { "@type": "Audience", audienceType: "Residents" },
 } as const;
 
+/**
+ * react-router types location.state as unknown, because any caller can put
+ * anything there. Only this one key is read, so only this one key is checked.
+ */
+function scrollTargetFrom(state: unknown): string | null {
+  if (typeof state === "object" && state !== null) {
+    const target = (state as { scrollToSection?: unknown }).scrollToSection;
+    if (typeof target === "string" && target) return target;
+  }
+  return null;
+}
+
 export default function Landing() {
   const { language } = useLanguage();
   const location = useLocation();
@@ -95,8 +107,8 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
-    if (location.state && (location.state as any).scrollToSection) {
-      const sectionId = (location.state as any).scrollToSection;
+    const sectionId = scrollTargetFrom(location.state);
+    if (sectionId) {
       window.history.replaceState({}, document.title);
       setTimeout(() => {
         const element = document.getElementById(sectionId);

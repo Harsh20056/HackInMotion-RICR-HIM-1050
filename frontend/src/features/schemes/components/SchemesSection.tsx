@@ -32,7 +32,6 @@ import {
 import {
   Shield,
   CheckCircle2,
-  ArrowRight,
   Users,
   Sparkles,
   AlertCircle,
@@ -41,9 +40,8 @@ import {
   ChevronDown,
   ChevronUp,
   Link2,
-  FileCheck,
-  FileX,
 } from "lucide-react";
+import { DocumentType } from "@/shared/types/domain/Document";
 
 interface EligibilityResult {
   isEligible: boolean;
@@ -187,7 +185,15 @@ export function SchemesSection() {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const { profile } = useProfileData(user, language);
-  const { schemes, eligibleSchemes, otherSchemes, loading, error } = useSchemes(user, profile);
+  // eligibleSchemes/otherSchemes are computed by the hook but this view
+  // filters `schemes` itself, so they are destructured out and unused.
+  const {
+    schemes,
+    eligibleSchemes: _eligibleSchemes,
+    otherSchemes: _otherSchemes,
+    loading,
+    error,
+  } = useSchemes(user, profile);
 
   // Hook into document locker reactively
   const { lockerDetails } = useDocuments();
@@ -591,7 +597,7 @@ function SchemeCard({
   isHighlighted?: boolean;
   isCalculated?: boolean;
   calculationResult?: { isEligible: boolean; reasons: string[] };
-  lockerDocuments: any[];
+  lockerDocuments: DocumentType[];
   activeAttachments: SchemeAttachment[];
 }) {
   const { t, language } = useLanguage();
@@ -665,7 +671,7 @@ function SchemeCard({
     navigate(ROUTES.DOCUMENTS);
   };
 
-  const handleAttach = (docType: string, file: any) => {
+  const handleAttach = (docType: string, file: DocumentType) => {
     schemeAttachmentService.attachFileToScheme(scheme.id, docType, file.id, file.file_path, file.name);
   };
 

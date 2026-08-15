@@ -13,6 +13,14 @@ import { voiceService } from "@/shared/services/voiceService";
 import { DuplicateIssueError } from "@/shared/errors/errors";
 import { getErrorMessage } from "@/shared/lib/errorMessage";
 
+/**
+ * visionService accepts a closed set of MIME types. A browser can hand us
+ * anything, so map to the supported union and fall back to JPEG — which is
+ * also what extractFrameFromVideo produces.
+ */
+const toSupportedMimeType = (mime: string): "image/jpeg" | "image/png" | "image/webp" =>
+  mime === "image/png" || mime === "image/webp" ? mime : "image/jpeg";
+
 const detectionToCategory = (cls: string): string | null => {
   const c = cls.toLowerCase();
   if (c.includes("pothole")) return "roads";
@@ -199,7 +207,7 @@ export function useReportIssue(user: AuthUser | null, activeLanguage: "en" | "hi
       try {
         const result = await visionService.analyseImage({
           base64Image: base64,
-          mimeType: processedFile.type as any,
+          mimeType: toSupportedMimeType(processedFile.type),
         });
         if (result.classes.length) {
           setDetectedClasses(result.classes);
