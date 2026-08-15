@@ -12,7 +12,6 @@
  */
 
 import { Issue } from "@/shared/types/domain/Issue";
-import { IssueStatus } from "@/shared/types/domain/IssueStatus";
 
 // ---------------------------------------------------------------------------
 // Types

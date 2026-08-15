@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/shared/lib/apiClient";
 import { useLanguage } from "@/app/providers/LanguageProvider";
-import { LoadingState } from "@/shared/components/LoadingState";
 import { PageMeta } from "@/shared/components/PageMeta";
 import { Badge } from "@/shared/components/ui/badge";
 import { ShieldCheck, AlertTriangle, Clock, TrendingUp, Building2 } from "lucide-react";

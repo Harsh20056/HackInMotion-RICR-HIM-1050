@@ -1,15 +1,16 @@
 import { Button } from "@/shared/components/ui/button";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { 
-  FileText, Upload, Mic, Volume2, MessageSquare,
-  CheckCircle2, Sparkles, Languages, HelpCircle,
+  FileText, Upload, Mic, Volume2,
+  CheckCircle2, Sparkles, Languages,
   Bot, User, Send, Loader2, MicOff, AlertCircle,
-  Check, Clock, ExternalLink, RefreshCw, X,
-  FileQuestion, MapPin, DollarSign, Calendar, Info, Play, Square
+  Check, ExternalLink, RefreshCw, X,
+  FileQuestion, MapPin, DollarSign, Calendar, Info, Square
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { aiService, FormAnalysisResult } from "../services/aiService";
 import { useToast } from "@/shared/hooks/use-toast";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 /* ---------------- SAMPLE QUESTIONS ---------------- */
 const sampleQuestions = {
@@ -289,13 +290,13 @@ export function AnalyzerAndAssistant() {
         description: language === "hi" ? "आपके फॉर्म की जानकारी सफलतापूर्वक प्राप्त कर ली गई है।" : "Your form guidance is ready.",
       });
 
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setStatus("error");
-      setErrorMessage(err.message || "Something went wrong during analysis.");
+      setErrorMessage(getErrorMessage(err, "Something went wrong during analysis."));
       toast({
         title: language === "hi" ? "विश्लेषण विफल" : "Analysis failed",
-        description: err.message || "Failed to process form.",
+        description: getErrorMessage(err, "Failed to process form."),
         variant: "destructive",
       });
     }
@@ -391,10 +392,10 @@ export function AnalyzerAndAssistant() {
       console.log("[TTS] Calling speak() with target language:", targetLang);
       window.speechSynthesis.speak(utterance);
       
-    } catch (err: any) {
+    } catch (err) {
       console.error("[TTS] Exception in toggleSpeech:", err);
       setIsSpeaking(false);
-      toast({ title: "Speech Error", description: err.message || "An unexpected error occurred.", variant: "destructive" });
+      toast({ title: "Speech Error", description: getErrorMessage(err, "An unexpected error occurred."), variant: "destructive" });
     }
   };
 

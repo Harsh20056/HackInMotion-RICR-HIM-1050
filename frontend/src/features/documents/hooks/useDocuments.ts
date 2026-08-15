@@ -7,6 +7,7 @@ import { subscribeToTable } from "@/shared/mock/mockLocalStore";
 import { logger } from "@/shared/services/logger";
 
 import { generateDocumentNotifications } from "../services/documentNotificationGenerator";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export function useDocuments() {
   const { user } = useAuth();
@@ -22,9 +23,9 @@ export function useDocuments() {
       const data = await documentService.getLockerDetails(user.id);
       setLockerDetails(data);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to load locker details:", err);
-      setError(err.message || "Failed to load locker documents");
+      setError(getErrorMessage(err, "Failed to load locker documents"));
     } finally {
       setLoading(false);
     }
@@ -116,7 +117,7 @@ export function useDocuments() {
     }
     try {
       await documentService.uploadAndAnalyze(user.id, file, setUploadStep);
-    } catch (err: any) {
+    } catch (err) {
       setUploadStep("idle");
       setUploadProgress(0);
       logger.error("Failed to upload document:", err);
@@ -130,7 +131,7 @@ export function useDocuments() {
   const deleteDocument = async (id: string, filePath: string): Promise<void> => {
     try {
       await documentService.deleteDocument(id, filePath);
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Failed to delete document:", err);
       throw err;
     }

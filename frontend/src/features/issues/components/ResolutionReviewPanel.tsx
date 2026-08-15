@@ -6,6 +6,7 @@ import { useToast } from "@/shared/hooks/use-toast";
 import { issueLifecycleService } from "../services/issueLifecycleService";
 import { logger } from "@/shared/services/logger";
 import { CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 interface Props {
   issueId: string;
@@ -30,11 +31,11 @@ export function ResolutionReviewPanel({ issueId, onReviewed }: Props) {
       await action();
       toast({ title: successTitle });
       onReviewed();
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Resolution review failed:", err);
       toast({
         title: language === "en" ? "Could not submit" : "सबमिट नहीं हो सका",
-        description: err?.message || (language === "en" ? "Please try again." : "पुनः प्रयास करें।"),
+        description: getErrorMessage(err) || (language === "en" ? "Please try again." : "पुनः प्रयास करें।"),
         variant: "destructive",
       });
     } finally {

@@ -4,7 +4,6 @@ import { useLanguage } from "@/app/providers/LanguageProvider";
 import { ROUTES } from "@/shared/config/routes";
 import { 
   MapPin, 
-  FileText, 
   Shield, 
   ArrowRight,
   CheckCircle2,

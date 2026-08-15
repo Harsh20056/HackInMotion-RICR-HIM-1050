@@ -38,7 +38,6 @@ import {
   Filter,
   BarChart3,
   AlertTriangle,
-  CheckCircle2,
   Timer,
   Droplets,
   Trash2,
@@ -48,8 +47,6 @@ import {
   Building2,
   X,
   Loader2,
-  TrendingUp,
-  ChevronRight,
   Activity,
   Search,
   Train,
@@ -276,7 +273,7 @@ function buildPopupHtml(issue: Issue, language: "en" | "hi"): string {
   const statusColor = STATUS_COLORS[issue.status] ?? "#6b7280";
   const catColor = CATEGORY_META[issue.category as string]?.color ?? "#6b7280";
   const statusLabel = STATUS_LABELS_MAP[issue.status]?.[language] ?? issue.status;
-  const dateStr = new Date(issue.createdAt).toLocaleDateString(
+  const _dateStr = new Date(issue.createdAt).toLocaleDateString(
     language === "hi" ? "hi-IN" : "en-IN",
     { year: "numeric", month: "short", day: "numeric" }
   );
@@ -783,7 +780,7 @@ export default function CivicMapPage() {
           
           setPlaceResults(merged);
         }
-      } catch (err) {
+      } catch (_err) {
         setPlaceResults(localMatches);
       } finally {
         setIsSearchingPlaces(false);

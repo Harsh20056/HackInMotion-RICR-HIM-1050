@@ -8,33 +8,17 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   MapPin,
-  FileText,
-  Shield,
   ArrowRight,
   CheckCircle2,
-  Users,
-  Clock,
   Award,
   Sparkles,
   Zap,
   Map,
-  Building2,
-  Layers,
   Cpu,
   CheckCheck,
-  TrendingUp,
-  Flame,
-  Search,
-  ExternalLink,
   ChevronRight,
-  Radio,
-  BarChart3,
   HardHat,
-  Eye,
-  AlertTriangle,
-  Send,
-  Droplets,
-  Lightbulb
+  AlertTriangle
 } from "lucide-react";
 
 /**
@@ -712,7 +696,7 @@ export default function Landing() {
 }
 
 // ── Clean Vector Indian Flag SVG ──────────────────────────────
-function CleanIndianFlag() {
+function _CleanIndianFlag() {
   return (
     <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-sm">
       <defs>

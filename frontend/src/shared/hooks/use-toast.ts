@@ -12,6 +12,9 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement;
 };
 
+// Referenced only in type position (typeof actionTypes), which no-unused-vars
+// does not see. Keeping the name so the Action union stays correct.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",

@@ -187,7 +187,7 @@ export const issueRepository = {
   },
 
   async addSupport(issueId: string, userId: string): Promise<SupportResponse> {
-    const issue = await apiRequest<ApiIssue>(`/issues/${issueId}/support`, { method: "POST" });
+    const _issue = await apiRequest<ApiIssue>(`/issues/${issueId}/support`, { method: "POST" });
     return { id: `${issueId}-${userId}`, issue_id: issueId, user_id: userId, created_at: new Date().toISOString() };
   },
 

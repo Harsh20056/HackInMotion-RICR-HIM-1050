@@ -15,6 +15,7 @@ import { issueRepository } from "@/features/issues/repositories/issueRepository"
 import { logger } from "@/shared/services/logger";
 import { Loader2, Upload, CheckCircle2, AlertTriangle } from "lucide-react";
 import { QueueItem } from "../services/adminService";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 interface Props {
   item: QueueItem;
@@ -44,10 +45,10 @@ export function ResolveIssueDialog({ item, onClose, onSubmit }: Props) {
     try {
       const url = await issueRepository.uploadIssueImage(item.issue.reportedBy, file);
       setProofUrl(url);
-    } catch (err: any) {
+    } catch (err) {
       logger.error("Proof upload failed:", err);
       setUploadError(
-        err?.message ||
+        getErrorMessage(err) ||
           (language === "en"
             ? "Upload failed. Check your connection and try again."
             : "अपलोड विफल। कनेक्शन जांचें और पुनः प्रयास करें।")

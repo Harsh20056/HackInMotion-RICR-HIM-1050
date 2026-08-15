@@ -54,7 +54,7 @@ export default function LocationPicker({
   latitude,
   longitude,
   onChange,
-  geocodeStatus,
+  geocodeStatus: _geocodeStatus,
   setGeocodeStatus,
   language,
 }: LocationPickerProps) {
@@ -235,7 +235,7 @@ export default function LocationPicker({
       const address = await reverseGeocode(lat, lng);
       onChange(address, lat, lng);
       setGeocodeStatus("success");
-    } catch (err) {
+    } catch (_err) {
       onChange(location || "Selected Location", lat, lng);
       setGeocodeStatus("failed");
     } finally {

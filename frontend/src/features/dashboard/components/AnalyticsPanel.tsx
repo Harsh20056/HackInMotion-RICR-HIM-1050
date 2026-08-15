@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import {
-  PieChart,
-  Pie,
   Cell,
   Tooltip,
   Legend,
@@ -17,9 +15,6 @@ import {
 import {
   dashboardService,
   CATEGORY_COLORS,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  formatResolutionTime,
 } from "../services/dashboardService";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { useLanguage } from "@/app/providers/LanguageProvider";
@@ -28,12 +23,8 @@ import { LoadingState } from "@/shared/components/LoadingState";
 import {
   BarChart3,
   TrendingUp,
-  Map,
   PieChart as PieIcon,
-  MapPin,
-  Clock,
   Sparkles,
-  Activity,
   AlertTriangle,
 } from "lucide-react";
 

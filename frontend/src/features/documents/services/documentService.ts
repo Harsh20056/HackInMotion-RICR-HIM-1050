@@ -149,9 +149,9 @@ function fileToBase64(file: File): Promise<string> {
  * state instead of calling out to a network endpoint that doesn't exist.
  */
 async function callAnalyzeDocumentEdgeFunction(
-  fileBase64: string,
-  mimeType: string,
-  filename: string
+  _fileBase64: string,
+  _mimeType: string,
+  _filename: string
 ): Promise<any> {
   return mockAiAdapter.analyzeDocument();
 }

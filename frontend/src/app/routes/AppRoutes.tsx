@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { MainLayout } from "../layouts/MainLayout";
 import { AuthGuard } from "./guards/AuthGuard";
 import { AdminGuard } from "./guards/AdminGuard";
@@ -10,9 +10,9 @@ import { Loader2 } from "lucide-react";
 const Landing = lazy(() => import("@/pages/Landing"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/DashboardPage"));
 const ReportIssue = lazy(() => import("@/features/issues/pages/ReportIssuePage"));
-const Schemes = lazy(() => import("@/features/schemes/pages/SchemesPage"));
+const _Schemes = lazy(() => import("@/features/schemes/pages/SchemesPage"));
 const FormAnalyzer = lazy(() => import("@/features/ai-assistant/pages/FormAnalyzerPage"));
-const Documents = lazy(() => import("@/features/documents/pages/DocumentsPage"));
+const _Documents = lazy(() => import("@/features/documents/pages/DocumentsPage"));
 const Auth = lazy(() => import("@/features/auth/pages/AuthPage"));
 const Profile = lazy(() => import("@/features/profile/pages/ProfilePage"));
 const Admin = lazy(() => import("@/features/admin/pages/AdminPage"));

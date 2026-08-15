@@ -3,7 +3,6 @@ import React from "react";
 import { 
   Home, 
   Heart, 
-  Briefcase, 
   GraduationCap,
   Sprout,
   Wrench,

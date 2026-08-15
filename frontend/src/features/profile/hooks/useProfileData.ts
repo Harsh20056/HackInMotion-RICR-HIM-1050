@@ -8,6 +8,7 @@ import { Profile } from "@/shared/types/domain/Profile";
 import { Issue } from "@/shared/types/domain/Issue";
 import { NotificationPreferences } from "@/shared/types/domain/NotificationPreference";
 import { logger } from "@/shared/services/logger";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi") {
   const { toast } = useToast();
@@ -102,11 +103,11 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
         title: activeLanguage === "en" ? "Profile Updated" : "प्रोफ़ाइल अपडेट",
         description: activeLanguage === "en" ? "Your profile has been saved." : "आपकी प्रोफ़ाइल सहेजी गई।",
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to update profile:", error);
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to update profile details.",
+        description: getErrorMessage(error, "Failed to update profile details."),
         variant: "destructive",
       });
     } finally {
@@ -126,13 +127,13 @@ export function useProfileData(user: AuthUser | null, activeLanguage: "en" | "hi
         title: activeLanguage === "en" ? "Preferences Updated" : "प्राथमिकताएं अपडेट",
         description: activeLanguage === "en" ? "Your notification preferences have been saved." : "आपकी अधिसूचना प्राथमिकताएं सहेजी गईं।",
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to update notification preferences:", error);
       // Rollback
       setNotifications((prev) => (prev ? { ...prev, [key]: !value } as NotificationPreferences : null));
       toast({
         title: activeLanguage === "en" ? "Error" : "त्रुटि",
-        description: error.message || "Failed to update settings.",
+        description: getErrorMessage(error, "Failed to update settings."),
         variant: "destructive",
       });
     }

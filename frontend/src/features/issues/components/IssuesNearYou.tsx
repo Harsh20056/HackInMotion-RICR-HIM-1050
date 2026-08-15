@@ -14,9 +14,6 @@ import {
   Construction,
   AlertTriangle,
   CheckCircle2,
-  Loader2,
-  TreePine,
-  Building2,
   Timer,
   Train
 } from "lucide-react";

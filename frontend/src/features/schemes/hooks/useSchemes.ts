@@ -13,6 +13,7 @@ import { schemeService } from "../services/schemeService";
 import { Scheme } from "@/shared/types/domain/Scheme";
 import { Profile } from "@/shared/types/domain/Profile";
 import { logger } from "@/shared/services/logger";
+import { getErrorMessage } from "@/shared/lib/errorMessage";
 
 // --------------------------------------------------------------------------
 // Eligibility Matching Engine
@@ -62,7 +63,7 @@ function parseAgeRange(raw: string): [number, number] | null {
  * (income thresholds, age ranges, student status) and compare against profile.
  * Schemes with no detectable criteria default to "potentially eligible".
  */
-function checkEligibility(scheme: Scheme, profile: Profile): boolean {
+function checkEligibility(scheme: Scheme, _profile: Profile): boolean {
   const criteria = scheme.eligibilityEn;
   let matched = 0;
   let totalChecked = 0;
@@ -160,10 +161,10 @@ export function useSchemes(user?: AuthUser | null, profile?: Profile | null) {
           setSchemes(data);
           setError(null);
         }
-      } catch (err: any) {
+      } catch (err) {
         logger.error("Failed to load schemes:", err);
         if (active) {
-          setError(err.message || "Failed to load schemes");
+          setError(getErrorMessage(err, "Failed to load schemes"));
         }
       } finally {
         if (active) {

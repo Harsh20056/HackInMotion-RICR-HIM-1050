@@ -13,6 +13,8 @@ dist
 frontend/dist
 dist-ssr
 *.local
+*.tsbuildinfo
+frontend/tsconfig.app.tsbuildinfo
 
 # Environment variables - never commit secrets!
 .env
@@ -34,21 +36,7 @@ frontend/.env
 *.njsproj
 *.sw?
 
-# Ignore all markdown files
-*.md
-**/*.md
 
-# Except README.md, project docs, and contributor-facing markdown
-!/README.md
-!/api-documentation.md
-!/backend/README.md
-!/CONTRIBUTING.md
-!/.github/**/*.md
-# docs/ is committed project documentation. Without this exception the
-# blanket **/*.md rule above silently swallowed it — which is why the
-# Phase 1.5 docs were written to disk but never landed in a commit.
-!/docs/
-!/docs/**/*.md
 
 # Python virtual environments & cache files
 .venv/

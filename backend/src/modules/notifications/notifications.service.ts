@@ -70,15 +70,15 @@ export function formatOverdue(minutes: number): string {
 }
 
 /** Shared subject line for the two single-work-order SLA templates. */
-function slaBody(payload: Record<string, any>): string {
+function slaBody(payload: Record<string, unknown>): string {
   const title = payload.issueTitle ? `"${payload.issueTitle}"` : "This report";
   const dept = payload.department ?? "the assigned department";
-  return `${title} — ${dept} · ${priorityLabel(payload.priority)} priority · ${formatOverdue(payload.overdueMinutes)} overdue.`;
+  return `${title} — ${dept} · ${priorityLabel(payload.priority)} priority · ${formatOverdue(Number(payload.overdueMinutes ?? 0))} overdue.`;
 }
 
 export function renderTemplate(
   template: NotificationTemplate,
-  payload: Record<string, any>
+  payload: Record<string, unknown>
 ): TemplateCopy {
   const ref = payload.publicRef ?? payload.issueRef ?? "";
   switch (template) {
@@ -127,7 +127,7 @@ export function renderTemplate(
     case "sla.digest": {
       const count = Number(payload.count ?? 0);
       const oldest = payload.oldestRef
-        ? ` Oldest: ${payload.oldestRef} (${formatOverdue(payload.oldestOverdueMinutes)} overdue).`
+        ? ` Oldest: ${payload.oldestRef} (${formatOverdue(Number(payload.oldestOverdueMinutes ?? 0))} overdue).`
         : "";
       return {
         title: `${count} work order${count === 1 ? "" : "s"} overdue`,
@@ -140,7 +140,7 @@ export function renderTemplate(
         body: `Your report ${ref} has been marked resolved. Please check and let us know if the problem is actually gone.`,
       };
     case "issue.status_changed": {
-      const label = issueStatusLabel(payload.to);
+      const label = issueStatusLabel(String(payload.to ?? ""));
       const reasonSuffix = payload.reason ? ` Reason: ${payload.reason}` : "";
       if (payload.audience === "staff") {
         return {
@@ -239,7 +239,7 @@ export const notificationsService = {
     });
 
     return rows.map((n) => {
-      const copy = renderTemplate(n.template as NotificationTemplate, (n.payload ?? {}) as Record<string, any>);
+      const copy = renderTemplate(n.template as NotificationTemplate, (n.payload ?? {}) as Record<string, unknown>);
       return {
         id: n.id,
         template: n.template,

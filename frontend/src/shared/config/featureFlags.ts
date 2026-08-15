@@ -1,4 +1,3 @@
-import { env } from "./environment";
 
 export const FEATURE_FLAGS = {
   AI_ASSISTANT: true,
