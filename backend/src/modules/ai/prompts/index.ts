@@ -121,7 +121,6 @@ export const photoMatchSchema = z.object({
   detectedLabel: z.string(),
   reason: z.string(),
 });
-export type PhotoMatchResult = z.infer<typeof photoMatchSchema>;
 
 // ── 3. Resolution-proof verification ───────────────────────────────────────
 
@@ -161,7 +160,6 @@ export const resolutionProofSchema = z.object({
   confidence: z.number().min(0).max(1),
   reason: z.string(),
 });
-export type ResolutionProofResult = z.infer<typeof resolutionProofSchema>;
 
 // ── 4. Auto-categorisation ─────────────────────────────────────────────────
 

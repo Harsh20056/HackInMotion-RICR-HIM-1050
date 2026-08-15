@@ -79,7 +79,6 @@ export const transitionStatusSchema = z.object({
   proofUrl: z.string().url().optional(),
   proofPublicId: z.string().max(300).optional(),
 });
-export type TransitionStatusInput = z.infer<typeof transitionStatusSchema>;
 
 export const reopenSchema = z.object({
   reason: z.string().min(1, "Please say why this issue should be reopened.").max(1000),

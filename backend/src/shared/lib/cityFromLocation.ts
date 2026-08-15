@@ -71,6 +71,3 @@ export function cityFromLocation(latitude: number, longitude: number): string | 
   if (!best || best.distanceKm > MAX_CITY_RADIUS_KM) return null;
   return best.name;
 }
-
-/** Every serviced city name, for validating filter input. */
-export const SERVICED_CITIES = CITY_CENTROIDS.map((c) => c.name);
