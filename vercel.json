@@ -1,5 +1,6 @@
 {
-  "buildCommand": "cd frontend && npm ci && npx vite build",
+  "installCommand": "cd frontend && npm ci",
+  "buildCommand": "cd frontend && npx vite build",
   "outputDirectory": "frontend/dist",
   "cleanUrls": true,
   "rewrites": [
