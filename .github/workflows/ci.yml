@@ -8,6 +8,32 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: samadhan
+          POSTGRES_PASSWORD: samadhan
+          POSTGRES_DB: samadhan_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U samadhan"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Tests run against the service container above, never the dev database.
+      TEST_DATABASE_URL: "postgresql://samadhan:samadhan@localhost:5432/samadhan_test?schema=public"
+      # Runtime env — harmless values; tests swap DATABASE_URL for TEST_DATABASE_URL.
+      DATABASE_URL: "postgresql://samadhan:samadhan@localhost:5432/samadhan_test?schema=public"
+      JWT_ACCESS_SECRET: ci-access-secret-not-used-outside-tests
+      JWT_REFRESH_SECRET: ci-refresh-secret-not-used-outside-tests
+      NODE_ENV: test
+      CORS_ORIGIN: "http://localhost:8080"
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,9 +54,14 @@ jobs:
       - name: Typecheck + build
         run: npm run build
         working-directory: backend
-      # Tests need a Postgres+PostGIS instance via TEST_DATABASE_URL. Left out
-      # here rather than pretending to run them against nothing — wire the
-      # secret in and add `npm test` when a CI database exists.
+      - name: Run migrations against test DB
+        run: npx prisma migrate deploy
+        working-directory: backend
+        env:
+          DATABASE_URL: "postgresql://samadhan:samadhan@localhost:5432/samadhan_test?schema=public"
+      - name: Test
+        run: npm test
+        working-directory: backend
 
   frontend:
     runs-on: ubuntu-latest
