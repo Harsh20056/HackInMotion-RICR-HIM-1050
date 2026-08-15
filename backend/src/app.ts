@@ -19,7 +19,22 @@ import { aiRouter } from "./modules/ai/ai.controller.js";
 export function createApp() {
   const app = express();
 
-  app.use(cors({ origin: env.CORS_ORIGIN }));
+  // Strict exact-match CORS allowlist — never reflect arbitrary Origin headers.
+  // env.CORS_ORIGIN is a string[] parsed and validated at startup (see env.ts).
+  const allowedOrigins = new Set(env.CORS_ORIGIN);
+  app.use(
+    cors({
+      origin(origin, callback) {
+        // Allow same-origin / non-browser requests (no Origin header).
+        if (origin === undefined || allowedOrigins.has(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin "${origin}" is not allowed by CORS policy`));
+        }
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json());
   app.use(pinoHttp({ logger }));
   app.use(auditContext);

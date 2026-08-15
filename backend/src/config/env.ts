@@ -1,6 +1,37 @@
 import "dotenv/config";
 import { z } from "zod";
 
+// ---------------------------------------------------------------------------
+// CORS_ORIGIN validation
+// Accepts a comma-separated list of exact-match origins.
+// In production the variable MUST be set and non-empty; the server refuses to
+// start otherwise (fail CLOSED — never reflect arbitrary Origin headers).
+// ---------------------------------------------------------------------------
+const corsOriginSchema = z
+  .string()
+  .optional()
+  .superRefine((val, ctx) => {
+    const isProduction = process.env.NODE_ENV === "production";
+    if (isProduction && (!val || val.trim() === "")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "CORS_ORIGIN must be set in production. " +
+          "Refusing to start with a permissive CORS configuration.",
+      });
+    }
+  })
+  .transform((val) => {
+    if (!val || val.trim() === "") {
+      // Development/test fallback — local only, never wildcards.
+      return ["http://localhost:8080"];
+    }
+    return val
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+  });
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET is required"),
@@ -12,7 +43,7 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional().default(""),
   PORT: z.coerce.number().default(4000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  CORS_ORIGIN: z.string().default("http://localhost:8080"),
+  CORS_ORIGIN: corsOriginSchema,
   // Email delivery. Absent key => email notifications are marked failed
   // with a stated reason rather than silently dropped.
   RESEND_API_KEY: z.string().optional().default(""),
