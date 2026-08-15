@@ -1131,8 +1131,10 @@ export default function CivicMapPage() {
       {/* Civic Intelligence Side Panel                                        */}
       {/* ------------------------------------------------------------------ */}
       <aside
-        className="relative z-[500] h-full bg-card border-r border-border overflow-y-auto shrink-0 transition-all duration-300 shadow-xl"
-        style={{ width: showPanel ? "340px" : "0px", overflow: showPanel ? "auto" : "hidden" }}
+        className={`absolute md:relative inset-y-0 left-0 z-[1020] md:z-[500] h-full bg-card border-r border-border overflow-y-auto shrink-0 transition-all duration-300 shadow-xl ${
+          showPanel ? "w-full md:w-[340px]" : "w-0 overflow-hidden"
+        }`}
+        style={{ overflow: showPanel ? "auto" : "hidden" }}
       >
         {showPanel && (
           <div className="p-4 space-y-5">
