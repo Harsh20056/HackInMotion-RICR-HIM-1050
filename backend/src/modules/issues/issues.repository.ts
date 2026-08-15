@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../shared/lib/prisma.js";
 import { ListIssuesQuery } from "./issues.schemas.js";
+import { randomUUID } from "node:crypto";
 
 // Shape returned by the raw spatial queries below — mirrors the frontend's
 // existing IssueResponse contract (category as a display string, not an id).
@@ -91,8 +92,9 @@ export const issuesRepository = {
   ): Promise<{ id: string; createdAt: Date }> {
     const rows = await tx.$queryRaw<{ id: string; created_at: Date }[]>(
       Prisma.sql`
-        INSERT INTO issues (public_ref, title, description, category_id, priority, reported_by, address, city, location)
+        INSERT INTO issues (id, public_ref, title, description, category_id, priority, reported_by, address, city, location)
         VALUES (
+          ${randomUUID()}::uuid,
           ${data.publicRef}, ${data.title}, ${data.description}, ${data.categoryId}::uuid, ${data.priority},
           ${data.reportedBy}::uuid, ${data.address}, ${data.city},
           ST_SetSRID(ST_MakePoint(${data.longitude}, ${data.latitude}), 4326)::geography
