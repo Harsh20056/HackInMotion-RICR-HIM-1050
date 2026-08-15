@@ -90,7 +90,9 @@ await new Promise((resolve) => server.listen(PORT, resolve));
 
 const chromePath = findChrome();
 if (!chromePath) {
-  console.warn("WARNING: No Chrome binary found. Skipping prerender phase. The app will build as a standard client-side SPA.");
+  console.warn(
+    "WARNING: No Chrome binary found. Skipping prerender phase. The app will build as a standard client-side SPA."
+  );
   server.close();
   process.exit(0);
 }
