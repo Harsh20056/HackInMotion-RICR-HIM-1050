@@ -14,7 +14,8 @@
 
 ### 🌐 Live Demo
 
-**[Visit Samadhan →](https://hack-in-motion-ricr-him-1050.vercel.app/)**
+**[Visit Samadhan →](https://hack-in-motion-ricr-him-1050.vercel.app/)**  
+`https://hack-in-motion-ricr-him-1050.vercel.app/`
 
 ---
 
