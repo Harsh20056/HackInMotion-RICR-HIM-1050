@@ -145,7 +145,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
   return (
     <header
       ref={ref}
-      className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border"
+      className="fixed top-0 left-0 right-0 z-[1050] bg-card/80 backdrop-blur-xl border-b border-border"
       {...props}
     >
       <div className="container mx-auto px-4">
