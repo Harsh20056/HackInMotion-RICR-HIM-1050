@@ -33,7 +33,7 @@ export function createApp() {
         }
       },
       credentials: true,
-    }),
+    })
   );
   app.use(express.json());
   app.use(pinoHttp({ logger }));
