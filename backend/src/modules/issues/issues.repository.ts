@@ -27,6 +27,10 @@ export interface IssueRow {
   closed_at: Date | null;
 }
 
+export interface NearbyIssueRow extends IssueRow {
+  distance_m: number;
+}
+
 const ISSUE_SELECT = Prisma.sql`
   SELECT
     i.id, i.public_ref, i.title, i.description, i.status, i.address, i.city, i.priority,
@@ -41,36 +45,36 @@ const ISSUE_SELECT = Prisma.sql`
 `;
 
 export const issuesRepository = {
-  async findDedupCandidate(params: {
-    categoryId: string;
+  async findNearbyUnresolved(params: {
     latitude: number;
     longitude: number;
     radiusM: number;
-    windowHours: number;
-  }): Promise<{ id: string; title: string; publicRef: string; distanceM: number } | null> {
-    const rows = await prisma.$queryRaw<
-      { id: string; title: string; public_ref: string; distance_m: number }[]
-    >(
+  }): Promise<NearbyIssueRow[]> {
+    return prisma.$queryRaw<NearbyIssueRow[]>(
       Prisma.sql`
-        SELECT id, title, public_ref,
-               ST_Distance(location, ST_SetSRID(ST_MakePoint(${params.longitude}, ${params.latitude}), 4326)::geography) AS distance_m
-        FROM issues
-        WHERE category_id = ${params.categoryId}::uuid
-          AND status NOT IN ('resolved', 'rejected', 'closed')
-          AND created_at >= NOW() - (${params.windowHours} || ' hours')::interval
+        SELECT
+          i.id, i.public_ref, i.title, i.description, i.status, i.address, i.city, i.priority,
+          i.reported_by, i.supports_count, i.resolution_note,
+          i.created_at, i.acknowledged_at, i.resolved_at, i.verified_at, i.closed_at,
+          ST_Y(i.location::geometry) AS latitude,
+          ST_X(i.location::geometry) AS longitude,
+          c.code AS category_code,
+          c.name_en AS category_name_en,
+          ST_Distance(
+            i.location::geography,
+            ST_SetSRID(ST_MakePoint(${params.longitude}, ${params.latitude}), 4326)::geography
+          ) AS distance_m
+        FROM issues i
+        JOIN issue_categories c ON c.id = i.category_id
+        WHERE i.status NOT IN ('resolved', 'verified', 'rejected', 'closed')
           AND ST_DWithin(
-                location,
+                i.location::geography,
                 ST_SetSRID(ST_MakePoint(${params.longitude}, ${params.latitude}), 4326)::geography,
                 ${params.radiusM}
               )
         ORDER BY distance_m ASC
-        LIMIT 1
       `
     );
-
-    if (rows.length === 0) return null;
-    const row = rows[0];
-    return { id: row.id, title: row.title, publicRef: row.public_ref, distanceM: Number(row.distance_m) };
   },
 
   /** Inserts the issues row (raw SQL — Prisma can't write an Unsupported geography column). */

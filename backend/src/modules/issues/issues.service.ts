@@ -8,6 +8,17 @@ import { cityFromLocation } from "../../shared/lib/cityFromLocation.js";
 import { slaService } from "../sla/sla.service.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 import { enqueueAi } from "../../jobs/scheduler.js";
+import { complete } from "../ai/providers/index.js";
+import {
+  DEDUPLICATION_JSON_SCHEMA,
+  DEDUPLICATION_SYSTEM,
+  DEDUPLICATION_VERSION,
+  deduplicationSchema,
+  deduplicationUser,
+} from "../ai/prompts/index.js";
+import { logger } from "../../shared/lib/logger.js";
+
+const DEDUP_RADIUS_M = 10;
 
 function toApiIssue(row: IssueRow) {
   return {
@@ -53,6 +64,80 @@ async function withMedia(rows: IssueRow[]) {
   return rows.map((row) => ({ ...toApiIssue(row), media: byIssue.get(row.id) ?? [] }));
 }
 
+async function findAiDuplicateCandidate(input: CreateIssueInput) {
+  const candidates = await issuesRepository.findNearbyUnresolved({
+    latitude: input.latitude,
+    longitude: input.longitude,
+    radiusM: DEDUP_RADIUS_M,
+  });
+  if (candidates.length === 0) return null;
+
+  const media = await prisma.issueMedia.findMany({
+    where: { issueId: { in: candidates.map((c) => c.id) }, kind: "evidence" },
+    orderBy: { createdAt: "asc" },
+  });
+  const mediaByIssue = new Map<string, string[]>();
+  for (const item of media) {
+    const urls = mediaByIssue.get(item.issueId) ?? [];
+    urls.push(item.url);
+    mediaByIssue.set(item.issueId, urls);
+  }
+
+  for (const candidate of candidates) {
+    const existingImageUrls = mediaByIssue.get(candidate.id) ?? [];
+    const images = [
+      ...(input.imageUrls ?? []).map((url) => ({ url })),
+      ...existingImageUrls.map((url) => ({ url })),
+    ];
+
+    try {
+      const { data } = await complete(
+        {
+          kind: "deduplication",
+          promptVersion: DEDUPLICATION_VERSION,
+          system: DEDUPLICATION_SYSTEM,
+          user: deduplicationUser({
+            newComplaint: {
+              title: input.title,
+              description: input.description,
+              category: input.categoryCode,
+            },
+            existingComplaint: {
+              publicRef: candidate.public_ref,
+              title: candidate.title,
+              description: candidate.description,
+              category: candidate.category_code,
+              distanceM: Number(candidate.distance_m),
+            },
+            newImageCount: input.imageUrls?.length ?? 0,
+            existingImageCount: existingImageUrls.length,
+          }),
+          images: images.length > 0 ? images : undefined,
+          jsonSchema: DEDUPLICATION_JSON_SCHEMA,
+          entityType: "issue",
+          entityId: candidate.id,
+        },
+        deduplicationSchema
+      );
+
+      if (data.is_duplicate) {
+        return {
+          id: candidate.id,
+          title: candidate.title,
+          publicRef: candidate.public_ref,
+          distanceM: Number(candidate.distance_m),
+          message: "This looks similar to an already reported issue. Is this the same?",
+          ai: data,
+        };
+      }
+    } catch (err) {
+      logger.warn({ err, candidateId: candidate.id }, "AI deduplication comparison failed");
+    }
+  }
+
+  return null;
+}
+
 export const issuesService = {
   async list(filters: ListIssuesQuery) {
     const { rows, total } = await issuesRepository.list(filters);
@@ -86,8 +171,9 @@ export const issuesService = {
   /**
    * The core reporting pipeline:
    *  1. resolve category (FK lookup by code)
-   *  2. PostGIS dedup check within the category's radius + time window
-   *  3. if a candidate exists, return it for citizen confirmation — no insert
+   *  2. PostGIS fetch of unresolved complaints within 10 meters
+   *  3. AI compares nearby descriptions/photos; duplicate=true returns a
+   *     confirmation warning — no insert
    *  4. otherwise, create the issue + primary report + work orders (from
    *     category_department_rules, data-driven, no if/else chains) +
    *     the initial status_history entry, all in one transaction
@@ -97,13 +183,7 @@ export const issuesService = {
     if (!category || !category.active) throw new ValidationError(`Unknown category: ${input.categoryCode}`);
 
     if (!input.force) {
-      const dedupCandidate = await issuesRepository.findDedupCandidate({
-        categoryId: category.id,
-        latitude: input.latitude,
-        longitude: input.longitude,
-        radiusM: category.dedupRadiusM,
-        windowHours: category.dedupWindowHours,
-      });
+      const dedupCandidate = await findAiDuplicateCandidate(input);
 
       if (dedupCandidate) {
         return { duplicateCandidate: dedupCandidate };
