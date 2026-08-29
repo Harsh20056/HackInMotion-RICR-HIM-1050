@@ -22,7 +22,7 @@ export async function startScheduler(): Promise<PgBoss | null> {
     return null;
   }
 
-  let connectionString = (env.DIRECT_URL && env.DIRECT_URL.length > 0) ? env.DIRECT_URL : env.DATABASE_URL;
+  let connectionString = env.DIRECT_URL && env.DIRECT_URL.length > 0 ? env.DIRECT_URL : env.DATABASE_URL;
   connectionString = connectionString.replace(/([?&])channel_binding=[^&]*&?/g, "$1").replace(/[?&]$/, "");
 
   boss = new PgBoss({
@@ -40,26 +40,26 @@ export async function startScheduler(): Promise<PgBoss | null> {
     await boss.createQueue(NOTIFY_QUEUE);
     await boss.createQueue(AI_QUEUE);
 
-  await boss.work(SLA_QUEUE, async () => {
-    await runSlaSweep();
-  });
-  await boss.work(NOTIFY_QUEUE, async () => {
-    await runNotificationDispatch();
-  });
-  // On demand, not scheduled: enqueued by the request path so the caller
-  // never waits on a model.
-  await boss.work<AiJob>(AI_QUEUE, async ([job]) => {
-    await runAiJob(job.data);
-  });
+    await boss.work(SLA_QUEUE, async () => {
+      await runSlaSweep();
+    });
+    await boss.work(NOTIFY_QUEUE, async () => {
+      await runNotificationDispatch();
+    });
+    // On demand, not scheduled: enqueued by the request path so the caller
+    // never waits on a model.
+    await boss.work<AiJob>(AI_QUEUE, async ([job]) => {
+      await runAiJob(job.data);
+    });
 
-  // Detect SLA breaches every 5 minutes; drain the notification queue every
-  // minute so the bell feels responsive.
-  await boss.schedule(SLA_QUEUE, "*/5 * * * *");
-  await boss.schedule(NOTIFY_QUEUE, "* * * * *");
+    // Detect SLA breaches every 5 minutes; drain the notification queue every
+    // minute so the bell feels responsive.
+    await boss.schedule(SLA_QUEUE, "*/5 * * * *");
+    await boss.schedule(NOTIFY_QUEUE, "* * * * *");
 
-  // Don't make the first sweep wait for the first cron tick.
-  await boss.send(SLA_QUEUE, {});
-  await boss.send(NOTIFY_QUEUE, {});
+    // Don't make the first sweep wait for the first cron tick.
+    await boss.send(SLA_QUEUE, {});
+    await boss.send(NOTIFY_QUEUE, {});
 
     logger.info("Scheduler started: SLA sweep every 5m, notification dispatch every 1m");
     return boss;
