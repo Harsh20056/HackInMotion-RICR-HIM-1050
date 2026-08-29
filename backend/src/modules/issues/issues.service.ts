@@ -128,6 +128,9 @@ async function findAiDuplicateCandidate(input: CreateIssueInput, dedupRadiusM: n
             message: "This looks similar to an already reported issue. Is this the same?",
             ai: data,
           };
+        } else {
+          // AI explicitly determined this candidate is NOT a duplicate. Skip heuristic fallback for this candidate.
+          continue;
         }
       } catch (err) {
         logger.warn({ err, candidateId: candidate.id }, "AI deduplication comparison failed");
