@@ -8,7 +8,7 @@ import { cityFromLocation } from "../../shared/lib/cityFromLocation.js";
 import { slaService } from "../sla/sla.service.js";
 import { notificationsService } from "../notifications/notifications.service.js";
 import { enqueueAi } from "../../jobs/scheduler.js";
-import { complete } from "../ai/providers/index.js";
+import { complete, aiEnabled } from "../ai/providers/index.js";
 import {
   DEDUPLICATION_JSON_SCHEMA,
   DEDUPLICATION_SYSTEM,
@@ -17,8 +17,6 @@ import {
   deduplicationUser,
 } from "../ai/prompts/index.js";
 import { logger } from "../../shared/lib/logger.js";
-
-const DEDUP_RADIUS_M = 10;
 
 function toApiIssue(row: IssueRow) {
   return {
@@ -64,11 +62,11 @@ async function withMedia(rows: IssueRow[]) {
   return rows.map((row) => ({ ...toApiIssue(row), media: byIssue.get(row.id) ?? [] }));
 }
 
-async function findAiDuplicateCandidate(input: CreateIssueInput) {
+async function findAiDuplicateCandidate(input: CreateIssueInput, dedupRadiusM: number = 100) {
   const candidates = await issuesRepository.findNearbyUnresolved({
     latitude: input.latitude,
     longitude: input.longitude,
-    radiusM: DEDUP_RADIUS_M,
+    radiusM: dedupRadiusM,
   });
   if (candidates.length === 0) return null;
 
@@ -90,48 +88,75 @@ async function findAiDuplicateCandidate(input: CreateIssueInput) {
       ...existingImageUrls.map((url) => ({ url })),
     ];
 
-    try {
-      const { data } = await complete(
-        {
-          kind: "deduplication",
-          promptVersion: DEDUPLICATION_VERSION,
-          system: DEDUPLICATION_SYSTEM,
-          user: deduplicationUser({
-            newComplaint: {
-              title: input.title,
-              description: input.description,
-              category: input.categoryCode,
-            },
-            existingComplaint: {
-              publicRef: candidate.public_ref,
-              title: candidate.title,
-              description: candidate.description,
-              category: candidate.category_code,
-              distanceM: Number(candidate.distance_m),
-            },
-            newImageCount: input.imageUrls?.length ?? 0,
-            existingImageCount: existingImageUrls.length,
-          }),
-          images: images.length > 0 ? images : undefined,
-          jsonSchema: DEDUPLICATION_JSON_SCHEMA,
-          entityType: "issue",
-          entityId: candidate.id,
-        },
-        deduplicationSchema
-      );
+    if (aiEnabled()) {
+      try {
+        const { data } = await complete(
+          {
+            kind: "deduplication",
+            promptVersion: DEDUPLICATION_VERSION,
+            system: DEDUPLICATION_SYSTEM,
+            user: deduplicationUser({
+              newComplaint: {
+                title: input.title,
+                description: input.description,
+                category: input.categoryCode,
+              },
+              existingComplaint: {
+                publicRef: candidate.public_ref,
+                title: candidate.title,
+                description: candidate.description,
+                category: candidate.category_code,
+                distanceM: Number(candidate.distance_m),
+              },
+              newImageCount: input.imageUrls?.length ?? 0,
+              existingImageCount: existingImageUrls.length,
+            }),
+            images: images.length > 0 ? images : undefined,
+            jsonSchema: DEDUPLICATION_JSON_SCHEMA,
+            entityType: "issue",
+            entityId: candidate.id,
+          },
+          deduplicationSchema
+        );
 
-      if (data.is_duplicate) {
-        return {
-          id: candidate.id,
-          title: candidate.title,
-          publicRef: candidate.public_ref,
-          distanceM: Number(candidate.distance_m),
-          message: "This looks similar to an already reported issue. Is this the same?",
-          ai: data,
-        };
+        if (data.is_duplicate) {
+          return {
+            id: candidate.id,
+            title: candidate.title,
+            publicRef: candidate.public_ref,
+            distanceM: Number(candidate.distance_m),
+            message: "This looks similar to an already reported issue. Is this the same?",
+            ai: data,
+          };
+        }
+      } catch (err) {
+        logger.warn({ err, candidateId: candidate.id }, "AI deduplication comparison failed");
       }
-    } catch (err) {
-      logger.warn({ err, candidateId: candidate.id }, "AI deduplication comparison failed");
+    }
+
+    // Heuristic fallback: if AI is disabled, fails, or evaluates false but proximity/category matches
+    const distanceM = Number(candidate.distance_m);
+    const categoryMatches = candidate.category_code.toLowerCase() === input.categoryCode.toLowerCase();
+
+    const extractWords = (str: string) =>
+      str
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(/\s+/)
+        .filter((w) => w.length > 3);
+
+    const newWords = new Set([...extractWords(input.title), ...extractWords(input.description)]);
+    const existingWords = new Set([...extractWords(candidate.title), ...extractWords(candidate.description)]);
+    const commonWords = [...newWords].filter((w) => existingWords.has(w));
+
+    if ((categoryMatches && distanceM <= dedupRadiusM) || distanceM <= 30 || commonWords.length >= 1) {
+      return {
+        id: candidate.id,
+        title: candidate.title,
+        publicRef: candidate.public_ref,
+        distanceM,
+        message: "A similar issue was already reported nearby. Is this the same issue?",
+      };
     }
   }
 
@@ -171,19 +196,17 @@ export const issuesService = {
   /**
    * The core reporting pipeline:
    *  1. resolve category (FK lookup by code)
-   *  2. PostGIS fetch of unresolved complaints within 10 meters
-   *  3. AI compares nearby descriptions/photos; duplicate=true returns a
+   *  2. PostGIS fetch of unresolved complaints within category dedupRadiusM (default 100 meters)
+   *  3. AI / spatial heuristic compares nearby complaints; duplicate candidate returns a
    *     confirmation warning — no insert
-   *  4. otherwise, create the issue + primary report + work orders (from
-   *     category_department_rules, data-driven, no if/else chains) +
-   *     the initial status_history entry, all in one transaction
+   *  4. otherwise, create the issue + primary report + work orders + initial status_history entry
    */
   async create(input: CreateIssueInput, reporterId: string) {
     const category = await prisma.issueCategory.findUnique({ where: { code: input.categoryCode } });
     if (!category || !category.active) throw new ValidationError(`Unknown category: ${input.categoryCode}`);
 
     if (!input.force) {
-      const dedupCandidate = await findAiDuplicateCandidate(input);
+      const dedupCandidate = await findAiDuplicateCandidate(input, category.dedupRadiusM ?? 100);
 
       if (dedupCandidate) {
         return { duplicateCandidate: dedupCandidate };
