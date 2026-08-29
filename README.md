@@ -12,6 +12,11 @@
 
 > A production-grade, full-stack civic intelligence platform that transforms municipal complaint management into an accountable, spatially deduplicated, multi-department resolution pipeline.
 
+### 🌐 Live Demo
+
+**[Visit Samadhan →](https://hack-in-motion-ricr-him-1050.vercel.app/)**  
+`https://hack-in-motion-ricr-him-1050.vercel.app/`
+
 ---
 
 ## Table of Contents

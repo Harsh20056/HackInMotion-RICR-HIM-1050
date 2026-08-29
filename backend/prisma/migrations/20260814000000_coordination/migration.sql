@@ -57,9 +57,9 @@ CREATE TABLE "work_order_dependencies" (
     -- A work order can never depend on itself.
     CONSTRAINT "work_order_dependencies_no_self" CHECK ("predecessor_id" <> "successor_id")
 );
-CREATE UNIQUE INDEX "work_order_dependencies_pair_key"
+CREATE UNIQUE INDEX "work_order_dependencies_predecessor_id_successor_id_key"
     ON "work_order_dependencies"("predecessor_id", "successor_id");
-CREATE INDEX "work_order_dependencies_successor_idx" ON "work_order_dependencies"("successor_id");
+CREATE INDEX "work_order_dependencies_successor_id_idx" ON "work_order_dependencies"("successor_id");
 ALTER TABLE "work_order_dependencies" ADD CONSTRAINT "work_order_dependencies_predecessor_id_fkey"
     FOREIGN KEY ("predecessor_id") REFERENCES "work_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "work_order_dependencies" ADD CONSTRAINT "work_order_dependencies_successor_id_fkey"
@@ -101,7 +101,7 @@ CREATE TABLE "work_order_transfers" (
     CONSTRAINT "work_order_transfers_distinct_depts" CHECK ("from_department_id" <> "to_department_id")
 );
 CREATE INDEX "work_order_transfers_work_order_id_idx" ON "work_order_transfers"("work_order_id");
-CREATE INDEX "work_order_transfers_to_department_status_idx"
+CREATE INDEX "work_order_transfers_to_department_id_status_idx"
     ON "work_order_transfers"("to_department_id", "status");
 ALTER TABLE "work_order_transfers" ADD CONSTRAINT "work_order_transfers_work_order_id_fkey"
     FOREIGN KEY ("work_order_id") REFERENCES "work_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -128,7 +128,7 @@ CREATE TABLE "escalations" (
     CONSTRAINT "escalations_pkey" PRIMARY KEY ("id")
 );
 -- One escalation per work order per level; the sweeper is idempotent.
-CREATE UNIQUE INDEX "escalations_work_order_level_key" ON "escalations"("work_order_id", "level");
+CREATE UNIQUE INDEX "escalations_work_order_id_level_key" ON "escalations"("work_order_id", "level");
 CREATE INDEX "escalations_created_at_idx" ON "escalations"("created_at");
 ALTER TABLE "escalations" ADD CONSTRAINT "escalations_work_order_id_fkey"
     FOREIGN KEY ("work_order_id") REFERENCES "work_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -149,7 +149,7 @@ CREATE TABLE "notifications" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
-CREATE INDEX "notifications_recipient_read_idx" ON "notifications"("recipient_id", "read_at");
+CREATE INDEX "notifications_recipient_id_read_at_idx" ON "notifications"("recipient_id", "read_at");
 CREATE INDEX "notifications_status_idx" ON "notifications"("status");
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_fkey"
     FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -171,3 +171,13 @@ CREATE TABLE "notification_preferences" (
 CREATE UNIQUE INDEX "notification_preferences_user_id_key" ON "notification_preferences"("user_id");
 ALTER TABLE "notification_preferences" ADD CONSTRAINT "notification_preferences_user_id_fkey"
     FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Drop gen_random_uuid() defaults from tables created in this migration
+-- (Prisma manages IDs in the application layer from this migration onward).
+ALTER TABLE "sla_policies" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "work_order_dependencies" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "work_order_notes" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "work_order_transfers" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "escalations" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "notifications" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "notification_preferences" ALTER COLUMN "id" DROP DEFAULT;

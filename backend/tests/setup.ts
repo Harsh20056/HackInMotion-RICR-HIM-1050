@@ -17,4 +17,5 @@ if (testUrl === process.env.DATABASE_URL) {
 }
 
 process.env.DATABASE_URL = testUrl;
+process.env.DIRECT_URL = testUrl;
 process.env.NODE_ENV = "test";
