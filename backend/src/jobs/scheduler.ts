@@ -22,15 +22,23 @@ export async function startScheduler(): Promise<PgBoss | null> {
     return null;
   }
 
-  boss = new PgBoss({ connectionString: env.DATABASE_URL, schema: "pgboss" });
+  let connectionString = (env.DIRECT_URL && env.DIRECT_URL.length > 0) ? env.DIRECT_URL : env.DATABASE_URL;
+  connectionString = connectionString.replace(/([?&])channel_binding=[^&]*&?/g, "$1").replace(/[?&]$/, "");
+
+  boss = new PgBoss({
+    connectionString,
+    schema: "pgboss",
+    ssl: { rejectUnauthorized: false },
+  });
 
   boss.on("error", (err: unknown) => logger.error({ err }, "pg-boss error"));
 
-  await boss.start();
+  try {
+    await boss.start();
 
-  await boss.createQueue(SLA_QUEUE);
-  await boss.createQueue(NOTIFY_QUEUE);
-  await boss.createQueue(AI_QUEUE);
+    await boss.createQueue(SLA_QUEUE);
+    await boss.createQueue(NOTIFY_QUEUE);
+    await boss.createQueue(AI_QUEUE);
 
   await boss.work(SLA_QUEUE, async () => {
     await runSlaSweep();
@@ -53,8 +61,12 @@ export async function startScheduler(): Promise<PgBoss | null> {
   await boss.send(SLA_QUEUE, {});
   await boss.send(NOTIFY_QUEUE, {});
 
-  logger.info("Scheduler started: SLA sweep every 5m, notification dispatch every 1m");
-  return boss;
+    logger.info("Scheduler started: SLA sweep every 5m, notification dispatch every 1m");
+    return boss;
+  } catch (err) {
+    logger.error({ err }, "Failed to start background scheduler");
+    return null;
+  }
 }
 
 /**
