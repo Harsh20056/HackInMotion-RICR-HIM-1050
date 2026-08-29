@@ -96,7 +96,9 @@ describe("issue dedup + routing pipeline", () => {
     expect(res.status).toBe(200);
     expect(res.body.duplicateCandidate).toBeTruthy();
     expect(res.body.duplicateCandidate.id).toBe(existingIssueId);
-    expect(res.body.duplicateCandidate.message).toBe("This looks similar to an already reported issue. Is this the same?");
+    expect(res.body.duplicateCandidate.message).toBe(
+      "This looks similar to an already reported issue. Is this the same?"
+    );
     expect(res.body.duplicateCandidate.ai).toEqual({
       is_duplicate: true,
       confidence_score: 91,
