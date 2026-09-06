@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient, Prisma } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { addMinutes } from "../src/modules/sla/sla.service.js";
 
 /**
@@ -136,10 +137,12 @@ async function seedCompoundDemo() {
   ]);
 
   const createdAt = new Date(Date.now() - 5 * 24 * 3600 * 1000);
+  const newIssueId = randomUUID();
 
   const [{ id: issueId }] = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    INSERT INTO issues (public_ref, title, description, category_id, status, priority, reported_by, address, city, location, created_at)
+    INSERT INTO issues (id, public_ref, title, description, category_id, status, priority, reported_by, address, city, location, created_at)
     VALUES (
+      ${newIssueId}::uuid,
       ${DEMO_REF},
       ${"Road collapsed over a leaking water main"},
       ${"The road surface has caved in above a burst pipe. The leak has to be fixed before the road can be repaved, otherwise the new surface will simply collapse again."},

@@ -195,7 +195,68 @@ export const categoriseSchema = z.object({
 });
 export type CategoriseResult = z.infer<typeof categoriseSchema>;
 
-// ── 5. Government form analyzer ─────────────────────────────────────────────
+// ── 5. Nearby complaint deduplication ─────────────────────────────────────
+
+export const DEDUPLICATION_VERSION = "deduplication@v1";
+
+export const DEDUPLICATION_SYSTEM = `You are an expert civic infrastructure inspector and deduplication AI.
+
+Compare a NEW user-submitted complaint against an EXISTING unresolved complaint reported in the same 10-meter radius. Determine if they depict the same physical, real-world issue to prevent duplicate dispatching.
+
+Guidelines:
+1. Visual Variables: Account for different lighting, camera angles, zoom levels, and weather conditions. The same pothole can look different from two distinct angles.
+2. Semantic Matching: Users describe things differently. "Water leaking from the road" and "Broken underground pipe" might be the same issue.
+3. Proximity vs. Identity: Nearby does not mean identical. A broken streetlamp and a pothole directly under it are separate issues.
+
+Respond ONLY with a raw JSON object using the exact schema. Do not include markdown formatting or conversational text.`;
+
+export function deduplicationUser(input: {
+  newComplaint: { title: string; description: string; category: string };
+  existingComplaint: {
+    publicRef: string;
+    title: string;
+    description: string;
+    category: string;
+    distanceM: number;
+  };
+  newImageCount: number;
+  existingImageCount: number;
+}) {
+  return `NEW COMPLAINT:
+Title: ${input.newComplaint.title}
+Category: ${input.newComplaint.category}
+Description: ${input.newComplaint.description}
+
+EXISTING COMPLAINT:
+Reference: ${input.existingComplaint.publicRef}
+Title: ${input.existingComplaint.title}
+Category: ${input.existingComplaint.category}
+Description: ${input.existingComplaint.description}
+Distance from new complaint: ${input.existingComplaint.distanceM.toFixed(2)} meters
+
+Attached images: first ${input.newImageCount} image(s) belong to the new complaint; next ${input.existingImageCount} image(s) belong to the existing complaint.
+
+Are these the same physical, real-world issue?`;
+}
+
+export const DEDUPLICATION_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    is_duplicate: { type: "boolean" },
+    confidence_score: { type: "integer", minimum: 0, maximum: 100 },
+    reasoning: { type: "string" },
+  },
+  required: ["is_duplicate", "confidence_score", "reasoning"],
+};
+
+export const deduplicationSchema = z.object({
+  is_duplicate: z.boolean(),
+  confidence_score: z.number().int().min(0).max(100),
+  reasoning: z.string().min(1),
+});
+export type DeduplicationResult = z.infer<typeof deduplicationSchema>;
+
+// ── 6. Government form analyzer ─────────────────────────────────────────────
 
 export const FORM_ANALYZER_VERSION = "form_analyzer@v1";
 
@@ -501,3 +562,4 @@ export const formAnalyzerSchema = z.object({
 });
 
 export type FormAnalyzerResult = z.infer<typeof formAnalyzerSchema>;
+
