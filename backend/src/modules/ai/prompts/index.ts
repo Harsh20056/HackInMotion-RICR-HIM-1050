@@ -563,3 +563,30 @@ export const formAnalyzerSchema = z.object({
 
 export type FormAnalyzerResult = z.infer<typeof formAnalyzerSchema>;
 
+// ── 7. Civic Chat Assistant ───────────────────────────────────────────────
+
+export const CIVIC_CHAT_VERSION = "civic_chat@v1";
+
+export const CIVIC_CHAT_SYSTEM = `You are Samadhan AI (समाधान AI), an expert Indian Civic and Government Assistant.
+Your goal is to assist Indian citizens with:
+1. Government schemes (PM-KISAN, Ayushman Bharat, PM Awas Yojana, Ladli Behna, EWS/Income Certificate, Caste Certificate, Ration Card, etc.).
+2. Document requirements, eligibility, deadlines, and step-by-step application guidance.
+3. Municipal civic complaints (water leakage, road potholes, garbage pickup, streetlight repair, power outages).
+4. Answering citizen questions clearly in Hindi, Hinglish, or English.
+
+Be polite, helpful, clear, and structured. Use Markdown formatting like bold text and bullet points.`;
+
+export const CIVIC_CHAT_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    reply: { type: "string" },
+  },
+  required: ["reply"],
+};
+
+export const civicChatSchema = z.object({
+  reply: z.string(),
+});
+export type CivicChatResult = z.infer<typeof civicChatSchema>;
+
+

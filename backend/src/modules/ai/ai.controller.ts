@@ -13,7 +13,8 @@ import { categoriseService } from "./categorise.service.js";
 import { hotspotsService } from "./hotspots.service.js";
 import { visionService } from "./vision.service.js";
 import { formAnalyzerService } from "./form-analyzer.service.js";
-import { aiEnabled, visionEnabled } from "./providers/index.js";
+import { aiEnabled, visionEnabled, complete } from "./providers/index.js";
+import { CIVIC_CHAT_VERSION, CIVIC_CHAT_SYSTEM, CIVIC_CHAT_JSON_SCHEMA, civicChatSchema } from "./prompts/index.js";
 
 export const aiRouter = Router();
 
@@ -246,19 +247,30 @@ aiRouter.post("/tts", async (req, res, next) => {
       remaining = remaining.slice(splitIdx + 1).trim();
     }
 
-    const audioBuffers: Buffer[] = [];
-    for (const chunk of chunks.slice(0, 10)) {
-      if (!chunk) continue;
+    const targetChunks = chunks.slice(0, 5);
+    const audioPromises = targetChunks.map(async (chunk) => {
+      if (!chunk) return null;
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
-      const audioRes = await fetch(ttsUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        },
-      });
-      if (audioRes.ok) {
-        audioBuffers.push(Buffer.from(await audioRes.arrayBuffer()));
+      try {
+        const audioRes = await fetch(ttsUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+        });
+        if (audioRes.ok) {
+          return Buffer.from(await audioRes.arrayBuffer());
+        }
+      } catch {
+        return null;
       }
+      return null;
+    });
+
+    const results = await Promise.all(audioPromises);
+    const audioBuffers: Buffer[] = [];
+    for (const b of results) {
+      if (b) audioBuffers.push(b);
     }
 
     if (audioBuffers.length === 0) {
@@ -274,3 +286,85 @@ aiRouter.post("/tts", async (req, res, next) => {
     next(err);
   }
 });
+
+// ── Civic AI Chat ─────────────────────────────────────────────────────────
+
+const chatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1),
+});
+
+const chatSchema = z.object({
+  messages: z.array(chatMessageSchema).min(1),
+  language: z.string().optional(),
+});
+
+aiRouter.post("/chat", async (req, res, next) => {
+  try {
+    const { messages, language } = chatSchema.parse(req.body);
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content || "";
+    const lang = language === "hi" ? "hi" : "en";
+
+    if (aiEnabled()) {
+      try {
+        const historyText = messages
+          .slice(-6)
+          .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+          .join("\n");
+
+        const result = await complete(
+          {
+            kind: "civic_chat",
+            promptVersion: CIVIC_CHAT_VERSION,
+            system: CIVIC_CHAT_SYSTEM,
+            user: `Language preference: ${lang === "hi" ? "Hindi/Hinglish" : "English"}\n\nConversation history:\n${historyText}\n\nUser Question: ${lastUserMsg}`,
+            jsonSchema: CIVIC_CHAT_JSON_SCHEMA,
+          },
+          civicChatSchema,
+          { preferFast: true }
+        );
+
+        res.json({ reply: result.data.reply });
+        return;
+      } catch (aiErr) {
+        // Fallback to intelligent local response on provider outage
+      }
+    }
+
+    // Smart Local Fallback Assistant
+    let reply = "";
+    const lower = lastUserMsg.toLowerCase();
+
+    if (lower.includes("document") || lower.includes("दस्तावेज़") || lower.includes("कागज़")) {
+      reply =
+        lang === "hi"
+          ? "📋 **सामान्य आवश्यक दस्तावेज़ (Required Documents):**\n1. आधार कार्ड (Aadhaar Card)\n2. निवास प्रमाण पत्र (Proof of Residence / Address Proof)\n3. आय प्रमाण पत्र (Income Certificate - यदि लागू हो)\n4. हाल की पासपोर्ट फोटो (Recent Passport Photo)\n5. बैंक पासबुक की प्रति (Bank Passbook Copy)"
+          : "📋 **Standard Required Documents:**\n1. Aadhaar Card / Identity Proof\n2. Proof of Residence (Voter ID, Utility Bill, Electricity Bill)\n3. Income Certificate (if applying for means-tested schemes)\n4. Passport-sized Photographs\n5. Bank Passbook Copy (for direct benefit transfer)";
+    } else if (lower.includes("mandatory") || lower.includes("जरूरी") || lower.includes("आवश्यक")) {
+      reply =
+        lang === "hi"
+          ? "⚠️ **अनिवार्य फ़ील्ड (Mandatory Fields):**\n- आवेदक का पूरा नाम (Full Name)\n- आधार नंबर / पहचान संख्या (Aadhaar Number)\n- मोबाइल नंबर (Mobile Number)\n- स्थायी पता (Permanent Address)\n- बैंक खाता विवरण (Bank Details)"
+          : "⚠️ **Mandatory Fields:**\n- Full Name of Applicant\n- Aadhaar Number / National ID\n- Active Mobile Number\n- Residential Address\n- Bank Account & IFSC Code";
+    } else if (lower.includes("eligible") || lower.includes("पात्र") || lower.includes("योग्यता")) {
+      reply =
+        lang === "hi"
+          ? "✅ **पात्रता मानदंड (Eligibility Criteria):**\n- आवेदक भारत का नागरिक होना चाहिए।\n- आयु और आय सीमा योजना के अनुसार (उदा. EWS के लिए ₹8 लाख/वर्ष से कम)।\n- सभी आवश्यक दस्तावेज़ सही और सत्यापित होने चाहिए।"
+          : "✅ **General Eligibility Criteria:**\n- Must be an Indian citizen / resident of the respective state.\n- Meets age and annual income thresholds (e.g. < ₹8 Lakh/year for EWS).\n- Valid identity proof and verified bank account.";
+    } else if (lower.includes("deadline") || lower.includes("अंतिम तिथि") || lower.includes("लास्ट डेट")) {
+      reply =
+        lang === "hi"
+          ? "📅 **आवेदन की अंतिम तिथि (Submission Deadline):**\nसरकारी योजनाओं की अंतिम तिथि विभाग द्वारा तय की जाती है। यदि आप फॉर्म अपलोड करते हैं, तो Samadhan AI फॉर्म से सटीक अंतिम तिथि निकालकर बता देता है!"
+          : "📅 **Submission Deadline:**\nDeadlines depend on the specific scheme or municipal order. You can also upload your application form in the Form Analyzer section, and Samadhan AI will automatically scan and display the deadline!";
+    } else {
+      reply =
+        lang === "hi"
+          ? `नमस्कार! समाधान AI नागरिक सहायक में आपका स्वागत है। आपने पूछा: "${lastUserMsg}".\n\nमैं आपकी सरकारी योजनाओं, आवश्यक दस्तावेज़ों, आवेदन प्रक्रियाओं तथा नगर निगम समस्याओं (सड़क, पानी, बिजली) में सहायता कर सकता हूँ। आप अपना फॉर्म ऊपर अपलोड करके भी संपूर्ण विवरण प्राप्त कर सकते हैं!`
+          : `Hello! Welcome to Samadhan AI Civic Assistant. Regarding: "${lastUserMsg}".\n\nI can guide you through government schemes, document requirements, eligibility, and municipal issue tracking. You can also upload any government application form above for automated AI analysis!`;
+    }
+
+    res.json({ reply });
+  } catch (err) {
+    next(err);
+  }
+});
+

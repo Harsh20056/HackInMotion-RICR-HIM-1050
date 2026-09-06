@@ -124,6 +124,7 @@ export function AnalyzerAndAssistant() {
 
     await aiService.streamChat({
       messages: [...messages, userMsg],
+      language,
       onDelta: (chunk) => {
         assistantText += chunk;
         setMessages((prev) => {
@@ -136,9 +137,9 @@ export function AnalyzerAndAssistant() {
         });
       },
       onDone: () => setIsChatLoading(false),
-      onError: () => {
+      onError: (errMsg) => {
         setIsChatLoading(false);
-        toast({ title: "Error", description: "Try again" });
+        toast({ title: "Error", description: errMsg || "Try again" });
       },
     });
   };
@@ -310,6 +311,9 @@ export function AnalyzerAndAssistant() {
   const runAnalysis = async () => {
     if (!file) return;
 
+    let t1: ReturnType<typeof setTimeout> | undefined;
+    let t2: ReturnType<typeof setTimeout> | undefined;
+
     try {
       // If PDF, show converting status first (PDF.js rasterization happens inside analyzeFormDirect)
       if (file.type === "application/pdf") {
@@ -319,13 +323,20 @@ export function AnalyzerAndAssistant() {
 
       setStatus("classifying");
 
-      // Simulate pipeline transitions
-      setTimeout(() => setStatus("retrieving"), 2000);
-      setTimeout(() => setStatus("generating"), 3500);
+      // Safely transition status only if analysis is still in progress
+      t1 = setTimeout(() => {
+        setStatus((curr) => (curr === "classifying" ? "retrieving" : curr));
+      }, 1500);
+
+      t2 = setTimeout(() => {
+        setStatus((curr) => (curr === "retrieving" ? "generating" : curr));
+      }, 3000);
 
       const result = await aiService.analyzeFormDirect(file, formQuery, guidanceLang);
 
-      setStatus("done");
+      if (t1) clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+
       setAnalysisResult(result);
 
       if (result.status === "rejected") {
@@ -338,6 +349,7 @@ export function AnalyzerAndAssistant() {
         setStatus("error");
         setErrorMessage(result.reason || "Unknown error occurred.");
       } else {
+        setStatus("done");
         setActiveTab("summary");
       }
 
@@ -349,6 +361,9 @@ export function AnalyzerAndAssistant() {
             : "Your form guidance is ready.",
       });
     } catch (err) {
+      if (t1) clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+
       console.error(err);
       setStatus("error");
       setErrorMessage(getErrorMessage(err, "Something went wrong during analysis."));
@@ -394,145 +409,116 @@ export function AnalyzerAndAssistant() {
         /[\u0900-\u097F]/.test(analysisResult.guidance.summary);
 
       const guidance = analysisResult.guidance;
-      let textToSpeak = "";
+      const formNameStr = analysisResult.form_name || (isHindi ? "सरकारी योजना फॉर्म" : "Government Form");
 
-      if (isHindi) {
-        textToSpeak += `यह फॉर्म ${analysisResult.form_name || "सरकारी फॉर्म"} है। `;
-        textToSpeak += `संक्षेप में: ${guidance.summary}. `;
-        if (guidance.scheme_benefit) {
-          textToSpeak += `योजना लाभ: ${guidance.scheme_benefit}. `;
-        }
-        if (guidance.eligibility?.length) {
-          textToSpeak += `पात्रता नियम: ${guidance.eligibility.join(". ")}. `;
-        }
-        if (guidance.required_documents?.length) {
-          textToSpeak += `आवश्यक दस्तावेज: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
-        }
-        if (guidance.filling_steps?.length) {
-          textToSpeak += `फॉर्म भरने के मुख्य चरण: ${guidance.filling_steps.map((s) => `चरण ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
-        }
-        if (guidance.submission?.where) {
-          textToSpeak += `जमा करने का स्थान: ${guidance.submission.where}। फीस: ${guidance.submission.fee || "कोई शुल्क नहीं"}।`;
-        }
-      } else {
-        textToSpeak += `This form is ${analysisResult.form_name || "Government Form"}. ${guidance.summary}. `;
-        if (guidance.scheme_benefit) {
-          textToSpeak += `Benefits: ${guidance.scheme_benefit}. `;
-        }
-        if (guidance.eligibility?.length) {
-          textToSpeak += `Eligibility: ${guidance.eligibility.join(". ")}. `;
-        }
-        if (guidance.required_documents?.length) {
-          textToSpeak += `Documents needed: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
-        }
-        if (guidance.filling_steps?.length) {
-          textToSpeak += `Steps: ${guidance.filling_steps.map((s) => `Step ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
-        }
-        if (guidance.submission?.where) {
-          textToSpeak += `Submit at ${guidance.submission.where}. Fee: ${guidance.submission.fee}.`;
-        }
+      let textToSpeak = "";
+      let tabTitleHi = "";
+      let tabTitleEn = "";
+
+      if (activeTab === "summary") {
+        tabTitleHi = "विवरण";
+        tabTitleEn = "Overview";
+        const sumSnippet = guidance.summary ? guidance.summary.slice(0, 160) : "";
+        const benSnippet = guidance.scheme_benefit ? guidance.scheme_benefit.slice(0, 100) : "";
+        textToSpeak = isHindi
+          ? `विवरण: यह फॉर्म ${formNameStr} का है। ${sumSnippet}। ${benSnippet ? `लाभ: ${benSnippet}` : ""}`
+          : `Overview: This form is for ${formNameStr}. ${sumSnippet}. ${benSnippet ? `Benefits: ${benSnippet}` : ""}`;
+      } else if (activeTab === "eligibility") {
+        tabTitleHi = "पात्रता नियम";
+        tabTitleEn = "Eligibility Criteria";
+        const items = (guidance.eligibility || []).join(". ");
+        textToSpeak = isHindi
+          ? `पात्रता नियम: ${items || "भारत का कोई भी पात्र नागरिक आवेदन कर सकता है।"}`
+          : `Eligibility criteria: ${items || "Any eligible citizen can apply."}`;
+      } else if (activeTab === "documents") {
+        tabTitleHi = "आवश्यक दस्तावेज़";
+        tabTitleEn = "Required Documents";
+        const docs = (guidance.required_documents || []).map((d) => `${d.name}: ${d.details}`).join(". ");
+        textToSpeak = isHindi
+          ? `आवश्यक दस्तावेज़: ${docs || "आधार कार्ड, पहचान प्रमाण, निवास प्रमाण।"}`
+          : `Required documents: ${docs || "Aadhaar card, identity proof, address proof."}`;
+      } else if (activeTab === "steps") {
+        tabTitleHi = "फॉर्म भरने के चरण";
+        tabTitleEn = "Filling Steps";
+        const steps = (guidance.filling_steps || [])
+          .slice(0, 4)
+          .map((s) => `चरण ${s.step}, ${s.field}: ${s.instruction}`)
+          .join(". ");
+        textToSpeak = isHindi
+          ? `भरने के चरण: ${steps || "फॉर्म में व्यक्तिगत और पता विवरण दर्ज करें।"}`
+          : `Filling steps: ${steps || "Fill personal and address details on form."}`;
+      } else if (activeTab === "submission") {
+        tabTitleHi = "जमा करने की जानकारी";
+        tabTitleEn = "Submission Info";
+        const sub = guidance.submission;
+        textToSpeak = isHindi
+          ? `जमा निर्देश: कार्यालय: ${sub?.where || "निकटतम सरकारी कार्यालय"}। फीस: ${sub?.fee || "कोई शुल्क नहीं"}।`
+          : `Submission guidance: Submit at ${sub?.where || "Nearest Government Office"}. Fee: ${sub?.fee || "Free"}.`;
       }
 
-      setIsSpeaking(true);
-      toast({
-        title: isHindi ? "🔊 ऑडियो गाइड शुरू" : "🔊 Audio Guide Playing",
-        description: isHindi ? "हिंदी में ऑडियो निर्देश लोड हो रहे हैं..." : "Playing audio guidance...",
-      });
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${isHindi ? "hi" : "en"}&client=tw-ob&q=${encodeURIComponent(textToSpeak.slice(0, 280))}`;
 
-      // ── Method 1: Backend Natural Neural Audio (Native Hindi pronunciation) ──
+      // ── Method 1: Instant Direct Audio CDN Stream (Sub-200ms start) ──
       try {
-        const res = await fetch(`${env.apiBaseUrl}/ai/tts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: textToSpeak,
-            lang: isHindi ? "hi" : "en",
-          }),
-        });
+        const audio = new Audio(ttsUrl);
+        audioRef.current = audio;
 
-        if (res.ok) {
-          const blob = await res.blob();
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          audioRef.current = audio;
+        audio.onplay = () => {
+          setIsSpeaking(true);
+          toast({
+            title: isHindi ? `🔊 ${tabTitleHi} ऑडियो गाइड` : `🔊 ${tabTitleEn} Audio Guide`,
+            description: isHindi ? `${tabTitleHi} नैरेशन चालू है...` : `Playing ${tabTitleEn.toLowerCase()} narration...`,
+          });
+        };
 
-          audio.onended = () => {
-            setIsSpeaking(false);
-            audioRef.current = null;
-            URL.revokeObjectURL(audioUrl);
-          };
+        audio.onended = () => {
+          setIsSpeaking(false);
+          audioRef.current = null;
+        };
 
-          audio.onerror = (e) => {
-            console.warn("[TTS] Audio playback error:", e);
-            setIsSpeaking(false);
-            audioRef.current = null;
-            URL.revokeObjectURL(audioUrl);
-          };
+        audio.onerror = (e) => {
+          console.warn("[TTS] Direct audio stream failed, falling back:", e);
+          fallbackWebSpeech(textToSpeak, isHindi);
+        };
 
-          await audio.play();
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
           return;
         }
-      } catch (backendTtsErr) {
-        console.warn("[TTS] Backend TTS error, trying browser fallback:", backendTtsErr);
-      }
-
-      // ── Method 2: Browser Web Speech API Fallback ──
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.resume();
-
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        const targetLang = isHindi ? "hi-IN" : "en-IN";
-        utterance.lang = targetLang;
-
-        const voices = window.speechSynthesis.getVoices();
-        if (voices && voices.length > 0) {
-          if (isHindi) {
-            const hindiVoice = voices.find(
-              (v) =>
-                v.lang.startsWith("hi") ||
-                v.name.toLowerCase().includes("hindi") ||
-                v.name.includes("हिन्दी")
-            );
-            if (hindiVoice) {
-              utterance.voice = hindiVoice;
-            }
-          } else {
-            const englishVoice =
-              voices.find((v) => v.lang === "en-IN") ||
-              voices.find((v) => v.lang.startsWith("en")) ||
-              voices[0];
-            if (englishVoice) {
-              utterance.voice = englishVoice;
-            }
-          }
-        }
-
-        utterance.rate = 0.92;
-        utterance.pitch = 1.0;
-
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          utteranceRef.current = null;
-        };
-
-        utterance.onerror = (e) => {
-          console.warn("[TTS] Speech synthesis event error:", e);
-          setIsSpeaking(false);
-          utteranceRef.current = null;
-        };
-
-        utteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
+      } catch (directAudioErr) {
+        console.warn("[TTS] Direct play exception, using fallback:", directAudioErr);
+        fallbackWebSpeech(textToSpeak, isHindi);
       }
     } catch (err) {
       console.error("[TTS] Exception in toggleSpeech:", err);
       setIsSpeaking(false);
-      toast({
-        title: "Speech Error",
-        description: getErrorMessage(err, "An unexpected error occurred."),
-        variant: "destructive",
-      });
+    }
+  };
+
+  const fallbackWebSpeech = (text: string, isHindi: boolean) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = isHindi ? "hi-IN" : "en-IN";
+      utterance.rate = 1.0;
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        utteranceRef.current = null;
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        utteranceRef.current = null;
+      };
+
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      setIsSpeaking(false);
     }
   };
 
@@ -1027,52 +1013,57 @@ export function AnalyzerAndAssistant() {
                   )}
 
                   {/* Tabs Selector */}
-                  <div className="flex border-b border-border overflow-x-auto scrollbar-none bg-muted/40">
+                  <div className="flex border-b border-border overflow-x-auto scrollbar-none bg-muted/40 relative z-10">
                     <button
+                      type="button"
                       onClick={() => setActiveTab("summary")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         activeTab === "summary"
-                          ? "border-primary text-primary bg-background"
+                          ? "border-primary text-primary bg-background shadow-sm"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "विवरण" : "Overview"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab("eligibility")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         activeTab === "eligibility"
-                          ? "border-primary text-primary bg-background"
+                          ? "border-primary text-primary bg-background shadow-sm"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "पात्रता" : "Eligibility"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab("documents")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         activeTab === "documents"
-                          ? "border-primary text-primary bg-background"
+                          ? "border-primary text-primary bg-background shadow-sm"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "दस्तावेज़" : "Required Docs"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab("steps")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         activeTab === "steps"
-                          ? "border-primary text-primary bg-background"
+                          ? "border-primary text-primary bg-background shadow-sm"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {language === "hi" ? "भरने का तरीका" : "Filling Steps"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab("submission")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         activeTab === "submission"
-                          ? "border-primary text-primary bg-background"
+                          ? "border-primary text-primary bg-background shadow-sm"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -1082,7 +1073,7 @@ export function AnalyzerAndAssistant() {
 
                   {/* Tabs Content */}
                   <div className="p-6 min-h-[250px] overflow-y-auto max-h-[450px]">
-                    {activeTab === "summary" && (
+                    {activeTab === "summary" && analysisResult?.guidance && (
                       <div className="space-y-4">
                         <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
                           <h4 className="font-bold text-primary mb-1 text-sm uppercase tracking-wide">
@@ -1110,7 +1101,7 @@ export function AnalyzerAndAssistant() {
                           {language === "hi" ? "कौन आवेदन कर सकता है?" : "Who is eligible to apply?"}
                         </h4>
                         <div className="grid gap-2">
-                          {analysisResult.guidance.eligibility.map((crit, idx) => (
+                          {(analysisResult?.guidance?.eligibility || []).map((crit, idx) => (
                             <div
                               key={idx}
                               className="flex gap-3 items-start p-3 bg-muted/40 rounded-xl border border-border/40"
@@ -1134,7 +1125,7 @@ export function AnalyzerAndAssistant() {
                             : "Documents Required for Application:"}
                         </h4>
                         <div className="grid gap-2">
-                          {analysisResult.guidance.required_documents.map((doc, idx) => (
+                          {(analysisResult?.guidance?.required_documents || []).map((doc, idx) => (
                             <div
                               key={idx}
                               className="p-3.5 bg-muted/40 rounded-xl border border-border/40 flex items-start gap-3.5"
@@ -1160,7 +1151,7 @@ export function AnalyzerAndAssistant() {
                             : "Step-by-Step Instructions (Field-by-Field):"}
                         </h4>
                         <div className="space-y-4">
-                          {analysisResult.guidance.filling_steps.map((s, idx) => (
+                          {(analysisResult?.guidance?.filling_steps || []).map((s, idx) => (
                             <div key={idx} className="relative pl-8 border-l border-border/80 pb-4 last:pb-0">
                               {/* Step Badge */}
                               <div className="absolute -left-3.5 top-0.5 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-md shadow-primary/20">
@@ -1198,7 +1189,7 @@ export function AnalyzerAndAssistant() {
                               {language === "hi" ? "कार्यालय (भौतिक रूप से):" : "Where to Submit (Physical):"}
                             </h5>
                             <p className="text-sm font-medium text-foreground">
-                              {analysisResult.guidance.submission.where}
+                              {analysisResult?.guidance?.submission?.where || "Relevant Tehsil / Local Government Office"}
                             </p>
                           </div>
 
@@ -1208,11 +1199,11 @@ export function AnalyzerAndAssistant() {
                               {language === "hi" ? "आवेदन शुल्क / खर्च:" : "Application Fee / Cost:"}
                             </h5>
                             <p className="text-sm font-bold text-emerald-600">
-                              {analysisResult.guidance.submission.fee}
+                              {analysisResult?.guidance?.submission?.fee || "Free / Nominal Fee"}
                             </p>
                           </div>
 
-                          {analysisResult.guidance.submission.online_portal && (
+                          {analysisResult?.guidance?.submission?.online_portal && (
                             <div className="p-4 bg-muted/40 border border-border/40 rounded-xl space-y-1 sm:col-span-2">
                               <h5 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                                 <ExternalLink className="w-3.5 h-3.5 text-secondary" />
@@ -1231,7 +1222,7 @@ export function AnalyzerAndAssistant() {
                                 className="text-sm font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const portal = analysisResult.guidance.submission.online_portal!;
+                                  const portal = analysisResult.guidance!.submission.online_portal!;
                                   const url = portal.startsWith("http") ? portal : `https://${portal}`;
                                   window.open(url, "_blank", "noopener,noreferrer");
                                 }}
@@ -1338,12 +1329,12 @@ export function AnalyzerAndAssistant() {
       </div>
 
       {/* Floating Sparkle FAB Widget */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+      <div className="fixed bottom-6 right-6 z-[1100] flex flex-col items-end pointer-events-none">
         {/* Floating Chat Panel */}
         <div
-          className={`mb-4 w-96 max-w-[calc(100vw-2rem)] h-[550px] bg-card rounded-3xl border border-border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+          className={`mb-4 w-96 max-w-[calc(100vw-2rem)] h-[550px] max-h-[calc(100vh-6rem)] bg-card rounded-3xl border border-border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
             isChatOpen
-              ? "opacity-100 scale-100 translate-y-0"
+              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
               : "opacity-0 scale-90 translate-y-10 pointer-events-none"
           }`}
         >
@@ -1451,7 +1442,7 @@ export function AnalyzerAndAssistant() {
         {/* Circular Sparkle FAB Button */}
         <button
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none hover:shadow-primary/30 hover:shadow-xl ${
+          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none hover:shadow-primary/30 hover:shadow-xl pointer-events-auto ${
             isChatOpen
               ? "bg-slate-700 hover:bg-slate-800 text-white"
               : "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-650 text-white"

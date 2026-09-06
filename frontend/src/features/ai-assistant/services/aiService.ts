@@ -12,19 +12,41 @@ export const aiService = {
    * reports an explicit unavailable state instead of pretending to work.
    */
   async streamChat({
-    messages: _messages,
-    onDelta: _onDelta,
-    onDone: _onDone,
+    messages,
+    onDelta,
+    onDone,
     onError,
+    language,
   }: {
     messages: ChatMessage[];
     onDelta: (deltaText: string) => void;
     onDone: () => void;
     onError: (error: string) => void;
+    language?: string;
   }): Promise<void> {
-    onError(
-      "The AI chat assistant is being rebuilt (Phase 2). Form analysis and government scheme guidance are fully live — try uploading a form!"
-    );
+    try {
+      const res = await fetch(`${env.apiBaseUrl}/ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, language }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
+      const reply = data?.reply || "Samadhan AI: Thank you for your question. How else can I assist you today?";
+
+      const words = reply.split(" ");
+      for (let i = 0; i < words.length; i++) {
+        onDelta(words[i] + (i === words.length - 1 ? "" : " "));
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      onDone();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Failed to send chat message");
+    }
   },
 
   /**
