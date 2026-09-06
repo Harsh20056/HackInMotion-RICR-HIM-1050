@@ -130,8 +130,8 @@ export const formAnalyzerService = {
       }
 
       return data;
-    } catch (err: any) {
-      const errMsg = err?.message || String(err);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       logger.warn({ err: errMsg }, "Form analyzer call failed, returning standard form guidance fallback");
 
       return DEFAULT_FALLBACK_RESULT;

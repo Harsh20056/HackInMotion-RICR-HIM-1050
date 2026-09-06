@@ -88,9 +88,9 @@ export const geminiProvider: AiProvider = {
           promptTokens: usage?.promptTokenCount,
           outputTokens: usage?.candidatesTokenCount,
         };
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastErr = err;
-        const msg = err?.message || String(err);
+        const msg = err instanceof Error ? err.message : String(err);
         // If 503 (high demand) or 429 (rate limit), try next fallback model
         if (
           msg.includes("503") ||

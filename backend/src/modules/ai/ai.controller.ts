@@ -328,7 +328,7 @@ aiRouter.post("/chat", async (req, res, next) => {
 
         res.json({ reply: result.data.reply });
         return;
-      } catch (aiErr) {
+      } catch (_aiErr) {
         // Fallback to intelligent local response on provider outage
       }
     }
