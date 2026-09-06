@@ -89,12 +89,6 @@ export default function LocationPicker({
   const [isMapMoving, setIsMapMoving] = useState(false);
   // Surfaced to the user — a silent GPS failure looks like a broken button.
   const [locationError, setLocationError] = useState<string | null>(null);
-  // Nominatim is a free third-party service that rate-limits and goes down.
-  // Without this the search box just silently returns nothing.
-  const [searchError, setSearchError] = useState<string | null>(null);
-  // Leaflet or OpenStreetMap tiles failing must not leave a blank grey box
-  // with no explanation and no way to continue.
-  const [mapError, setMapError] = useState<string | null>(null);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
 

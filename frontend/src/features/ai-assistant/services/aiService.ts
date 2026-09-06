@@ -148,7 +148,7 @@ export async function analyzeFormDirect(
     } finally {
       clearTimeout(timer);
     }
-  } catch (networkErr) {
+  } catch (_networkErr) {
     const isOffline = !navigator.onLine;
     return {
       status: "error",
