@@ -18,15 +18,40 @@ describe("analyzeFormDirect", () => {
     );
   });
 
-  it("reports a backend-pending status for valid files (Phase 2 backend not available)", async () => {
+  it("sends valid files to the backend for form analysis", async () => {
     const mockFile = new File(["dummy file content"], "form.jpg", { type: "image/jpeg" });
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          status: "success",
+          summary: "Sample form summary",
+          fields: [],
+          warnings: [],
+          nextSteps: [],
+        })
+      )
+    );
 
     const result = await analyzeFormDirect(mockFile, "What are the rules?");
 
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/ai/analyze-form"),
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(result.status).toBe("success");
+  });
+
+  it("handles network errors gracefully", async () => {
+    const mockFile = new File(["dummy file content"], "form.jpg", { type: "image/jpeg" });
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new TypeError("Failed to fetch"));
+
+    const result = await analyzeFormDirect(mockFile, "What are the rules?");
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result.status).toBe("error");
-    expect(result.reason).toBeTruthy();
+    expect(result.reason).toContain("Could not reach the Samadhan server");
   });
 });
