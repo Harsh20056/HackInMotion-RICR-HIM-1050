@@ -172,9 +172,11 @@ export function AnalyzerAndAssistant() {
   const [activeTab, setActiveTab] = useState<
     "summary" | "eligibility" | "documents" | "steps" | "submission"
   >("summary");
+  const [guidanceLang, setGuidanceLang] = useState<"hi" | "en">("hi");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Smooth progress simulator
   useEffect(() => {
@@ -276,6 +278,23 @@ export function AnalyzerAndAssistant() {
     setStatus("idle");
   };
 
+  const loadSampleForm = async (samplePath: string, fileName: string) => {
+    try {
+      const res = await fetch(samplePath);
+      const blob = await res.blob();
+      const sampleFile = new File([blob], fileName, { type: "image/png" });
+      handleFileSelected(sampleFile);
+    } catch (err) {
+      console.error("Failed to load sample form:", err);
+      toast({
+        title: "Error",
+        description: "Could not load sample form file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
   const clearFile = () => {
     setFile(null);
     setAnalysisResult(null);
@@ -304,7 +323,7 @@ export function AnalyzerAndAssistant() {
       setTimeout(() => setStatus("retrieving"), 2000);
       setTimeout(() => setStatus("generating"), 3500);
 
-      const result = await aiService.analyzeFormDirect(file, formQuery);
+      const result = await aiService.analyzeFormDirect(file, formQuery, guidanceLang);
 
       setStatus("done");
       setAnalysisResult(result);
@@ -342,24 +361,24 @@ export function AnalyzerAndAssistant() {
   };
 
   /* ---------------- TEXT TO SPEECH (TTS) ---------------- */
-  const toggleSpeech = () => {
+  const toggleSpeech = async () => {
     try {
-      console.log("[TTS] toggleSpeech triggered. isSpeaking:", isSpeaking);
-
-      if (typeof window === "undefined" || !window.speechSynthesis) {
-        toast({
-          title: "Not supported",
-          description: "Your browser does not support text-to-speech.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       // --- STOP path ---
-      if (isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        window.speechSynthesis.cancel();
+      if (isSpeaking) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
+        }
+        if (typeof window !== "undefined" && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
         setIsSpeaking(false);
         utteranceRef.current = null;
+        toast({
+          title: language === "hi" ? "ऑडियो बंद" : "Audio Stopped",
+          description: language === "hi" ? "गाइड नैरेशन रोक दिया गया है।" : "Narration stopped.",
+        });
         return;
       }
 
@@ -368,75 +387,144 @@ export function AnalyzerAndAssistant() {
         return;
       }
 
-      // Instant UI feedback
-      setIsSpeaking(true);
+      // Detect whether the guidance is in Hindi
+      const isHindi =
+        guidanceLang === "hi" ||
+        language === "hi" ||
+        /[\u0900-\u097F]/.test(analysisResult.guidance.summary);
 
       const guidance = analysisResult.guidance;
       let textToSpeak = "";
 
-      if (language === "hi") {
-        textToSpeak += `यह फॉर्म ${analysisResult.form_name} है। संक्षेप में: ${guidance.summary}. `;
-        textToSpeak += `इस योजना से लाभ: ${guidance.scheme_benefit}. `;
-        textToSpeak += `पात्रता नियम: ${guidance.eligibility.join(". ")}. `;
-        textToSpeak += `आवश्यक दस्तावेज: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
-        textToSpeak += `फॉर्म भरने के मुख्य चरण: ${guidance.filling_steps.map((s) => `चरण ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
-        textToSpeak += `जमा करने की जानकारी: ${guidance.submission.where} में जमा करें। फीस: ${guidance.submission.fee}.`;
+      if (isHindi) {
+        textToSpeak += `यह फॉर्म ${analysisResult.form_name || "सरकारी फॉर्म"} है। `;
+        textToSpeak += `संक्षेप में: ${guidance.summary}. `;
+        if (guidance.scheme_benefit) {
+          textToSpeak += `योजना लाभ: ${guidance.scheme_benefit}. `;
+        }
+        if (guidance.eligibility?.length) {
+          textToSpeak += `पात्रता नियम: ${guidance.eligibility.join(". ")}. `;
+        }
+        if (guidance.required_documents?.length) {
+          textToSpeak += `आवश्यक दस्तावेज: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
+        }
+        if (guidance.filling_steps?.length) {
+          textToSpeak += `फॉर्म भरने के मुख्य चरण: ${guidance.filling_steps.map((s) => `चरण ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
+        }
+        if (guidance.submission?.where) {
+          textToSpeak += `जमा करने का स्थान: ${guidance.submission.where}। फीस: ${guidance.submission.fee || "कोई शुल्क नहीं"}।`;
+        }
       } else {
-        textToSpeak += `This form is ${analysisResult.form_name}. ${guidance.summary}. `;
-        textToSpeak += `Benefits: ${guidance.scheme_benefit}. `;
-        textToSpeak += `Eligibility: ${guidance.eligibility.join(". ")}. `;
-        textToSpeak += `Documents needed: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
-        textToSpeak += `Steps: ${guidance.filling_steps.map((s) => `Step ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
-        textToSpeak += `Submit at ${guidance.submission.where}. Fee: ${guidance.submission.fee}.`;
+        textToSpeak += `This form is ${analysisResult.form_name || "Government Form"}. ${guidance.summary}. `;
+        if (guidance.scheme_benefit) {
+          textToSpeak += `Benefits: ${guidance.scheme_benefit}. `;
+        }
+        if (guidance.eligibility?.length) {
+          textToSpeak += `Eligibility: ${guidance.eligibility.join(". ")}. `;
+        }
+        if (guidance.required_documents?.length) {
+          textToSpeak += `Documents needed: ${guidance.required_documents.map((d) => d.name).join(", ")}. `;
+        }
+        if (guidance.filling_steps?.length) {
+          textToSpeak += `Steps: ${guidance.filling_steps.map((s) => `Step ${s.step}, ${s.field}: ${s.instruction}`).join(". ")}. `;
+        }
+        if (guidance.submission?.where) {
+          textToSpeak += `Submit at ${guidance.submission.where}. Fee: ${guidance.submission.fee}.`;
+        }
       }
 
-      // --- SPEAK path ---
-      // Do NOT call cancel() here if not speaking! Chrome has a bug where cancel()
-      // right before speak() causes speak() to be silently dropped.
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      setIsSpeaking(true);
+      toast({
+        title: isHindi ? "🔊 ऑडियो गाइड शुरू" : "🔊 Audio Guide Playing",
+        description: isHindi ? "हिंदी में ऑडियो निर्देश लोड हो रहे हैं..." : "Playing audio guidance...",
+      });
 
-      // Voice selection
-      const voices = window.speechSynthesis.getVoices();
-      const targetLang = language === "hi" ? "hi-IN" : "en-US";
-      const voice =
-        voices.find((v) => v.lang === targetLang) ||
-        voices.find((v) => v.lang.startsWith(targetLang.split("-")[0])) ||
-        voices[0];
-
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      // Optional configuration for pacing
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-
-      utterance.onstart = () => {
-        console.log("[TTS] Speech playback started successfully.");
-      };
-
-      utterance.onend = () => {
-        console.log("[TTS] Speech playback completed naturally.");
-        setIsSpeaking(false);
-        utteranceRef.current = null;
-      };
-
-      utterance.onerror = (e) => {
-        console.error("[TTS] Speech synthesis playback error:", e);
-        setIsSpeaking(false);
-        utteranceRef.current = null;
-        toast({
-          title: "Speech Error",
-          description: "Could not play audio. Please check your system settings.",
-          variant: "destructive",
+      // ── Method 1: Backend Natural Neural Audio (Native Hindi pronunciation) ──
+      try {
+        const res = await fetch(`${env.apiBaseUrl}/ai/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: textToSpeak,
+            lang: isHindi ? "hi" : "en",
+          }),
         });
-      };
 
-      // Store reference to prevent GC mid-speech in Chrome/Safari
-      utteranceRef.current = utterance;
+        if (res.ok) {
+          const blob = await res.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
 
-      console.log("[TTS] Calling speak() with target language:", targetLang);
-      window.speechSynthesis.speak(utterance);
+          audio.onended = () => {
+            setIsSpeaking(false);
+            audioRef.current = null;
+            URL.revokeObjectURL(audioUrl);
+          };
+
+          audio.onerror = (e) => {
+            console.warn("[TTS] Audio playback error:", e);
+            setIsSpeaking(false);
+            audioRef.current = null;
+            URL.revokeObjectURL(audioUrl);
+          };
+
+          await audio.play();
+          return;
+        }
+      } catch (backendTtsErr) {
+        console.warn("[TTS] Backend TTS error, trying browser fallback:", backendTtsErr);
+      }
+
+      // ── Method 2: Browser Web Speech API Fallback ──
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        const targetLang = isHindi ? "hi-IN" : "en-IN";
+        utterance.lang = targetLang;
+
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          if (isHindi) {
+            const hindiVoice = voices.find(
+              (v) =>
+                v.lang.startsWith("hi") ||
+                v.name.toLowerCase().includes("hindi") ||
+                v.name.includes("हिन्दी")
+            );
+            if (hindiVoice) {
+              utterance.voice = hindiVoice;
+            }
+          } else {
+            const englishVoice =
+              voices.find((v) => v.lang === "en-IN") ||
+              voices.find((v) => v.lang.startsWith("en")) ||
+              voices[0];
+            if (englishVoice) {
+              utterance.voice = englishVoice;
+            }
+          }
+        }
+
+        utterance.rate = 0.92;
+        utterance.pitch = 1.0;
+
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          utteranceRef.current = null;
+        };
+
+        utterance.onerror = (e) => {
+          console.warn("[TTS] Speech synthesis event error:", e);
+          setIsSpeaking(false);
+          utteranceRef.current = null;
+        };
+
+        utteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+      }
     } catch (err) {
       console.error("[TTS] Exception in toggleSpeech:", err);
       setIsSpeaking(false);
@@ -450,6 +538,10 @@ export function AnalyzerAndAssistant() {
 
   useEffect(() => {
     return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -580,6 +672,62 @@ export function AnalyzerAndAssistant() {
                       <Button type="button" variant="outline" className="rounded-full px-6">
                         {t("analyzer.browseFiles")}
                       </Button>
+
+                      {/* Sample Forms One-Click Test */}
+                      <div className="mt-6 pt-5 border-t border-border/50 text-center" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-xs font-semibold text-muted-foreground mb-3">
+                          {language === "hi"
+                            ? "💡 नमूना फॉर्म के साथ तुरंत आज़माएं:"
+                            : "💡 Or test immediately with a sample government form:"}
+                        </p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs rounded-full gap-1.5 hover:border-primary/50 transition-all"
+                            onClick={() =>
+                              loadSampleForm(
+                                "/sample_forms/aadhaar_enrolment_update_form.png",
+                                "Aadhaar_Update_Form_Sample.png"
+                              )
+                            }
+                          >
+                            <FileText className="w-3.5 h-3.5 text-primary" />
+                            Aadhaar Update Form
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs rounded-full gap-1.5 hover:border-primary/50 transition-all"
+                            onClick={() =>
+                              loadSampleForm(
+                                "/sample_forms/pmay_urban_application_form.png",
+                                "PMAY_Urban_Application_Sample.png"
+                              )
+                            }
+                          >
+                            <FileText className="w-3.5 h-3.5 text-primary" />
+                            PMAY Urban Form
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs rounded-full gap-1.5 hover:border-primary/50 transition-all"
+                            onClick={() =>
+                              loadSampleForm(
+                                "/sample_forms/pm_kisan_samman_nidhi_form.png",
+                                "PM_Kisan_Application_Sample.png"
+                              )
+                            }
+                          >
+                            <FileText className="w-3.5 h-3.5 text-primary" />
+                            PM-KISAN Form
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -627,13 +775,49 @@ export function AnalyzerAndAssistant() {
                         />
                       </div>
 
+                      {/* Guidance Language Selector */}
+                      <div className="flex items-center justify-between p-3.5 bg-muted/60 rounded-xl border border-border/60">
+                        <div className="flex items-center gap-2">
+                          <Languages className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-semibold text-foreground">
+                            {language === "hi" ? "मार्गदर्शन भाषा:" : "Guidance Language:"}
+                          </span>
+                        </div>
+                        <div className="flex gap-1.5 bg-background p-1 rounded-lg border border-border">
+                          <button
+                            type="button"
+                            onClick={() => setGuidanceLang("hi")}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                              guidanceLang === "hi"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            🇮🇳 हिंदी (Hindi)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setGuidanceLang("en")}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                              guidanceLang === "en"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            🇬🇧 English
+                          </button>
+                        </div>
+                      </div>
+
                       <Button
                         onClick={runAnalysis}
                         disabled={status === "uploading"}
-                        className="w-full py-6 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 gap-2"
+                        className="w-full py-6 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 gap-2 cursor-pointer"
                       >
                         <Sparkles className="w-5 h-5" />
-                        {language === "hi" ? "दस्तावेज़ का विश्लेषण शुरू करें" : "Start Document Analysis"}
+                        {guidanceLang === "hi"
+                          ? "दस्तावेज़ का विश्लेषण शुरू करें (हिंदी में)"
+                          : "Start Document Analysis (In English)"}
                       </Button>
                     </div>
                   )}
@@ -789,22 +973,26 @@ export function AnalyzerAndAssistant() {
                       <h3 className="text-2xl font-extrabold text-foreground">{analysisResult.form_name}</h3>
                     </div>
 
-                    <div className="flex gap-2 relative z-50">
+                    <div className="flex items-center gap-2 relative z-50">
                       <Button
                         type="button"
-                        variant={isSpeaking ? "destructive" : "outline"}
+                        variant={isSpeaking ? "destructive" : "default"}
                         onClick={toggleSpeech}
-                        className="rounded-full gap-2 font-semibold shrink-0 relative z-50 pointer-events-auto"
+                        className={`rounded-full gap-2 font-bold shrink-0 cursor-pointer shadow-md transition-all duration-200 border relative z-50 select-none ${
+                          isSpeaking
+                            ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 animate-pulse ring-2 ring-destructive/40"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 border-primary/20"
+                        }`}
                       >
                         {isSpeaking ? (
                           <>
-                            <Square className="w-4 h-4 fill-white" />
-                            {language === "hi" ? "नैरेशन रोकें" : "Stop Reader"}
+                            <Square className="w-4 h-4 fill-current" />
+                            <span>{language === "hi" || guidanceLang === "hi" ? "ऑडियो रोकें" : "Stop Audio"}</span>
                           </>
                         ) : (
                           <>
                             <Volume2 className="w-4 h-4" />
-                            {language === "hi" ? "ऑडियो गाइड सुनें" : "Listen to Guide"}
+                            <span>{language === "hi" || guidanceLang === "hi" ? "ऑडियो गाइड सुनें" : "Listen to Guide"}</span>
                           </>
                         )}
                       </Button>
@@ -813,7 +1001,8 @@ export function AnalyzerAndAssistant() {
                         variant="ghost"
                         size="icon"
                         onClick={clearFile}
-                        className="rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 relative z-50 pointer-events-auto"
+                        title={language === "hi" || guidanceLang === "hi" ? "नया फॉर्म जांचें" : "Analyze Another Form"}
+                        className="rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/60 relative z-50 cursor-pointer"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -1032,13 +1221,23 @@ export function AnalyzerAndAssistant() {
                                   : "Official Online Submission Portal:"}
                               </h5>
                               <a
-                                href={analysisResult.guidance.submission.online_portal}
+                                href={
+                                  analysisResult.guidance.submission.online_portal.startsWith("http")
+                                    ? analysisResult.guidance.submission.online_portal
+                                    : `https://${analysisResult.guidance.submission.online_portal}`
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
+                                className="text-sm font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const portal = analysisResult.guidance.submission.online_portal!;
+                                  const url = portal.startsWith("http") ? portal : `https://${portal}`;
+                                  window.open(url, "_blank", "noopener,noreferrer");
+                                }}
                               >
                                 {analysisResult.guidance.submission.online_portal}
-                                <ExternalLink className="w-3 h-3" />
+                                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                               </a>
                             </div>
                           )}
@@ -1108,13 +1307,18 @@ export function AnalyzerAndAssistant() {
                               </span>
                               {s.source_url && (
                                 <a
-                                  href={s.source_url}
+                                  href={s.source_url.startsWith("http") ? s.source_url : `https://${s.source_url}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-primary hover:text-primary-hover flex items-center gap-0.5 font-bold"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-all font-bold text-xs cursor-pointer shadow-xs border border-primary/25 hover:underline select-none"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const url = s.source_url.startsWith("http") ? s.source_url : `https://${s.source_url}`;
+                                    window.open(url, "_blank", "noopener,noreferrer");
+                                  }}
                                 >
-                                  Official Link
-                                  <ExternalLink className="w-3 h-3" />
+                                  <span>{language === "hi" ? "आधिकारिक लिंक" : "Official Link"}</span>
+                                  <ExternalLink className="w-3 h-3 shrink-0" />
                                 </a>
                               )}
                             </div>

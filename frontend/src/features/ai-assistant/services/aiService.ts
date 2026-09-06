@@ -1,4 +1,4 @@
-import { BACKEND_PENDING_MESSAGE_EN } from "@/shared/mock/mockAiAdapter";
+import { env } from "@/shared/config/environment";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -22,15 +22,21 @@ export const aiService = {
     onDone: () => void;
     onError: (error: string) => void;
   }): Promise<void> {
-    onError(BACKEND_PENDING_MESSAGE_EN);
+    onError(
+      "The AI chat assistant is being rebuilt (Phase 2). Form analysis and government scheme guidance are fully live — try uploading a form!"
+    );
   },
 
   /**
-   * TEMPORARY — backend pending (Phase 2). Delegates to the standalone
-   * analyzeFormDirect(), which reports a backend-pending status.
+   * Sends the uploaded file to POST /ai/analyze-form and returns the
+   * structured FormAnalysisResult.
+   *
+   * For PDFs: rasterises page 1 to JPEG first (via pdfFirstPageToJpeg) so the
+   * backend always receives an image — Gemini Vision doesn't accept raw PDFs.
+   * For images: reads as base64 and uploads directly.
    */
-  async analyzeFormDirect(file: File, userQuery?: string): Promise<FormAnalysisResult> {
-    return analyzeFormDirect(file, userQuery);
+  async analyzeFormDirect(file: File, userQuery?: string, language?: string): Promise<FormAnalysisResult> {
+    return analyzeFormDirect(file, userQuery, language);
   },
 };
 
@@ -67,8 +73,12 @@ export interface FormAnalysisResult {
   };
 }
 
-export async function analyzeFormDirect(file: File, _userQuery?: string): Promise<FormAnalysisResult> {
-  // Validate file size (max 10MB)
+export async function analyzeFormDirect(
+  file: File,
+  userQuery?: string,
+  language?: string
+): Promise<FormAnalysisResult> {
+  // ── Client-side validation ───────────────────────────────────────────────
   if (file.size > 10 * 1024 * 1024) {
     throw new Error("File size must be under 10MB");
   }
@@ -78,18 +88,88 @@ export async function analyzeFormDirect(file: File, _userQuery?: string): Promis
     throw new Error("Only PDF, JPEG, PNG, or WebP files are accepted");
   }
 
-  // TEMPORARY — backend pending (Phase 2): the form-analyzer RAG backend
-  // hasn't been rebuilt yet, so report an explicit unavailable state
-  // instead of calling out to a network endpoint that doesn't exist.
-  return {
-    status: "error",
-    reason: BACKEND_PENDING_MESSAGE_EN,
-  };
+  // ── Build the FormData payload ───────────────────────────────────────────
+  // PDFs are rasterised client-side: Gemini Vision does not accept raw PDFs.
+  let uploadFile: File;
+  if (file.type === "application/pdf") {
+    const { base64, mimeType } = await pdfFirstPageToJpeg(file);
+    const blob = base64ToBlob(base64, mimeType);
+    uploadFile = new File([blob], file.name.replace(/\.pdf$/i, ".jpg"), { type: mimeType });
+  } else {
+    uploadFile = file;
+  }
+
+  const formData = new FormData();
+  formData.append("file", uploadFile);
+  if (userQuery?.trim()) {
+    formData.append("userQuery", userQuery.trim());
+  }
+  if (language?.trim()) {
+    formData.append("language", language.trim());
+  }
+
+  // ── POST to backend ──────────────────────────────────────────────────────
+  let response: Response;
+  try {
+    const controller = new AbortController();
+    // Form analysis involves a Gemini Vision call (10–25 s typical).
+    const timer = setTimeout(() => controller.abort(), 60_000);
+    try {
+      response = await fetch(`${env.apiBaseUrl}/ai/analyze-form`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+        // Note: do NOT set Content-Type — the browser sets it automatically
+        // with the correct multipart boundary when using FormData.
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (networkErr) {
+    const isOffline = !navigator.onLine;
+    return {
+      status: "error",
+      reason: isOffline
+        ? "You appear to be offline. Reconnect and try again."
+        : "Could not reach the Samadhan server. Please try again.",
+    };
+  }
+
+  if (!response.ok) {
+    let serverMsg = "Form analysis failed on the server.";
+    try {
+      const body = await response.json();
+      if (body?.error?.message) serverMsg = body.error.message;
+    } catch {
+      // ignore parse error
+    }
+    return { status: "error", reason: serverMsg };
+  }
+
+  try {
+    const result = (await response.json()) as FormAnalysisResult;
+    return result;
+  } catch {
+    return {
+      status: "error",
+      reason: "The server sent an unexpected response. Please try again.",
+    };
+  }
+}
+
+/** Convert a base64 string + MIME type back to a Blob. */
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const bytes = atob(base64);
+  const array = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    array[i] = bytes.charCodeAt(i);
+  }
+  return new Blob([array], { type: mimeType });
 }
 
 /**
  * Renders the first page of a PDF file to a JPEG image using PDF.js.
- * NVIDIA NIM vision models accept images (JPEG/PNG/WebP) but NOT raw PDFs.
+ * Gemini Vision accepts images (JPEG/PNG/WebP) but NOT raw PDFs.
  * We rasterise at 2x scale (144 DPI) for sharp, readable form text.
  */
 export async function pdfFirstPageToJpeg(file: File): Promise<{ base64: string; mimeType: string }> {

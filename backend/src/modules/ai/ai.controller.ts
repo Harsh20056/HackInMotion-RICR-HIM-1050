@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import multer from "multer";
 import { prisma } from "../../shared/lib/prisma.js";
 import { validate } from "../../shared/middleware/validate.js";
 import { authenticate, optionalAuthenticate } from "../../shared/middleware/authenticate.js";
@@ -11,12 +12,33 @@ import { decompositionService } from "./decomposition.service.js";
 import { categoriseService } from "./categorise.service.js";
 import { hotspotsService } from "./hotspots.service.js";
 import { visionService } from "./vision.service.js";
+import { formAnalyzerService } from "./form-analyzer.service.js";
 import { aiEnabled, visionEnabled } from "./providers/index.js";
 
 export const aiRouter = Router();
 
+/**
+ * Multer memory-storage for form image uploads.
+ * Files are held in RAM only for the duration of the Gemini call — nothing is
+ * written to disk or persisted anywhere.
+ * 10 MB limit matches the frontend validation.
+ */
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, WebP, or PDF files are accepted"));
+    }
+  },
+});
+
 /** Lets the UI hide AI affordances instead of showing dead controls. */
 aiRouter.get("/status", async (_req, res) => {
+
   res.json({ enabled: aiEnabled(), vision: visionEnabled() });
 });
 
@@ -141,6 +163,113 @@ aiRouter.get("/hotspots/recurring", validate(hotspotQuery, "query"), async (req,
   try {
     const q = req.validatedQuery as z.infer<typeof hotspotQuery>;
     res.json(await hotspotsService.recurring(q));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Government Form Analyzer ───────────────────────────────────────────────
+
+/**
+ * POST /ai/analyze-form
+ *
+ * Public endpoint — no auth required (same access level as the Form Analyzer
+ * page itself, which is an unauthenticated public route).
+ *
+ * Accepts multipart/form-data:
+ *   file     — the form image or PDF (max 10 MB; JPEG / PNG / WebP / PDF)
+ *   userQuery — optional free-text question from the citizen about this form
+ *
+ * For PDFs the frontend rasterises page 1 to JPEG before uploading,
+ * so the backend always receives an image (never a raw PDF blob).
+ *
+ * Returns FormAnalysisResult (see frontend aiService.ts for the TypeScript type).
+ */
+aiRouter.post("/analyze-form", upload.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: { message: "No file uploaded." } });
+      return;
+    }
+
+    const userQuery: string | undefined =
+      typeof req.body?.userQuery === "string" && req.body.userQuery.trim()
+        ? req.body.userQuery.trim()
+        : undefined;
+
+    const language: string | undefined =
+      typeof req.body?.language === "string" && req.body.language.trim()
+        ? req.body.language.trim()
+        : "hi";
+
+    const base64 = req.file.buffer.toString("base64");
+    const mimeType = req.file.mimetype;
+
+    const result = await formAnalyzerService.analyze({ base64, mimeType, userQuery, language });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Text To Speech (TTS) ───────────────────────────────────────────────────
+
+/**
+ * POST /ai/tts
+ * Generates natural Hindi or English speech audio (MP3).
+ * Solves the missing Hindi voice problem on client operating systems by
+ * streaming authentic, natural Hindi audio directly to the browser.
+ */
+aiRouter.post("/tts", async (req, res, next) => {
+  try {
+    const text: string = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    const lang: string = typeof req.body?.lang === "string" && req.body.lang === "en" ? "en" : "hi";
+
+    if (!text) {
+      res.status(400).json({ error: { message: "Text is required." } });
+      return;
+    }
+
+    // Split text into chunks of at most 180 chars on sentence/word boundaries
+    const chunks: string[] = [];
+    let remaining = text;
+    while (remaining.length > 0) {
+      if (remaining.length <= 180) {
+        chunks.push(remaining);
+        break;
+      }
+      let splitIdx = remaining.lastIndexOf("।", 180);
+      if (splitIdx === -1) splitIdx = remaining.lastIndexOf(".", 180);
+      if (splitIdx === -1) splitIdx = remaining.lastIndexOf(" ", 180);
+      if (splitIdx === -1) splitIdx = 180;
+      chunks.push(remaining.slice(0, splitIdx + 1).trim());
+      remaining = remaining.slice(splitIdx + 1).trim();
+    }
+
+    const audioBuffers: Buffer[] = [];
+    for (const chunk of chunks.slice(0, 10)) {
+      if (!chunk) continue;
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
+      const audioRes = await fetch(ttsUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+      });
+      if (audioRes.ok) {
+        audioBuffers.push(Buffer.from(await audioRes.arrayBuffer()));
+      }
+    }
+
+    if (audioBuffers.length === 0) {
+      res.status(502).json({ error: { message: "Could not generate speech audio." } });
+      return;
+    }
+
+    const fullAudio = Buffer.concat(audioBuffers);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Content-Length", fullAudio.length);
+    res.send(fullAudio);
   } catch (err) {
     next(err);
   }

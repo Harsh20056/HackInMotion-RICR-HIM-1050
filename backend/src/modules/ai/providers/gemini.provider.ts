@@ -20,8 +20,21 @@ function getClient(): GoogleGenAI {
   return client;
 }
 
-/** Cloudinary/remote URL -> inline base64, which is what the SDK wants. */
+/**
+ * Resolves an image reference to an inline base64 part for the Gemini SDK.
+ * Accepts either:
+ *   - A remote URL  (e.g. Cloudinary CDN link)
+ *   - A data: URI   (e.g. data:image/jpeg;base64,/9j/4AAQ…)
+ */
 async function fetchImagePart(url: string, signal: AbortSignal) {
+  // Inline base64 path — no network call needed.
+  if (url.startsWith("data:")) {
+    const [header, data] = url.split(",", 2);
+    const mimeType = header.replace("data:", "").replace(";base64", "");
+    return { inlineData: { mimeType, data } };
+  }
+
+  // Remote URL path — fetch and convert.
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`image fetch ${res.status} for ${url}`);
   const buf = Buffer.from(await res.arrayBuffer());
@@ -49,25 +62,45 @@ export const geminiProvider: AiProvider = {
       parts.push(await fetchImagePart(img.url, signal));
     }
 
-    const res = await getClient().models.generateContent({
-      model: MODEL,
-      contents: [{ role: "user", parts }] as never,
-      config: {
-        systemInstruction: req.system,
-        responseMimeType: "application/json",
-        responseSchema: req.jsonSchema as never,
-        temperature: 0.1,
-        abortSignal: signal,
-      } as never,
-    });
+    const modelsToTry = [MODEL, "gemini-3.6-flash"].filter(
+      (m, idx, arr) => arr.indexOf(m) === idx
+    );
 
-    const usage = (res as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } })
-      .usageMetadata;
+    let lastErr: unknown;
+    for (const modelName of modelsToTry) {
+      try {
+        const res = await getClient().models.generateContent({
+          model: modelName,
+          contents: [{ role: "user", parts }] as never,
+          config: {
+            systemInstruction: req.system,
+            responseMimeType: "application/json",
+            responseSchema: req.jsonSchema as never,
+            temperature: 0.1,
+            abortSignal: signal,
+          } as never,
+        });
 
-    return {
-      raw: res.text,
-      promptTokens: usage?.promptTokenCount,
-      outputTokens: usage?.candidatesTokenCount,
-    };
+        const usage = (
+          res as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }
+        ).usageMetadata;
+
+        return {
+          raw: res.text,
+          promptTokens: usage?.promptTokenCount,
+          outputTokens: usage?.candidatesTokenCount,
+        };
+      } catch (err: any) {
+        lastErr = err;
+        const msg = err?.message || String(err);
+        // If 503 (high demand) or 429 (rate limit), try next fallback model
+        if (msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("429") || msg.includes("high demand")) {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    throw lastErr;
   },
 };

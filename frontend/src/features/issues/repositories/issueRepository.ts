@@ -144,24 +144,60 @@ export const issueRepository = {
     return mapped;
   },
 
+  /**
+   * Photo evidence upload. Every rejection below names the specific problem
+   * and what the citizen should do instead — a failed upload must never leave
+   * them staring at a spinner or a raw status code.
+   *
+   * Validation runs locally first (size, MIME, magic bytes) so an obviously
+   * bad file never costs a round trip, then the signed upload goes straight
+   * to Cloudinary.
+   */
   async uploadIssueImage(_userId: string, file: File): Promise<string> {
     const MAX_SIZE = 5 * 1024 * 1024;
-    if (file.size > MAX_SIZE) throw new ValidationError("File size exceeds the 5MB limit");
+    if (file.size > MAX_SIZE) {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      throw new ValidationError(
+        `That photo is ${mb} MB, over the 5 MB limit. Choose a smaller photo, or retake it at a lower resolution.`
+      );
+    }
+    if (file.size === 0) {
+      throw new ValidationError("That file is empty. Choose a different photo.");
+    }
 
     const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!ALLOWED_MIMES.includes(file.type)) throw new ValidationError("Unsupported image MIME type");
+    if (!ALLOWED_MIMES.includes(file.type)) {
+      throw new ValidationError(
+        `"${file.name}" isn't a supported image. Upload a JPG, PNG, WebP, or GIF photo.`
+      );
+    }
 
-    const isValidSignature = await validateFileSignature(file, ALLOWED_MIMES);
-    if (!isValidSignature)
-      throw new ValidationError("File signature mismatch. Upload rejected for security reasons.");
+    // Extension and MIME can both be spoofed; the file header cannot.
+    let isValidSignature: boolean;
+    try {
+      isValidSignature = await validateFileSignature(file, ALLOWED_MIMES);
+    } catch {
+      throw new ValidationError("We couldn't read that file. Choose a different photo and try again.");
+    }
+    if (!isValidSignature) {
+      throw new ValidationError(
+        `"${file.name}" doesn't look like a real image file, so it was rejected. Upload a photo taken with your camera.`
+      );
+    }
 
-    const sig = await apiRequest<{
-      timestamp: number;
-      folder: string;
-      signature: string;
-      apiKey: string;
-      cloudName: string;
-    }>("/uploads/signature", { method: "POST" });
+    let sig: { timestamp: number; folder: string; signature: string; apiKey: string; cloudName: string };
+    try {
+      sig = await apiRequest<typeof sig>("/uploads/signature", { method: "POST" });
+    } catch (err) {
+      // The signing endpoint is ours, so apiRequest has already produced a
+      // usable message. Re-frame it so the user knows the photo is what failed
+      // and that the rest of their report is intact.
+      const detail = err instanceof APIError ? err.message : "The upload couldn't be authorised.";
+      throw new APIError(
+        `Couldn't start the photo upload. ${detail} Your report details are safe — try attaching the photo again.`,
+        err instanceof APIError ? err.statusCode : 0
+      );
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -170,12 +206,58 @@ export const issueRepository = {
     formData.append("folder", sig.folder);
     formData.append("signature", sig.signature);
 
-    const resp = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
-      method: "POST",
-      body: formData,
-    });
-    if (!resp.ok) throw new APIError("Image upload failed", resp.status);
-    const data = await resp.json();
+    // Uploads are much slower than API calls, so they get their own, longer
+    // bound rather than the shared apiRequest timeout.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    let resp: Response;
+    try {
+      resp = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      // Losing the connection part-way through is the common case on mobile
+      // data — the old code let a raw TypeError escape to the UI.
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new APIError(
+          "The photo upload timed out. Check your connection and try again, or submit the report without a photo.",
+          0
+        );
+      }
+      throw new APIError(
+        navigator.onLine
+          ? "The photo upload was interrupted. Check your connection and try again, or submit the report without a photo."
+          : "You went offline during the upload. Reconnect and try again, or submit the report without a photo.",
+        0
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => null);
+      const cloudinaryMessage: string | undefined = body?.error?.message;
+      // 4xx means this file will never succeed; 5xx is worth retrying.
+      const guidance =
+        resp.status >= 500
+          ? "The image service is having trouble. Try again in a moment, or submit the report without a photo."
+          : "That photo was rejected by the image service. Try a different photo.";
+      throw new APIError(
+        cloudinaryMessage ? `${guidance} (${cloudinaryMessage})` : guidance,
+        resp.status,
+        body
+      );
+    }
+
+    const data = await resp.json().catch(() => null);
+    if (!data?.secure_url) {
+      throw new APIError(
+        "The photo uploaded but we didn't get a link back. Try attaching it again.",
+        resp.status
+      );
+    }
     return data.secure_url as string;
   },
 
