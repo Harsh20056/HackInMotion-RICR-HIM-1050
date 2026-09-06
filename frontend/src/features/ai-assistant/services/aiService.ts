@@ -36,7 +36,8 @@ export const aiService = {
       }
 
       const data = await res.json();
-      const reply = data?.reply || "Samadhan AI: Thank you for your question. How else can I assist you today?";
+      const reply =
+        data?.reply || "Samadhan AI: Thank you for your question. How else can I assist you today?";
 
       const words = reply.split(" ");
       for (let i = 0; i < words.length; i++) {

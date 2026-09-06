@@ -180,7 +180,6 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
 
             {user
               ? visibleNavItems.map((item) => (
-
                   <Link
                     key={item.labelKey}
                     to={item.href}

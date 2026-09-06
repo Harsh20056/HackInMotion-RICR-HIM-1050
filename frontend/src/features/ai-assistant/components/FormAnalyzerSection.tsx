@@ -295,7 +295,6 @@ export function AnalyzerAndAssistant() {
     }
   };
 
-
   const clearFile = () => {
     setFile(null);
     setAnalysisResult(null);
@@ -404,9 +403,7 @@ export function AnalyzerAndAssistant() {
 
       // Detect whether the guidance is in Hindi
       const isHindi =
-        guidanceLang === "hi" ||
-        language === "hi" ||
-        /[\u0900-\u097F]/.test(analysisResult.guidance.summary);
+        guidanceLang === "hi" || language === "hi" || /[\u0900-\u097F]/.test(analysisResult.guidance.summary);
 
       const guidance = analysisResult.guidance;
       const formNameStr = analysisResult.form_name || (isHindi ? "सरकारी योजना फॉर्म" : "Government Form");
@@ -467,7 +464,9 @@ export function AnalyzerAndAssistant() {
           setIsSpeaking(true);
           toast({
             title: isHindi ? `🔊 ${tabTitleHi} ऑडियो गाइड` : `🔊 ${tabTitleEn} Audio Guide`,
-            description: isHindi ? `${tabTitleHi} नैरेशन चालू है...` : `Playing ${tabTitleEn.toLowerCase()} narration...`,
+            description: isHindi
+              ? `${tabTitleHi} नैरेशन चालू है...`
+              : `Playing ${tabTitleEn.toLowerCase()} narration...`,
           });
         };
 
@@ -660,7 +659,10 @@ export function AnalyzerAndAssistant() {
                       </Button>
 
                       {/* Sample Forms One-Click Test */}
-                      <div className="mt-6 pt-5 border-t border-border/50 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="mt-6 pt-5 border-t border-border/50 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <p className="text-xs font-semibold text-muted-foreground mb-3">
                           {language === "hi"
                             ? "💡 नमूना फॉर्म के साथ तुरंत आज़माएं:"
@@ -973,12 +975,18 @@ export function AnalyzerAndAssistant() {
                         {isSpeaking ? (
                           <>
                             <Square className="w-4 h-4 fill-current" />
-                            <span>{language === "hi" || guidanceLang === "hi" ? "ऑडियो रोकें" : "Stop Audio"}</span>
+                            <span>
+                              {language === "hi" || guidanceLang === "hi" ? "ऑडियो रोकें" : "Stop Audio"}
+                            </span>
                           </>
                         ) : (
                           <>
                             <Volume2 className="w-4 h-4" />
-                            <span>{language === "hi" || guidanceLang === "hi" ? "ऑडियो गाइड सुनें" : "Listen to Guide"}</span>
+                            <span>
+                              {language === "hi" || guidanceLang === "hi"
+                                ? "ऑडियो गाइड सुनें"
+                                : "Listen to Guide"}
+                            </span>
                           </>
                         )}
                       </Button>
@@ -987,7 +995,11 @@ export function AnalyzerAndAssistant() {
                         variant="ghost"
                         size="icon"
                         onClick={clearFile}
-                        title={language === "hi" || guidanceLang === "hi" ? "नया फॉर्म जांचें" : "Analyze Another Form"}
+                        title={
+                          language === "hi" || guidanceLang === "hi"
+                            ? "नया फॉर्म जांचें"
+                            : "Analyze Another Form"
+                        }
                         className="rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/60 relative z-50 cursor-pointer"
                       >
                         <X className="w-4 h-4" />
@@ -1189,7 +1201,8 @@ export function AnalyzerAndAssistant() {
                               {language === "hi" ? "कार्यालय (भौतिक रूप से):" : "Where to Submit (Physical):"}
                             </h5>
                             <p className="text-sm font-medium text-foreground">
-                              {analysisResult?.guidance?.submission?.where || "Relevant Tehsil / Local Government Office"}
+                              {analysisResult?.guidance?.submission?.where ||
+                                "Relevant Tehsil / Local Government Office"}
                             </p>
                           </div>
 
@@ -1298,13 +1311,17 @@ export function AnalyzerAndAssistant() {
                               </span>
                               {s.source_url && (
                                 <a
-                                  href={s.source_url.startsWith("http") ? s.source_url : `https://${s.source_url}`}
+                                  href={
+                                    s.source_url.startsWith("http") ? s.source_url : `https://${s.source_url}`
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-all font-bold text-xs cursor-pointer shadow-xs border border-primary/25 hover:underline select-none"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const url = s.source_url.startsWith("http") ? s.source_url : `https://${s.source_url}`;
+                                    const url = s.source_url.startsWith("http")
+                                      ? s.source_url
+                                      : `https://${s.source_url}`;
                                     window.open(url, "_blank", "noopener,noreferrer");
                                   }}
                                 >
