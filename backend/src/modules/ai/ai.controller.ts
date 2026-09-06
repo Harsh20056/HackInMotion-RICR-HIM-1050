@@ -14,7 +14,12 @@ import { hotspotsService } from "./hotspots.service.js";
 import { visionService } from "./vision.service.js";
 import { formAnalyzerService } from "./form-analyzer.service.js";
 import { aiEnabled, visionEnabled, complete } from "./providers/index.js";
-import { CIVIC_CHAT_VERSION, CIVIC_CHAT_SYSTEM, CIVIC_CHAT_JSON_SCHEMA, civicChatSchema } from "./prompts/index.js";
+import {
+  CIVIC_CHAT_VERSION,
+  CIVIC_CHAT_SYSTEM,
+  CIVIC_CHAT_JSON_SCHEMA,
+  civicChatSchema,
+} from "./prompts/index.js";
 
 export const aiRouter = Router();
 
@@ -39,7 +44,6 @@ const upload = multer({
 
 /** Lets the UI hide AI affordances instead of showing dead controls. */
 aiRouter.get("/status", async (_req, res) => {
-
   res.json({ enabled: aiEnabled(), vision: visionEnabled() });
 });
 
@@ -199,9 +203,7 @@ aiRouter.post("/analyze-form", upload.single("file"), async (req, res, next) => 
         : undefined;
 
     const language: string | undefined =
-      typeof req.body?.language === "string" && req.body.language.trim()
-        ? req.body.language.trim()
-        : "hi";
+      typeof req.body?.language === "string" && req.body.language.trim() ? req.body.language.trim() : "hi";
 
     const base64 = req.file.buffer.toString("base64");
     const mimeType = req.file.mimetype;
@@ -367,4 +369,3 @@ aiRouter.post("/chat", async (req, res, next) => {
     next(err);
   }
 });
-

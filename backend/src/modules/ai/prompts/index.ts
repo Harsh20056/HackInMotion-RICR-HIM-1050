@@ -494,7 +494,15 @@ export const FORM_ANALYZER_JSON_SCHEMA = {
               source_url: { type: "string" },
               last_verified: { type: "string" },
             },
-            required: ["chunk_title", "chunk_type", "similarity", "form_name", "version", "source_url", "last_verified"],
+            required: [
+              "chunk_title",
+              "chunk_type",
+              "similarity",
+              "form_name",
+              "version",
+              "source_url",
+              "last_verified",
+            ],
           },
         },
       },
@@ -588,5 +596,3 @@ export const civicChatSchema = z.object({
   reply: z.string(),
 });
 export type CivicChatResult = z.infer<typeof civicChatSchema>;
-
-

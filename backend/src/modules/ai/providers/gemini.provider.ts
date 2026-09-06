@@ -62,9 +62,7 @@ export const geminiProvider: AiProvider = {
       parts.push(await fetchImagePart(img.url, signal));
     }
 
-    const modelsToTry = [MODEL, "gemini-3.6-flash"].filter(
-      (m, idx, arr) => arr.indexOf(m) === idx
-    );
+    const modelsToTry = [MODEL, "gemini-3.6-flash"].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
     let lastErr: unknown;
     for (const modelName of modelsToTry) {
@@ -94,7 +92,12 @@ export const geminiProvider: AiProvider = {
         lastErr = err;
         const msg = err?.message || String(err);
         // If 503 (high demand) or 429 (rate limit), try next fallback model
-        if (msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("429") || msg.includes("high demand")) {
+        if (
+          msg.includes("503") ||
+          msg.includes("UNAVAILABLE") ||
+          msg.includes("429") ||
+          msg.includes("high demand")
+        ) {
           continue;
         }
         throw err;
